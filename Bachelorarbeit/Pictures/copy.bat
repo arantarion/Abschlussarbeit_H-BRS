@@ -1,0 +1,2 @@
+@echo off
+for /D %%a in ("D:\Benutzer\Henry\Downloads\Abschlussarbeit_H-BRS\Bachelorarbeit\Pictures\TR.M\*.*") do xcopy /y /d D:\Benutzer\Henry\Downloads\Abschlussarbeit_H-BRS\Bachelorarbeit\Pictures\.keep "%%a\"

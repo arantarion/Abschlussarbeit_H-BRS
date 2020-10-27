@@ -1,0 +1,52 @@
+====== DNSCrypt with Dnsmasq and dnscrypt-proxy2 ======
+{{section>meta:infobox:howto_links#cli_skills&noheader&nofooter&noeditbutton}}
+
+===== Introduction =====
+  * This how-to describes the method for setting up [[wp>DNSCrypt]] on OpenWrt.
+  * It relies on [[docs:guide-user:base-system:dhcp.dnsmasq|Dnsmasq]] and [[packages:pkgdata:dnscrypt-proxy2|dnscrypt-proxy2]] that supports DNSCrypt v2, DNS over HTTPS and Anonymized DNSCrypt.
+  * Follow [[docs:guide-user:firewall:fw3_configurations:intercept_dns|DNS hijacking]] to intercept DNS traffic or use [[docs:guide-user:services:vpn:start|VPN]] to protect all traffic.
+
+===== Goals =====
+{{section>docs:guide-user:services:dns:dnscrypt_dnsmasq_dnscrypt-proxy#goals&noheader&nofooter&noeditbutton}}
+
+===== Instructions =====
+Install the packages and configure DNS encryption.
+
+<code bash>
+# Install packages
+opkg update
+opkg install dnsmasq dnscrypt-proxy2
+
+# Enable DNS encryption
+uci -q delete dhcp.@dnsmasq[0].server
+uci add_list dhcp.@dnsmasq[0].server="127.0.0.53#53"
+
+# Enforce DNS encryption for LAN clients
+uci set dhcp.@dnsmasq[0].noresolv="1"
+uci commit dhcp
+/etc/init.d/dnsmasq restart
+</code>
+
+LAN clients should use Dnsmasq as a primary resolver.
+Dnsmasq forwards DNS queries to dnscrypt-proxy2 which encrypts DNS traffic.
+
+===== Testing =====
+{{section>docs:guide-user:services:dns:dnscrypt_dnsmasq_dnscrypt-proxy#testing&noheader&nofooter&noeditbutton}}
+
+===== Troubleshooting =====
+Collect and analyze the following information.
+
+<code bash>
+# Restart services
+/etc/init.d/log restart; /etc/init.d/dnsmasq restart; /etc/init.d/dnscrypt-proxy restart
+
+# Log and status
+logread -e dnsmasq; netstat -l -n -p | grep -e dnsmasq
+logread -e dnscrypt-proxy; netstat -l -n -p | grep -e dnscrypt-proxy
+
+# Runtime configuration
+pgrep -f -a dnsmasq; pgrep -f -a dnscrypt-proxy
+
+# Persistent configuration
+uci show dhcp; grep -v -e "^\s*#" -e "^\s*$" /etc/dnscrypt-proxy2/dnscrypt-proxy.toml
+</code>

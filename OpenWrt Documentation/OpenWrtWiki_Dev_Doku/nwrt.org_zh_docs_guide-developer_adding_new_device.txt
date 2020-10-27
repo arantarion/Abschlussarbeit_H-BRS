@@ -1,0 +1,211 @@
+FIXME **This page is not fully translated, yet. Please help completing the translation.**\\ //(remove this paragraph once the translation is finished)//
+
+====== 为新设备添加OpenWrt支持 ======
+
+为了全面了解如何添加新设备支持，我们建议您查看一台新设备相关的最新的commit，摸清楚哪些文件发生了修改和如何修改它们。这些文件非常方便理解，我们只需要去打开查看就能理解。
+===== 通过实例进行学习 =====
+
+一个好方法是通过示例学习，我们通过搜索__mt300a__这个版型文件来，找出需要修改的文件，所以你可以这样做：
+
+grep -lri mt300a target/
+
+显示结果是添加新板所需的最少文件列表：
+
+target/linux/ramips/base-files/etc/board.d/01_leds
+
+target/linux/ramips/base-files/etc/board.d/02_network
+
+target/linux/ramips/base-files/lib/upgrade/platform.sh
+
+target/linux/ramips/base-files/lib/ramips.sh
+
+target/linux/ramips/dts/GL-MT300A.dts
+
+target/linux/ramips/image/mt7620.mk
+
+===== 重要文件 =====
+
+最重要的文件一般存放于以下目录：
+
+==== /target/linux/<arch_name>/base-files/etc/… ====
+
+该目录的文件和文件夹最终将会存放于设备固件的/etc/目录。
+
+它一般包含下列的文件和文件夹：
+
+  * **…board.d/** 定义设备专用的默认硬件的脚本，如LED和网络接口。
+  * **…hotplug.d/** 定义设备专用的，在插入热插拔设备时自动运行的脚本
+  * **…init.d/** 定义设备专用的在启动时自动运行的脚本
+  * **…uci-defaults/** 定义设备专用的UCI默认设置
+  * **…diag.sh** 定义设备显示的错误代码
+==== /target/linux/<arch_name>/base-files/lib/… ====
+
+该文件夹下的文件夹和文件对应固件中的/lib目录下文件夹和文件。
+
+它的子文件夹和文件有:
+
+  * **…<arch_name>.sh** 将__阅读友好的设备名__转化为__脚本安全的设备名__的脚本
+  * **…preinit/** 通用<arch_name>预初始化脚本
+  * **…upgrade/** 通用<arch_name>升级脚本
+
+==== /target/linux/<arch_name>/base-files/sbin ====
+
+该文件夹对应固件中的/sbin文件夹, 一般为通用的<arch_name> sbin脚本和工具.
+
+==== /target/linux/<arch_name>/dts/ ====
+
+设备树源文件(Device tree source files, 简写为dts).
+
+==== /target/linux/<arch_name>/image/ ====
+
+用于构建写入用镜像的设置文件。
+==== /target/linux/<arch_name>/<board_name>/ ====
+
+设备专用的设置文件
+
+==== /target/linux/<arch_name>/modules.mk ====
+
+__menuconfig__中使用的架构专用(Arch-specific)配置文件
+
+
+==== 使新设备出现在make menuconfig中 ====
+
+在编辑了上述的文件后, 你需要对Makefile使用touch命令
+
+touch target/linux/*/Makefile
+
+===== 补丁 =====
+子目录 patches-xxx 是对一个 目标版本xxx 的内核补丁.\\ 
+它包含的文件名（'3个数字-全小写字母的简介.patch'）称含义如下:
+
+**0xx** - 上游需要回退的内容补丁\\
+**1xx** - 等待上游合并的代码补丁\\
+**2xx** - 内核构建、配置和头文件的补丁\\
+**3xx** - 用于特定体系结构的补丁\\
+**4xx** - MTD相关的补丁（系统和设备方面）\\
+**5xx** - 文件系统相关的补丁\\
+**6xx** - 网络通用补丁\\
+**7xx** - 网络物理层驱动补丁\\
+**8xx** - 其他设备补丁\\
+**9xx** - 未分类的其他补丁\\
+
+<WRAP center round tip 80%>
+所有的补丁发布都必须具有相比现阶段潜在的优势，如：
+
+- 补丁必须具有**合适明确的主题**\\
+- 必须有一个**明确清晰的commit信息**来解析补丁作出了什么样的改变\\
+- 补丁必须包含**一个签署人**\\
+</WRAP>
+
+===== 镜像测试 =====
+测试镜像固件通过ramdisk镜像而不通过烧写到Flash。\\
+
+在**make menuconfig**配置中选择**Target Images**，然后再选择**ramdisk**选项。\\
+
+这样将会编译生成一个kernel+inittramfs（内核加上内存根文件系统）的镜像文件，它的名字中将会包含**initramfs**。通过BootLoader的tftp功能可以将这个镜像文件导入到设备，这样可以在不需要flash文件系统的支持下进行启动。
+
+===== 小窍门 =====
+==== 使用目标设备中的shell ====
+为了获取到某个你感兴趣的OpenWrt设备的端口的相关数据，需要进行shell访问。但是大多数设备都没有提供使用telnet或者ssh连接shell的方法。
+
+==== 通过PING或者NTP功能进入shell ====
+某些路由器提供ping测试或NTP服务器配置，并且可能无法正确清理用户输入。尝试输入shell脚本，看看您是否幸运。您可能需要一些JavaScript知识才能禁用客户端输入验证。
+== 使用telnetd ==
+<code bash>
+$( /bin/busybox telnetd -l/bin/sh -p23 & )
+</code>
+== 如果需要远程登录，请使用HTTP获取密码哈希或使用“sed”删除/更改默认密码 ==
+<code bash>
+$( cp /etc/shadow /www )
+$( cp /etc/passwd /www )
+</code>
+然后尝试将他们下载到您的电脑并且破解哈希密码。
+== 降级固件 ==
+某些路由器可能会在启动之初尝试从特定的专用IP下载固件文件（例如TP-Link Archer C2 AC750），从而允许用户降级到较旧的固件。
+== HTTP服务器漏洞 ==
+一些路由器可能正在运行过时/不安全的HTTP服务器，并且可能容易受到缓冲区溢出或其他攻击的影响。
+== 网件 ==
+使用 [[toh:netgear:telnet.console|netgear-telnetenable]] 许多网件设备都可以通过telnet进入，也可以查看 [[https://github.com/insanid/NetgearTelnetEnable|GitHub: insanid/NetgearTelnetEnable]]。如果无法使用这种方法，则可以尝试从启用了telnetd的供应商发布的源中刷新映像构建。
+
+通过 [[https://github.com/jclehner/nmrpflash|nmrpflash]]许多网件设备可以被烧录，但是无法确定能够使用该工具的设备有哪些。
+==== 收集相关数据 ====
+在[[https://wikidevi.com/wiki/Main_Page|WikiDevi]]上面许多信息可以被查询到，例如：FCC ID：十分的有用处当你搜寻文件的时候，datasheets和网络照片：能够无需打开机壳就能区分使用过的芯片。
+
+通常可以使用以下的命令：
+<code bash>
+  dmesg                          # log buffer might be to small, see note 1.
+  cat /proc/cmdline
+  cat /proc/cpuinfo
+  cat /proc/meminfo
+  cat /proc/devices
+  ls /sys/devices/platform
+  cat /proc/mtd
+  cat /sys/class/mtd/mtd*/offset # Linux 4.1 and newer, see note 2.
+  ifconfig -a
+  ls /sys/class/net
+  brctl show
+  cat /sys/kernel/debug/gpio     # GPIO information
+</code>
+
+**注意1**:通过**dmesg**检索时，如果日志的缓存区太小，就会丢失掉最早的信息。如果从供应商发布的资源中构建库存及镜像文件，则可以在内核配置中设置更大的缓冲区大小。
+
+**注意2**:[[http://lxr.free-electrons.com/source/Documentation/ABI/testing/sysfs-class-mtd]]
+
+获取设置LED信息的另一个有用的工具是[[https://github.com/jclehner/gpiodump-mt7620|gpiodump]]，它是MT7620 GPIOMODE寄存器转储器(RAMIPS)。
+
+
+==== 从设备获取数据 ====
+由于空间有限，常见的文件传输实用程序（例如rsync/curl/ssh/scp/ftp/http/tftp）可能不可用，精简版version/applet可能在busybox中可用。
+
+假设路由器ip为192.168.0.123，要传输的文件位于/tmp/important-data.txt
+
+=== HTTP通过"httpd"和"busybox mount"===
+ 
+如果从/www提供Web界面
+
+== Sender ==
+<code bash>
+mount -o bind /tmp /www
+</code>
+
+== Receiver ==
+<code bash>
+wget http://192.168.0.123/important-data.txt
+</code>
+
+=== FTP通过“busybox ftpput” ===
+== Receiver ==
+设置一个FTP服务器，添加一个具有写权限的匿名账号。
+<code bash>
+python -m pyftpdlib -w -p 21
+</code>
+
+
+== Sender ==
+<code bash>
+busybox ftpput 192.168.0.123 important-data.txt /tmp/important-data.txt 
+</code>
+
+=== netcat通过“buxybox nc” ===
+== Receiver ==
+<code bash>
+busybox nc -l -p 12345 > important-data.txt 
+</code>
+
+== Sender ==
+<code bash>
+cat /tmp/important-data.txt | busybox nc 192.168.0.123:12345 
+</code>
+
+=== TFTP通过“busybox tftp” ===
+== Receiver ==
+建立一个tftp服务器
+
+== Sender ==
+<code bash>
+busybox tftp -p -l /tmp/important-data.txt -r important-data.txt 192.168.0.123
+</code>
+
+=== 通过终端（terminal）复制 ===
+如果上述所有工具/小工具都不可用，则可以从telnet终端进行复制，但不适用于二进制文件
+  

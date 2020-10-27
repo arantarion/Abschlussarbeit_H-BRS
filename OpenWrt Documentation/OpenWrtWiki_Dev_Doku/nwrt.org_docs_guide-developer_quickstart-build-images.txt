@@ -1,0 +1,94 @@
+====== Quick Image Building Guide ======
+This is a short guide for building an OpenWrt **snapshot** firmware image. To build a **stable release**, look to the [[docs:guide-user:additional-software:beginners-build-guide|beginners guide to building your own firmware]]. There is a FAQ about [[faq:difference_between_a_release_and_a_trunk_build|difference between a release and a snapshot build]].\\
+This guide is not intended to cover all pitfalls, but provides a quick way to build an OpenWrt image, if everything goes well. Guides with more information about building an OpenWrt image:\\
+- [[docs:guide-user:additional-software:imagebuilder|Using the image builder]];\\
+- [[docs:guide-user:additional-software:beginners-build-guide|Beginners guide to building your own firmware]].
+{{page>releases:snapshot&noheader&nofooter&noeditbtn&firstseconly}}
+===== 1. Prerequisites =====
+Use a Linux, BSD or MacOSX system.
+==== 1.1 Download package list information ====
+In Debian GNU/Linux 10 (buster) for example with:
+<code>
+sudo apt update
+</code>
+==== 1.2 Install required dependencies ====
+See [[docs:guide-developer:build-system:install-buildsystem#examples_of_package_installations|examples of package installations]].
+
+If package list information is not downloaded ([[docs:guide-developer:quickstart-build-images#download_package_list_information|step 1.1]]), message can be:\\
+''E: Unable to locate package''
+==== 1.3 Other prerequisites  ====
+In Debian GNU/Linux 10 (buster) leave sudo privileged mode for example by:
+<code>
+exit
+</code>
+Maybe alter permissions.
+For Fedora 30?
+<code>
+umask 0022
+</code>
+===== 2. Get OpenWrt source code =====
+==== 2.1 Clone repository ====
+<code>
+git clone https://git.openwrt.org/openwrt/openwrt.git
+</code>
+For more info see: [[docs:guide-developer:source-code:start|the OpenWrt source code]].\\
+If dependency is not installed ([[docs:guide-developer:quickstart-build-images#install_required_dependencies|step 1.2]]), message can be:\\
+''-bash: git: command not found''\\
+If trying second time, message can be:\\
+''fatal: destination path 'openwrt' already exists and is not an empty directory.''
+==== 2.2 Change directory ====
+For following steps go to the openwrt directory.
+<code>
+cd openwrt
+</code>
+If repository is not cloned ([[docs:guide-developer:quickstart-build-images#clone_repository|step 2.1]]), message can be:\\
+''-bash: cd: openwrt: No such file or directory''
+==== 2.3 Update and install feeds ====
+<code>
+./scripts/feeds update -a
+./scripts/feeds install -a
+</code>
+If dependencies are not installed ([[docs:guide-developer:quickstart-build-images#install_required_dependencies|step 1.2]]), messages can be:\\
+''Can't exec "make": No such file or directory at ./scripts/feeds line 22.''\\
+''Unsupported version of make found: make''\\
+''Checking 'gcc'... failed.''\\
+''Checking 'working-gcc'... failed.''\\
+''Checking 'g++'... failed.''\\
+''Checking 'working-g++'... failed.''\\
+''Checking 'ncurses'... failed.''\\
+''Checking 'awk'... failed.''\\
+''Checking 'unzip'... failed.''\\
+''Checking 'bzip2'... failed.''\\
+''Checking 'wget'... failed.''\\
+''Checking 'python'... failed.''\\
+''Checking 'python3'... failed.''\\
+''Checking 'file'... failed.''\\
+If directory is wrong ([[docs:guide-developer:quickstart-build-images#change_directory|step 2.2]]), message can be:\\
+''-bash: ./scripts/feeds: No such file or directory''
+===== 3. Configure target and options  =====
+<code>
+make menuconfig
+</code>
+This opens the OpenWrt configuration menu for setting target and options.
+
+E.g. for target "[[toh:tp-link:tl-wr841n|TL-WR841N v11]]" Wi-Fi router do following:
+  * “Target System” ⇒ “Select” ⇒ “Atheros AR7xxx/AR9xxx” ⇒ “Select”
+  * “Subtarget” ⇒ “Select” ⇒ “Devices with small flash” ⇒ “Select”
+  * “Target Profile” ⇒ “Select” ⇒ “TP-LINK TL-WR841N/ND v11” ⇒ “Select”
+
+To exit OpenWrt configuration and save target with options settings do following:
+  * “Exit” ⇒ "Yes"
+===== 4. Build image =====
+<code>
+make
+</code>
+Completion can take time.If successful, the images are in directory ./bin/targets/ar71xx/generic/
+  * The *-factory.bin image file is for the first installation of OpenWrt on the target.
+  * The *-sysupgrade.bin image file is for updating an existing OpenWrt installation.
+
+Notes:
+
+  * For recompiling the images, just execute ''make'' again.
+  * For faster compiling, use ''make -j N'', where N is the number of CPU cores + 1. Be aware that this method is prone to errors during compiling. In case you encounter compile errors, **your very first step is to compile again without ''-j N''**. Use of ''make download'' prior to parallel compilation is recommended to prevent some of these errors (''-jN'' is //generally// safe for the download step for those with faster Internet connectivity.)
+  * Change settings with ''make menuconfig'' and compile again.
+  * You can include custom files in your image by placing them in ''<buildroot>/files'', e.g. if you want to have ''my_config'' included in your image in the directory ''/etc/config/'' => ''<buildroot>/files/etc/config/my_config''. If the ''files'' directory doesn't exist on your buildsystem, then create it.

@@ -1,0 +1,11 @@
+====== Dashboard ======
+This is a simplified version of the router dashboard, used to view the connection information of some devices and routers
+
+**Attention: **It is not available yet with LuCI interface.
+
+{{https://imgur.com/G08zs8U.png}}
+
+
+====== Responsive ======
+
+{{https://imgur.com/UFc1h5w.png}}

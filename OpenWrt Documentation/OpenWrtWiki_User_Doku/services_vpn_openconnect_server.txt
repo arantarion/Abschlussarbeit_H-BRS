@@ -1,0 +1,101 @@
+====== OpenConnect server ====== 
+OpenConnect is an SSL-based VPN client which is inter-operable with the commercial products Cisco AnyConnect, Juniper Pulse Connect Secure, and Palo Alto Networks GlobalProtect.
+(GlobalProtect mode is new in OpenConnect 8.0 and is not yet fully integrated into OpenWrt).
+A companion VPN server ''ocserv'' which implements the AnyConnect protocol is also available for OpenWrt.
+The rest of this page describes the ocserv server.
+To set up an OpenConnect client, see [[docs:guide-user:services:vpn:openconnect:client]].
+
+This is a beginner's guide to setting up OpenConnect as a SERVICE (ocserv) on OpenWRT for use with a client running either the OpenConnect client or Cisco's Anyconnect.
+
+The primary goal of this HOWTO is to get a working OpenConnect tunnel with the least amount of compatability issues. Note that the instructions provided [[https://github.com/openwrt/packages/tree/master/net/ocserv|here]] did NOT WORK for me, and it seemed like there is an easier, more elegant solution as described in the [[http://www.infradead.org/ocserv/recipes-ocserv-pseudo-bridge.html|OpenConnect documentation on Pseudo-Bridging]].
+
+===== Use case (the beginner's configuration) =====
+The user wants a client to access their OpenWrt router and the network it supports on the back securely with a minimum of compatibility issues and minimum configuration fuss.
+The client can be a mobile user roaming on a mobile network OR at a public wifi hotspot, and wants to EITHER secure their traffic from eavesdropping, or access their private network.
+
+The end result will be an encrypted connection directly between the client (on the WAN side) and LAN side of the OpenWRT, such that the client effectively has access to the LAN side as if they were local, PLUS the benefits of their OpenWRT firewall for browsing the Internet.
+
+Note that this is a FULL tunnel, meaning all traffic is routed through the VPN once connected. This is, in my opinion, the only type of tunnel to use, as a split tunnel is inherently insecure.
+You cannot, for example, secure your traffic from a public hotspot using a split tunnel since your banking traffic will go through the PUBLIC hotspot and not through your VPN tunnel.
+
+===== Why use OpenConnect =====
+  * Your network provider is BLOCKING IPSEC traffic. This is apparently POLICY for mobile carriers, though they deny it. OpenConnect is SSL.
+  * Your client only supports AnyConnect or the OpenConnect Client. (Blackberry, for example, does not support OpenVPN).
+  * You just want a secure SSL-based VPN to your LAN.
+
+[[http://www.infradead.org/openconnect/|OpenConnect official site]]
+
+===== Server =====
+You will want the following packages: [[packages:pkgdata:ocserv]] + [[packages:pkgdata:luci-app-ocserv]]
+
+One of the easiest setups is to configure the VPN as a pseudo-bridge with Proxy ARP.
+What this means is that you will connect and be on the LAN side of your router with no additional routing needed, as if you were there.
+The configuration is described in this recipe[[http://www.infradead.org/ocserv/recipes-ocserv-pseudo-bridge.html|recipe: ocserv pseudo bridge]].
+
+Router is configured at 192.168.1.1
+DHCP hosts are configured to use the range 192.168.1.2-192.168.1.50
+You want your VPN hosts to use the range 192.168.1.100 and have only 1-2 hosts connecting at any given time
+
+1) Edit VPN service configuration:
+
+<code bash>
+# /etc/config/ocserv
+
+config ocserv 'config'
+    option enable '1'
+    option port '443'
+    option netmask '255.255.255.253'
+    option ipaddr '192.168.1.100'
+    option zone 'lan'
+</code>
+
+This will put your VPN clients at 192.168.1.100+.
+Note that the netmask limits the # of clients you can have to TWO.
+Change as necessary.
+
+NOTE: the above suggests port 443 as the preferred port.
+This is to support MOBILE clients.
+Many mobile network operators are blocking other ports (despite the FCC open internet order), but they cannot block port 443, therefore 443 is more likely to work for the majority of mobil users.
+
+2) Add your DNS server:
+
+<code bash>
+config dns
+    option ip '192.168.1.1'
+</code>
+
+3) Configure firewall:
+
+<code bash>
+# Configure firewall
+uci rename firewall.@zone[0]="lan"
+uci rename firewall.@zone[1]="wan"
+uci del_list firewall.lan.device="vpns+"
+uci add_list firewall.lan.device="vpns+"
+uci -q delete firewall.oc
+uci set firewall.oc="rule"
+uci set firewall.oc.name="Allow-OpenConnect"
+uci set firewall.oc.src="wan"
+uci set firewall.oc.dest_port="443"
+uci set firewall.oc.proto="tcp udp"
+uci set firewall.oc.target="ACCEPT"
+uci commit firewall
+/etc/init.d/firewall restart
+</code>
+
+What these do is allow traffic from the VPN interface(s).
+
+4) Modify kernel parameters:
+
+<code bash>
+cat << EOF >> /etc/sysctl.conf
+net.ipv4.conf.all.proxy_arp=1
+EOF
+/etc/init.d/sysctl restart
+</code>
+
+5) Add users (and passwords) to your OpenConnect service.
+I find LuCI to be pretty easy to use for all of these steps.
+
+FINALLY: Fire up the OpenConnect server to test it out.
+That's all there is to it!

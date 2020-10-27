@@ -1,0 +1,121 @@
+====== Installing and troubleshooting USB Drivers ======
+
+  - A **[[docs:guide-user:storage:usb-drives-quickstart|Quick Start for installing a USB drive]]** is available. This solves the very common case of installing a single USB drive onto your OpenWrt device.
+  - If the [[docs:guide-user:storage:usb-drives-quickstart|Quick Start]] doesn't address your question, you can install USB drivers manually. Background information about the different USB host controller interfaces (OHCI, UHCO, EHCI) is given in a [[wp>Host controller interface|Wikipedia article]]. Please refer to your device documentation to find out which USB driver version your device needs.
+  - There is a more complete [[docs:guide-user:storage:usb-drives|USB Drives]] page
+
+===== To install USB Drivers Manually =====
+
+  - Start with refreshing the list of available packages<code>opkg update</code>
+  - Obtain a list of already installed USB packages:<code>opkg list-installed | grep usb</code>Result: <code>kmod-usb-core - 4.9.58-1
+kmod-usb-storage - 4.9.58-1
+kmod-usb3 - 4.9.58-1
+...</code>
+  - Install the USB core package (all USB versions), if the previous list-output does not list it:<code>opkg install kmod-usb-core
+insmod usbcore</code>
+  - Install the USB storage package (all USB versions), if the previous list-output does not list it:<code>opkg install kmod-usb-storage</code>
+  - To install USB 1.1 drivers, first try the UHCI driver:<code>opkg install kmod-usb-uhci
+insmod usb-ohci</code>If this fails with an error "No such device", try installing the alternative OHCI driver for USB 1.1:<code>opkg install kmod-usb-ohci
+insmod uhci</code>(to remove non-working drivers, use ''opkg remove''. Note: If both OHCI And UHCI drivers fail, then you do not have USB 1.1)
+  - To install USB 2.0 drivers:<code>opkg install kmod-usb2
+insmod ehci-hcd</code>
+  - To install USB 3.0 drivers:<code>opkg install kmod-usb3
+insmod xhci-hcd</code>
+  - To install support for UASP aka [[wp>USB_Attached_SCSI|USB Attached SCSI]] (supported by many USB drives and drive enclosures, especially if USB 3.0. It enhances performance if it's supported by both the drive and the host controller in your device):<code>opkg install kmod-usb-storage-uas</code>
+
+
+**NOTES:** 
+  * Some devices (e.g. Asus WL-500g router, brcm47xx) additionally need the kmod-usb2 module (even though they only have an USB 1.1 controller)
+  * Some devices (e.g. NLSU2,LinkSys WRT54G3GV2) additionally need the following packages: <code>opkg install kmod-usb-ohci-pci
+opkg install kmod-usb2-pci</code>
+
+
+===== Troubleshooting USB Drivers =====
+
+==== Diagnostics using dmesg ====
+Most firmware images already have USB or SATA support integrated in the default profile/image, so it should not be necessary to install additional packages.\\
+To check, if USB support in included and if connected USB devices get detected:\\
+1. Execute ''dmesg'' in the terminal, note its output. These are "driver messages", events related to hardware being connected/started or disconnected/shut-down.\\ 
+2. Now connect your external storage device, wait a few seconds and then execute ''dmesg'' on the terminal again.\\
+3. If USB drivers are active and your device has successfully been recognized, you will notice that additional log output has been added at the end. 
+
+Here is an example of the dmesg text about an USB device being connected and properly recognized. 
+<code>[   96.603945] usb 1-1: new high-speed USB device number 2 using ehci-pci
+[   96.812362] usb-storage 1-1:1.0: USB Mass Storage device detected
+[   96.842945] scsi host4: usb-storage 1-1:1.0
+[   98.242956] scsi 4:0:0:0: Direct-Access     JetFlash Transcend 8GB    1100 PQ: 0 ANSI: 4
+[   98.415163] sd 4:0:0:0: [sdb] 15826944 512-byte logical blocks: (8.10 GB/7.55 GiB)
+[   98.443523] sd 4:0:0:0: [sdb] Write Protect is off
+[   98.732241] sd 4:0:0:0: [sdb] Mode Sense: 43 00 00 00
+[   98.738043] sd 4:0:0:0: [sdb] No Caching mode page found
+[   98.752681] sd 4:0:0:0: [sdb] Assuming drive cache: write through
+[   98.893168]  sdb: sdb1 sdb2
+[   98.951053] sd 4:0:0:0: [sdb] Attached SCSI disk</code>
+
+If your log output does not show USB-related output like this, please check that you have the right drivers and report this as a bug in the [[https://bugs.openwrt.org/|bugtracker]] 
+
+==== Diagnostics using lsusb ====
+Further diagnostics information about connected USB drives can be obtained, when installing the optional 'usbutils' package:
+<code>
+opkg update && opkg install usbutils
+</code>
+This package installs the ''lsusb'' command that will output information of the router-built in USB-hub and connected USB-devices. The following example was run on a router with a single USB port. 
+lsusb has recognized USB 2.0 and 3.0 support on this port and a connected device consisting of an USB-to-SATA-disk-bridge from ASMedia. Since this device is listed with the same bus-ID as the 3.0 hub, the USB-harddisk obviously is connected via the USB 3.0 protocol:
+<code>
+Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+Bus 002 Device 002: ID 174c:1153 ASMedia Technology Inc. ASM2115 SATA 6Gb/s bridge
+Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+</code>
+
+The command ''lsusb -t'' reveals, if your personal combination of device, OpenWrt firmware and external USB drive supports the newer and slightly faster USB 3.0 UASP Extension (USB Attached SCSI Protocol) or the older USB 3.0 block driver:
+<code>
+...
+/:  Bus 02.Port 1: Dev 1, Class=root_hub, Driver=xhci_hcd/6p, 5000M
+    |__ Port 2: Dev 3, If 0, Class=Mass Storage, Driver=uas, 5000M
+    |__ Port 4: Dev 5, If 0, Class=Mass Storage, Driver=usb-storage, 5000M
+...
+</code>
+In this example, device 3 ("Driver=uas") is UASP-capable, while device 5 ("Driver=usb-storage") is not.
+
+On USB storage device problems, pay attention to the "Driver" output of ''lsusb -t''. If it returned something like
+<code>
+|__ Port 4: Dev 5, If 0, Class=Mass Storage, Driver=, 5000M
+</code>
+instead of
+<code>
+|__ Port 4: Dev 5, If 0, Class=Mass Storage, Driver=usb-storage, 5000M
+</code>
+then OpenWrt has recognized the attached USB storage device, but does not have an USB-Storage driver installed yet. In this case you will need to install USB storage drivers first:
+<code>
+opkg install kmod-usb-storage
+</code>
+
+==== Diagnostics using cat ====
+If you are truly out of options, you can use ''cat'', thanks to linux's "everything is a file" feature, you can look over usb debug information:
+<code>
+cat /sys/kernel/debug/usb/devices
+
+T:  Bus=01 Lev=00 Prnt=00 Port=00 Cnt=00 Dev#=  1 Spd=480  MxCh= 2
+B:  Alloc=  0/800 us ( 0%), #Int=  0, #Iso=  0
+D:  Ver= 2.00 Cls=09(hub  ) Sub=00 Prot=01 MxPS=64 #Cfgs=  1
+P:  Vendor=1d6b ProdID=0002 Rev= 4.14
+S:  Manufacturer=Linux 4.14.171 xhci-hcd
+S:  Product=xHCI Host Controller
+S:  SerialNumber=1e1c0000.xhci
+C:* #Ifs= 1 Cfg#= 1 Atr=e0 MxPwr=  0mA
+I:* If#= 0 Alt= 0 #EPs= 1 Cls=09(hub  ) Sub=00 Prot=00 Driver=hub
+E:  Ad=81(I) Atr=03(Int.) MxPS=   4 Ivl=256ms
+
+T:  Bus=01 Lev=01 Prnt=01 Port=01 Cnt=01 Dev#=  4 Spd=480  MxCh= 0
+D:  Ver= 2.10 Cls=00(>ifc ) Sub=00 Prot=00 MxPS=64 #Cfgs=  1
+P:  Vendor=0781 ProdID=5583 Rev= 1.00
+S:  Manufacturer=SanDisk
+S:  Product=Ultra Fit
+S:  SerialNumber=4C530001091024119291
+C:* #Ifs= 1 Cfg#= 1 Atr=80 MxPwr=224mA
+I:* If#= 0 Alt= 0 #EPs= 2 Cls=08(stor.) Sub=06 Prot=50 Driver=(none)
+E:  Ad=81(I) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+E:  Ad=02(O) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+</code>
+
+You can piece enough information from this output for diagnostics.

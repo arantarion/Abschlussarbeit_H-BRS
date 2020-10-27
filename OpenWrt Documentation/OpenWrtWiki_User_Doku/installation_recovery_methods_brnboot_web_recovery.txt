@@ -1,0 +1,15 @@
+====== brnboot web recovery ======
+
+Recovery can be done via brnboot web recovery.
+
+  * -> [[docs:techref:bootloader:brnboot|brnboot]]
+
+===== Devices with this recovery method =====
+---- datatable ----
+cols       : Brand, Model, Versions, Supported Current Rel_releasecurrent, Recovery method(s)_method-recovery, Comment recovery, Device Page_page, Device Techdata_pageid
+dynfilters : 1
+filter     : Model!=@@Model@@
+filter     : recovery method(s)=brnboot web recovery
+sort       : Brand
+limit      : 25
+----

@@ -1,0 +1,12 @@
+====== Sending patches by git send-email ======
+
+Send an email to the [[https://lists.openwrt.org/mailman/listinfo/openwrt-devel|development mailing list]]. All patches need to be sent in the same format as those that are listed on [[https://patchwork.ozlabs.org/project/openwrt/list/|patchwork]]. If the patch does not get listed in patchwork then it won't get processed.
+
+Using [[https://git-scm.com/docs/git-send-email|git send-email]] is warmly recommended, as email clients tend to add spaces and screw up the formatting or add non-printable characters. 
+
+<code>
+git send-email --from "..." --to "openwrt-devel@lists.openwrt.org" 001-description.patch
+</code>
+
+[[http://git-scm.com/docs/git-send-email|git send-email documentation]]
+

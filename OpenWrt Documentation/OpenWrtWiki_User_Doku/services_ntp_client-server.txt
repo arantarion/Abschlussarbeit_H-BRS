@@ -1,0 +1,125 @@
+~~NOTOC~~
+====== NTP client / NTP server ======
+
+See also [[docs:guide-user:advanced:ntp_configuration|NTP]]
+
+ **''Note:''** most devices supported by OpenWrt do not have a hardware clock.
+
+You can set the system date and time using one of the following methods:
+
+  *  //__Manually__// by utilizing **''busybox-date''**, e.g.<code>date -s  hh:mm[:ss] or [YYYY.]MM.DD-hh:mm[:ss] or YYYY-MM-DD hh:mm[:ss] or [[[[[YY]YY]MM]DD]hh]mm[.ss]</code>
+
+  *  //__[[wp>Network Time Protocol]]__// by invoking **''busybox-ntpd''** once, e.g.: <code bash>ntpd -q -p ptbtime1.ptb.de</code>, or configure ''[[docs:guide-user:base-system:system_configuration|/etc/config/system]]'' accordingly to have nptd run as NTP client (and optionally additionally as NTP server) daemon. By default busybox-ntpd runs as a client and does not serve time. You can set the UCI option ''enable_server'' in ''/etc/config/system'' (in the ntp section) to enable serving time as well.
+ 
+  *  //__[[wp>Time Protocol]]__// :!: **Obsolete**  Use rdate (**''busybox-rdate''**) to set the time: <code>rdate -s time.protocol.server.org</code>  Use with ''[[docs:guide-user:base-system:notuci.config##etccrontabsroot|/etc/crontabs/root]]''
+
+  - //__Other NTP packages__//  If the default busybox-ntpd isn't sufficient, one of the following alternate ntpd packages can be installed:
+
+^ Name       ^ Version  ^  Size  ^ Description  ^
+| ntpclient  |  2007_365-4  |   12.970 | NTP client for setting system time from NTP servers.  |
+| ntpd       |  4.2.6p4-1   |  168.021 | The ISC ntp suite is a collection of tools used to synchronize the system clock with remote NTP time servers and run/montior local NTP servers. This package contains the [[wp>ntpd]] server. See [[man>ntpd]]  |
+| ntpd-ssl   |  4.2.6p4-1   |  179.511 | The ISC ntp ... . This package contains the ntpd server with OpenSSL support.  |
+| ntpdate    |  4.2.6p4-1   |   36.642 | The ISC ntp ... . This package contains [[wp>ntpdate]]. See [[man>ntpdate]] |
+| ntp-utils  |  4.2.6p4-1   |  158.035 | The ISC ntp ... . This package contains ''ntpdc'' and ''ntpq''.  |
+
+
+NTP (Network Time Protocol) is used to keep computer clocks accurate by synchronizing them over the Internet or a local network, or by following an accurate hardware receiver that interprets GPS, DCF-77, NIST or similar time signals.
+
+This package contains the NTP daemon and utility programs. An NTP daemon needs to be running on each host that is to have its clock accuracy controlled by NTP. The same NTP daemon is also used to provide NTP service to other hosts.
+
+
+| {{:meta:icons:tango:48px-outdated.svg.png?nolink}} | In [[https://dev.openwrt.org/changeset/28612|R28612]] and [[https://dev.openwrt.org/changeset/28613|R28613]] ''busybox-rdate'' has been replaced with ''busybox-ntpd'' by default.\\ If you check the entire file [[https://dev.openwrt.org/browser/trunk/package/busybox/config/networking/Config.in?rev=28613|Config.in]] not only the diffs above, you will learn that busybox-ntpd //is// employable as server as well by default.  |
+
+
+The ''busybox-ntpd'' will auto-tune its sync rate depending on clock drift and other factors, it varies between 1-60min, and yes its a daemon which keeps syncing the time. When invoking it with ''-q'' it would act like ntpdate, means do a burst poll/sync cycle and exit.
+
+
+
+===== Installation =====
+See [[docs:guide-user:additional-software:opkg]] for more details on using the OpenWrt package manager.
+
+By default, **busybox-ntpd**, can supply both a client for setting time, and a server for supplying time to the local net. This is installed out of the box and should take care of most time syncing needs. It doesnt support advanced features like query, so the server cannot be monitored from other systems like Nagios.
+
+Example (install the real ntpd package (=not busybox-ntpd):
+<code bash>
+opkg update
+opkg install ntpd
+/etc/init.d/sysntpd disable
+/etc/init.d/ntpd enable
+/etc/init.d/ntpd start
+netstat -l | grep ntp
+</code>
+
+When you use ntpd, make sure you disable sysntpd daemon.
+An ntpd server should be listening on the default NTP port (UDP 123).
+
+===== Configuration =====
+  * The busybox-ntpd is configured in ''[[docs:guide-user:base-system:system_configuration|/etc/config/system]]''.
+
+By default, it runs as a client and does not serve time to other peers.   A server can be enabled by adding the flag "-l" to "local args" in /etc/init.d/sysntpd (line 23). Starting with Backfire 10.3.1 this is not anymore needed and can be also changed in /etc/config/system.
+
+  * The package ''ntpclient'' is configured in ''[[docs:guide-user:services:ntp:client|/etc/config/ntpclient]]''.
+
+
+''ntpdate'' is a command line tool that usually is used for one time synchronizations with remote ntp peers:
+<code>
+ntpdate pool.ntp.org
+</code>
+and also in conjuction with ''[[docs:guide-user:base-system:notuci.config##etccrontabsroot|/etc/crontabs/root]]''
+
+  * ''ntpd'' is a daemon that runs all the time in the background for permanent synchronization.
+
+According to [[http://packages.debian.org/squeeze/ntp|Debian]] the same NTP daemon is also used to provide NTP service to other hosts.
+
+To use ntpd as NTP client daemon, no change to the firewall is required, to run as NTP server daemon, open port 123 UDP for your NTP clients (which is by default open in LAN). An example to run ''ntpd'' as a server:
+
+<code>
+driftfile  /var/lib/ntp/ntp.drift
+
+server 0.openwrt.pool.ntp.org iburst
+server 1.openwrt.pool.ntp.org iburst
+server 2.openwrt.pool.ntp.org iburst
+server 3.openwrt.pool.ntp.org iburst
+
+#exchange time with everybody but dont allow configuration (noquery to forbid query)
+restrict -4 default kod notrap nomodify nopeer
+restrict -6 default kod notrap nomodify nopeer
+
+#local users may interrogate the ntp server more closely
+restrict 127.0.0.1
+restrict ::1
+</code>
+Depending on your configuration ntpd won't start properly when
+<code>
+restrict 127.0.0.1
+restrict ::1
+</code>
+is not set. When ntpd is started and it tries to connect to a server for which only a hostname is known, e.g. 0.openwrt.pool.ntp.org, and for some reason DNS service is not available yet (e.g. you are on a dial-up connection and it takes some time to set everything up), then without the above snippet you'll find two processes of ntpd running (one as user 'root', the other as user 'ntp') and you will have errors like this in the log:
+<code>
+ntp_intres.request: permission denied
+</code>
+The explanation I found at https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=571469. The default configuration above sets "nomodify". That configuration on localhost "will prevent the resolver process from adding the peers." [...] "The nomodify will only be a problem in case the resolver process needs to be started, which it does when it can't resolve the hostsnames when ntpd starts.  So this is mostly when the network isn't up yet." (explanation by Kurt, from Debian bug report mentioned above) (sic)
+===== rdate server =====
+
+First of all: rdate is old, very simple and does not give you highly reliable time.
+If you still want to run a server for rdate clients for some reason you can use the xinetd package.
+
+After installing xinetd and running "/etc/init.d/xinetd enable", create a file "/etc/xinetd.d/time-stream" with the following content:
+<code>
+service time
+{
+	disable = no
+	id		= time-stream
+	type		= INTERNAL
+	wait		= no
+	socket_type	= stream
+	flags		= IPv4
+}
+</code>
+Finally run "/etc/init.d/xinetd restart" and your rdate-timeserver should be up and running.
+
+
+===== Troubleshooting =====
+
+
+===== Notes =====

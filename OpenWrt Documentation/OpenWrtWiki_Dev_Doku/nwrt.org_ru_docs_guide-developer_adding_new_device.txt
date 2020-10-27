@@ -1,0 +1,221 @@
+FIXME **This page is not fully translated, yet. Please help completing the translation.**\\ //(remove this paragraph once the translation is finished)//
+
+====== Добавление нового устройства ======
+
+Хорошим всесторонним советом было бы начать с просмотра недавних комментариев о добавлении нового устройства,чтобы увидеть, какие файлы были изменены и как. Многие файлы стараются быть как можно более понятными, в большинстве случаев достаточно просто открыть их, чтобы понять их функцию.
+
+===== Учитесь на примере =====
+
+==== Поиск по grep локально ====
+
+Хороший метод-учиться на примере, так что вы можете сделать: 
+
+устройство grep-lri mt300a/
+
+В результате получается минимальный список файлов необходимых для добавления новой платы:
+
+<code>
+target/linux/ramips/base-files/etc/board.d/01_leds
+target/linux/ramips/base-files/etc/board.d/02_network
+target/linux/ramips/base-files/lib/upgrade/platform.sh
+target/linux/ramips/base-files/lib/ramips.sh
+target/linux/ramips/dts/GL-MT300A.dts
+target/linux/ramips/image/mt7620.mk
+</code>
+
+==== Поиск по git commit ====
+
+[[https://git.openwrt.org/?p=openwrt%2Fopenwrt.git&a=search&h=HEAD&st=commit&s=add+support+for|Просмотрите источник, отфильтрованный по ссылке " добавить поддержку для"]] и проверьте "diff" для недавно добавленного устройства
+===== Важный файлы =====
+
+Это общая карта расположения наиболее важных файлов:
+
+==== /target/linux/<arch_name>/base-files/etc/… ====
+
+Эта папка содержит файлы и папки, которые будут интегрированы в папку firmware /etc.
+
+Это его вложенные папки и файлы:
+
+  * **…board.d/** скрипты для определения аппаратного обеспечения по умолчанию для конкретного устройства, например светодиодов и сетевых интерфейсов.
+  * **…hotplug.d/** скрипты для определения специфичных для устройства действий, которые должны выполняться автоматически при горячем подключении устройств
+  * **…init.d/** скрипты для определения специфичных для устройства действий, которые будут выполняться автоматически при загрузке
+  * **…uci-defaults/** файлы для определения параметров конфигурации uci для конкретного устройства по умолчанию
+  * **…diag.sh** определяет, какой светодиод использовать для кодов ошибок для каждой платы
+  * 
+//Обратите внимание, что некоторые из этих функций теперь выполняются в DTS для устройства.//
+==== /target/linux/<arch_name>/base-files/lib/… ====
+
+Эта папка содержит файлы и папки, которые будут интегрированы в папку firmware /lib.
+
+Это его вложенные папки и файлы:
+
+  * **…<arch_name>.sh** читаемое человеком полное имя платы, связанное с именем безопасной для скрипта платы
+  * **…preinit/** общие < имя_архива> предустановленные сценарии запуска
+  * **…upgrade/** общие скрипты обновления <имя_архива> 
+==== /target/linux/<arch_name>/base-files/sbin ====
+
+Эта папка содержит файлы и папки, которые будут интегрированы в папку firmware /sbin, обычно общие < arch_name> сценарии и инструменты sbin.
+
+==== /target/linux/<arch_name>/dts/ ====
+
+Исходные файлы дерева устройств, или сокращенно dts.
+
+//Некоторые архитектуры имеют каталог DTS глубже вниз. Устройства ARM, например, обычно имеют его расположение на''files-X.yy/arch/arm/boot/dts/''//
+
+//Если файл DTS или DTSI уже присутствует в вышестоящем Linux, они обычно не будут присутствовать в исходном коде OpenWrt. Настройка для целевого объекта и запуск''make target/linux/{clean,prepare}'' будет скачиваться и исправляться Linux, что позволит найти полученный файл в ''build_dir''//
+==== /target/linux/<arch_name>/image/ ====
+
+Конфигурация, необходимая для создания специфичных для устройства флэш-образов.
+
+==== /target/linux/<arch_name>/<board_name>/ ====
+
+Конфигурация для конкретной платы.
+
+==== /target/linux/<arch_name>/modules.mk ====
+
+Arch- специфичный файл конфигурации ядра для менюконфиг
+
+==== Создание нового устройства в make menuconfig ====
+
+После редактирования файлов, указанных выше, вы должны ввести команду
+
+  touch target/linux/*/Makefile
+
+===== Патчи =====
+Подкаталоги patches-* содержат патчи ядра, применяемые для каждого целевого объекта.\\ 
+Все патчи должны быть названы 'NNN-lowercase_short name.patch" и отсортированы по следующим категориям:
+
+**0xx** - бэкпортов вверх \\
+**1xx** - код, ожидающий слияния в восходящем потоке\\
+**2xx* * - патчи для сборки ядра / конфигурации / заголовков\\
+**3xx* * - патчи, специфичные для архитектуры\\
+**4xx* * - патчи, связанные с mtd (подсистема и драйверы)\\
+****5xx* * - патчи, связанные с файловой системой\\
+**6xx* * - общие сетевые патчи\\
+**7xx* * - патчи сетевых / phy драйверов\\
+**8xx** - другие драйверы\\
+**9xx* * - другие патчи без категорий\\
+
+<WRAP center round tip 80%>
+Все патчи должны быть написаны таким образом, чтобы они были потенциально доступны для распространения, т. е.:
+
+  - they must contain a **proper subject**
+  - they must contain a **proper commit message** explaining what they change
+  - they must contain a **valid Signed-off-by line**
+</WRAP>
+
+===== Тестирование образов ===== 
+
+Тестовые образы прошивки без записи их в Flash при использовании RAMDisk изображений.
+
+В * * make menuconfig * * выберите * * целевые образы**, а затем вы можете выбрать опцию * * ramdisk**.
+
+Это создаст образ с ядром + initramfs, который будет иметь **initramfs** в имени. Полученный образ может быть загружен в устройство через функцию bootloader tftp и должен загрузиться в приглашение, не полагаясь на поддержку flash/файловой системы.
+===== Tips and tricks =====
+==== Getting a shell on the target device ====
+In order to collect relevant data for a port of OpenWrt to the device of interest one wants shell access. Most devices though do not offer a way to get a shell with telnet or ssh.
+=== Abuse Unsanitized User Input ===
+Some router offers ping test or NTP server configuration and may not properly sanitize user input. Try to enter shell script and see if you are lucky. You may need some ''javascript'' knowledges to disable client-side input validation.
+== Starting telnetd ==
+<code bash>
+$( /bin/busybox telnetd -l/bin/sh -p23 & )
+</code>
+== Obtain the password hash using HTTP or use ''sed'' to delete/change the default password if telnet login is required ==
+<code bash>
+$( cp /etc/shadow /www )
+$( cp /etc/passwd /www )
+</code>
+Then try to download them to your computer and crack the hash
+
+=== Downgrade to older firmware ===
+Some router may try to download a firmware file (e.g. [[toh:tp-link:archer_c2_ac750|TP-Link Archer C2 AC750]]) from specific private IP at the beginning of booting, which allow user to downgrade to older firmware
+
+=== Downgrade by Serial access ===
+Serial access may allow you to enter console mode of u-boot for flashing/loading other firmware. Usually soldering is required.
+See [[docs:guide-user:installation:generic.flashing.serial|Generic flashing over the Serial port]]
+
+=== HTTP Server Vulnerability ===
+Some routers may be running outdated/insecure HTTP server and may be vulnerable to buffer overflow or other attack
+
+=== Netgear ===
+With [[toh:netgear:telnet.console|netgear-telnetenable]] many Netgear devices can be opened up for telnet access. Also see [[https://github.com/insanid/NetgearTelnetEnable|GitHub: insanid/NetgearTelnetEnable]].
+When such means cannot be used, one could try to flash an image build from the sources published by the vendor with telnetd enabled.
+
+With [[https://github.com/jclehner/nmrpflash|nmrpflash]] many Netgear devices can be flashed. Devices that are compatible with this tool become effectively unbrickable.
+
+= = = = Сбор соответствующих данных ====
+На [[https://wikidevi.com/wiki/Main_Page/WikiDevi]] можно найти много информации, например, идентификатор FCC очень полезен при поиске документации, описаний и внутренних фотографий (чтобы иметь возможность различать используемые чипы без необходимости открывать корпус).
+
+Обычно можно использовать следующие команды:
+
+<code bash>
+dmesg                          # log buffer might be to small, see note 1.
+cat /proc/cmdline
+cat /proc/cpuinfo
+cat /proc/meminfo
+cat /proc/devices
+ls /sys/devices/platform
+cat /proc/mtd
+cat /sys/class/mtd/mtd*/offset # Linux 4.1 and newer, see note 2.
+ifconfig -a
+ls /sys/class/net
+brctl show
+cat /sys/kernel/debug/gpio     # GPIO information
+</code>
+
+** Примечание 1: * * часто буфер журнала слишком мал, и самые ранние сообщения могут отсутствовать в информации, полученной с помощью "dmesg". Если вы создаете исходное изображение из источников, опубликованных поставщиком, то в конфигурации ядра можно установить больший размер буфера.
+
+** Примечание 2:* * [[http://lxr.free-electrons.com/source/Documentation/ABI/testing/sysfs-class-mtd]]
+
+Еще одним полезным инструментом для получения информации для настройки светодиодов может быть [[https://github.com/jclehner/gpiodump-mt7620/gpiodump]], Дампер регистра MT7620 GPIOMODE (RAMIPS).
+==== Getting collected data from a device ====
+Because of the limited space, common file transfer utilities such as rsync/curl/ssh/scp/ftp/http/tftp may not be available, a stripped down version/applet may be available from busybox.
+
+Assume the router ip is ''192.168.0.123'', and the file to be transfer located at ''/tmp/important-data.txt''. 
+ 
+=== HTTP by ''httpd'' and ''busybox mount'' ===
+If the web interface are served from ''/www''.
+
+== Sender ==
+<code bash>
+mount -o bind /tmp /www
+</code>
+
+== Receiver ==
+<code bash>
+wget http://192.168.0.123/important-data.txt
+</code>
+
+=== FTP by ''busybox ftpput'' ===
+== Receiver ==
+Setup an FTP server. Add an anonymous account with write permission
+
+<code bash>
+python -m pyftpdlib -w -p 21
+</code>
+== Sender ==
+<code bash>
+busybox ftpput 192.168.0.123 important-data.txt /tmp/important-data.txt 
+</code>
+
+=== netcat by ''busybox nc'' ===
+== Receiver ==
+<code bash>
+busybox nc -l -p 12345 > important-data.txt 
+</code>
+== Sender ==
+<code bash>
+cat /tmp/important-data.txt | busybox nc 192.168.0.123:12345 
+</code>
+
+=== TFTP by ''busybox tftp'' ===
+== Receiver ==
+Setup a tftp server 
+
+== Sender == 
+<code bash>
+busybox tftp -p -l /tmp/important-data.txt -r important-data.txt 192.168.0.123
+</code>
+
+=== Copy from terminal ===
+If all of the above tools/applets are unavailable, you may copy from telnet terminal but it may not work for binary file

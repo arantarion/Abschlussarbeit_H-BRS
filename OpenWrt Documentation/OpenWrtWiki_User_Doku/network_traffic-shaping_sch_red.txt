@@ -1,0 +1,4 @@
+====== Random Early Detection ======
+
+  * [[man>tc-red]]
+  * https://forum.openwrt.org/viewtopic.php?pid=11315#p11315

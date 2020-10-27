@@ -1,0 +1,152 @@
+====== How To send AT commands to device ======
+AT commands ("attention commands" formally, the Hayes command set), are used to communicate directly with a modem device and configure it.
+
+
+===== From OpenWrt =====
+To send AT commands directly from OpenWrt, you can simply use ''echo'' to send them to the right device. However, you will not get any errors, confirmation or any other answer from the modem.
+
+A better solution is to use ''socat'', which can both send commands and print the modem's answers.
+
+
+==== socat ====
+
+''socat'' will open a prompt where you can enter AT commands (see examples in the [[docs:guide-user:network:wan:wwan:at_commands#examples_of_at_commands|section below]]).
+
+For instance, to access a Quectel EP06 LTE modem, which creates 4 devices (''/dev/ttyUSB0'' through to ''/dev/ttyUSB3''):
+<code>
+socat - /dev/ttyUSB2,crnl
+</code>
+
+(Here, socat sends a carriage return (cr) and a new line (nl) after each command, which seems to be needed for this modem.)
+
+To find the device on which to run ''socat'', try looking through ''dmesg''. Something like the following may help:
+<code>
+dmesg | grep -A 1 -B 12 ttyUSB
+</code>
+
+Some modems also show up as a ''ttyACM'' device.
+
+To quit ''socat'', use ''ctrl+C''.
+
+==== echo ====
+
+Use ''echo -e'' so as to be able to escape characters such as ''"''.
+
+===== From a computer =====
+To send AT commands to a LTE modem, you need to first connect the device/modem to the computer, most likely using an adapter (built-in modem slots are very rare these days) and access it with a COM terminal.
+
+If you are not familiar with using COM terminals, you might want to use a graphical tool like: ''CuteCom'' or ''minicom''. Installation of these are beyond the scope of this page.
+
+These settings should work fine:
+<code>
+Device: /dev/ttyUSB0
+Connection: 115200 @ 8-N-1
+Line end: CR
+</code>
+
+===== Examples of AT commands =====
+
+To test things are working, you can issue ''ATI'' which should return basic information such as brand, model and firmware revision.
+
+''AT+CSQ'' can be used to get signal strength. The values returned are the RSSI (received signal strength indication,higher is better) and BER (bit error rate, lower is better)
+
+Here is example for the Huawei E392 LTE/3G dongle:
+
+<code>
+Send: AT
+OK
+
+Send: AT^SETPORT=?
+Recieve: 1:MODEM
+Recieve: 2:PCUI 
+Recieve: 3:DIAG
+Recieve: 4:PCSC
+Recieve: 5:GPS
+Recieve: 6:GPS CONTROL
+Recieve: 7:NDIS
+Recieve: A:BLUE TOOTH
+Recieve: B:FINGER PRINT
+Recieve: D:MMS
+Recieve: E:PC VOICE
+Recieve: A1:CDROM
+Recieve: A2:SD
+Recieve: OK
+
+Send: AT^SETPORT?
+Recieve: A1,A2;1,2,3,A1,A2
+Recieve: OK
+
+Send: AT^SETPORT="A1;2,7,A2"
+Recieve: OK
+
+Send: AT^SETPORT?
+Recieve: A1;2,7,A2
+Recieve: OK
+</code>
+
+Explanations:
+
+<code>
+AT^SETPORT=?        - Lists the Available interfaces and their numbers  
+AT^SETPORT?         - Show current configuration  
+AT^SETPORT="A1;2,7  - Sets configuration.
+</code>
+
+Modem configuration is split into 2 parts: before '';'' and after.
+
+Once a modem is plugged-in, it should declare itself in first configuration (normally with at least: A1 - virtual CD drive with Drivers and application). 
+If the drivers are installed, they will see the modem and issue a special command to switch to a "working" configuration - this is 2,7 interfaces in this example.
+
+:!: **Warning: Never turn Off PC interface! (2:PCUI in this example)** You will lose the ability to access modem with terminal and change the configuration.
+
+You can add more interfaces to be active i.e. SD card:
+<code>AT^SETPORT="A1,A2;2,7,A2"</code>
+
+If you get an **ERROR**, maybe the numerical mode is not sorted (16,2,7)->(2,7,16). If your device answers to set command with **OK** but ''AT^SETPORT?'' doesn't show your desired settings, you can try using space in between numerical modes(2,7) and alphabetical modes(A2) like so:
+<code>
+AT^SETPORT="A1,A2;2,7, A2"
+</code>
+
+Or with multiple modes:
+<code>
+AT^SETPORT="A1,A2;2,7, A1,A2"
+</code>
+
+===== How to force LTE connection =====
+
+Using telnet / SSH command line.
+
+**Format:**
+<code>
+AT+QCFG=“nwscanmode”[,<scanmode>[,<effect>]]
+</code>
+
+**Parameters**：
+<code>
+<scanmode> Number format, network search mode
+0 AUTO
+1 GSM only
+2 UMTS only
+3 LTE only
+
+<effect> Number format, when to take effect
+0 Take effect after UE reboots
+1 Take effect immediately
+</code>
+
+**Examples:**
+
+Set modem to LTE only:
+<code>
+echo -e "AT+QCFG=\"nwscanmode\",3,1" > /dev/ttyUSB2
+</code>
+
+Set it back to "auto":
+<code>
+echo -e "AT+QCFG=\"nwscanmode\",0,1" > /dev/ttyUSB2
+</code>
+
+===== Further references =====
+
+  * [[https://www.chromium.org/chromium-os/how-tos-and-troubleshooting/debugging-3g|Chromium project page]] on debugging cellular modems
+  * [[https://en.wikipedia.org/wiki/Hayes_command_set|Wikipedia article]] on AT commands and their history

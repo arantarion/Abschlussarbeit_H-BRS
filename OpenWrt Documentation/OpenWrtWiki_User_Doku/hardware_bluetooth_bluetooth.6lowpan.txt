@@ -1,0 +1,66 @@
+====== IPv6 over Bluetooth Smart (Low Energy) ======
+
+Cross-compilation tested on Ubuntu 14.10 with kernel 3.18.
+Tested routers:
+  * ASUS RT-N16
+  * x86_64 (Virtual Box)
+
+===== Prerequisites =====
+  * Bluetooth 4.0 USB dongle
+  * trunk (CC 3.18)
+
+
+===== Needed Modules =====
+
+Kernel modules->Other Modules:
+  * kmod-6lowpan
+  * kmod-bluetooth
+  * kmod-bluetooth_6lowpan
+
+Kernel modules->USB support:
+  * kmod-usb-core
+  * kmod-usb-ohci
+  * kmod-usb2
+
+Libraries:
+  * bluez-libs
+
+Utilities: 
+  * bluez-utils
+
+===== Example of usage =====
+Below procedure shows how to establish a connection with Bluetooth Smart device (with IPv6 stack software) and do a ping. Note that router has to have Bluetooth Smart chip or dongle connected to USB.
+
+Load 6LoWPAN module:
+<code>
+modprobe 6lowpan
+modprobe bluetooth_6lowpan
+</code>
+Set PSM channel as 0x23 (35):
+<code>
+echo 35 > /sys/kernel/debug/bluetooth/6lowpan_psm
+</code>
+Look for available HCI devices:
+<code>
+hciconfig
+</code>
+Reset HCI device - e.g. hci0 device:
+<code>
+hciconfig hci0 reset
+</code>
+Read 00:AA:BB:XX:YY:ZZ address of bluetooth device:
+<code>
+hcitool lescan
+</code>
+Connect to the device:
+<code>
+echo "connect 00:AA:BB:XX:YY:ZZ 1" > /sys/kernel/debug/bluetooth/6lowpan_control
+</code>
+Check if connection has been established:
+<code>
+ifconfig
+</code>
+Try to ping device using its link-local address, e.g. on bt0 interface:
+<code>
+ping6 -I bt0 fe80::2AA:BBFF:FEXX:YYZZ
+</code>

@@ -1,0 +1,6 @@
+====== Hierarchy Token Bucket ======
+
+  * [[man>tc-htb|Man Page]]
+  * [[http://luxik.cdi.cz/~devik/qos/htb/|Home Page]]
+  * [[http://lxr.free-electrons.com/source/net/sched/sch_htb.c|Source Code]]
+

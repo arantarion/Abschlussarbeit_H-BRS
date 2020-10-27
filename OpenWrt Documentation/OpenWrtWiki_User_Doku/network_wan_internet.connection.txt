@@ -1,0 +1,55 @@
+====== Internet Verbindung ======
+Eine Verbindung ins Internet kann unter Verwendung diverser Geräte und Protokolle erfolgen:
+
+| {{:meta:icons:tango:dialog-information.png?nolink}} | **//''Beachte1''://** forwarding von IPv4 ist bereits ''enabled'' (in der Datei ''[[docs:guide-user:base-system:notuci.config#etcsysctl.conf|/etc/sysctl.conf]]'')\\ **//''Beachte2''://** ''[[wp>Network address translation|MASQUERADING]]'' von (LAN+WLAN)-bridge nach WAN ist ebenfalls bereits ''enabled'' (in der Datei ''[[docs:guide-user:firewall:firewall_configuration|/etc/config/firewall]]'') \\ **//''Beachte3''://** Das LAN und das WLAN [[docs:guide-developer:networking:start#network interfaces]] sind zusammen "gebridged" (in der Datei ''[[docs:guide-user:base-system:basic-networking|/etc/config/network]]'')\\ **//''Beachte4''://** Das WLAN ist ''disabled'' (in der Datei ''[[docs:guide-user:network:wifi:basic|/etc/config/wireless]]'')  |
+
+
+===== Allgemeine Einrichtung =====
+Das Netz wird am Besten ausschließlich über die [[de:docs:guide-user:base-system:uci]]-Datei ''[[docs:guide-user:base-system:basic-networking|/etc/config/network]]'' konfiguriert. Diese Datei kann mit einem Texteditor oder mit Hilfe der [[de:docs:guide-user:base-system:uci#command.line.utility|UCI-Kommandozeilenutility]] bearbeitet werden.
+
+Die folgenden Sektionen der ''[[docs:guide-user:base-system:basic-networking|/etc/config/network]]''-Doku sind relevant:
+
+  * **DSL** -> [[docs:guide-user:network:wan:wan_interface_protocols#protocol_ppp_ppp_over_modem|PPP]] oder [[docs:guide-user:network:wan:wan_interface_protocols#protocol_pppoe_ppp_over_ethernet|PPPoE]] oder [[docs/guide-user/network/wan/wan_interface_protocols#protocol_pppoa_ppp_over_atm_aal5|PPPoA]].
+    * eingebautes Modem: ✗
+    * externes Modem: you could [[docs:guide-user:network:wan:access.modem.through.nat]]
+  * **DOCSIS** (Kabelmodem) -> [[docs:guide-user:network:protocol.dhcp|DHCP]] oder [[docs:guide-user:network:protocol.static|static IP address]]
+    * eingebautes Modem: ✗
+    * externes Modem: [[docs:guide-user:network:wan:access.modem.through.nat]]
+  * HSDPA/**UMTS**/EDGE/GPRS/GSM -> [[docs:guide-user:network:wan:wan_interface_protocols#protocol_3g_ppp_over_ev-do_cdma_umts_or_gprs|3G]]
+    * eingebautes Modem: ✗
+    * externes Modem, per USB angeschlossen (häufig //3G dongle// genannt):
+  * via einfachem **Ethernet**
+    * [[docs:guide-user:network:protocol.dhcp|DHCP]] (default)
+    * [[docs:guide-user:network:protocol.static|Static IP]]
+      * Example configuration commands: <code>
+uci set network.wan.proto=static
+uci set network.wan.ipaddr=74.125.115.103
+uci set network.wan.netmask=255.255.255.0
+uci set network.wan.gateway=74.125.115.1
+uci set network.wan.dns=8.8.8.8
+uci add_list network.wan.dns=8.8.4.4 (2nd dns)
+uci commit
+/etc/init.d/network restart</code>
+    * [[docs:guide-user:services:vpn:overview|VPN]]
+  * via **Funk** (nach IEEE 802.11 Standard)
+  * bei **multiplen Internet-Service-Providern**, sollten Sie jede Verbindung erstmal einzeln zum Laufen bringen, und anschließend [[docs:guide-user:network:wan:multiwan:multiwan_package|MultiWAN]] probieren.
+
+
+===== NGN: IP-Telefonie und IPTV =====
+[[wpde>Next Generation Network]] umfasst [[doc:howto:VoIP|IP-Telefonie]] und [[doc:howto:IPTV]]. Sämtliche Anwendungen basieren auf auf dem [[wpde>Internet Protocol]]. Diese Datenströme müssen erst einmal vom normalen Datenstrom getrennt und anschließend an einen Hardware-Port zur Ausgabe umgeleitet werden. Wenn die Ausgabe nicht über einen gewöhnlichen Ethernet Port stattfindet, sondern etwa über einen ISDN- oder [[wpde>Telekommunikations-Anschluss-Einheit|Analog-Stecker]], muss natürlich zusätzlich ein entsprechendes Signal erzeugt werden.
+
+==== Der Trick mit dem VLAN trunking ====
+Ein Trick die Datenpakete, die zu den jeweiligen Services gehören, voneinander zu unterscheiden, besteht darin VLAN trunking zu benutzen. Es muss auf beiden Seiten der Verbindung durchgeführt werden und Sie müssen die gleichen VIDs verwenden, die Ihr IPS benutzt.
+
+Während Sie sich in das Thema VLANs und VLAN trunking einlesen, könnte es hilfreich sein sich in Gedanken zu halten, was man hier ultimativ erreichen will: man hat lediglich eine Datenverbindung (z.B. Klingeldraht) zu seiner Verfügung, möchte aber so tun, als hätte man derer drei (respektive zwei). Man definiert sich drei virtuelle Ports auf ISP-Seite, jeder sei über seinen eigenen Draht mit einem virtuellen Port in ihrem Router verbunden. Und jeder virtuelle Port ist jeweils mit mindestens einem weiteren (echten) Port verbunden; dort können Sie die Daten abgreifen.
+
+Anstatt sechs Ports und drei Drähten haben Sie aber nur vier (die meisten Router) und einen Draht. Also bringen sie den einen Port, an dem der Klingeldraht anliegt, dazu so zu tun, als wären es drei. Das war es schon. So einfach, wie eine Dose mit einem elektrischen Dosenöffner zu öffnen.
+
+| {{:meta:icons:tango:48px-dialog-error-round.svg.png?nolink}} | **//''Beachte''://**  Besagte NGN-Funktionalität wird häufig als **[[wpde>Triple Play|Dual/Triple/Quadruple Play]]** beworben, Hilfe mit der Einrichtung von VLANs findet sich hier [[docs:guide-user:network:wan:x.play]]. |
+
+
+===== IPv6 =====
+  * ->[[docs:guide-user:network:ipv6:ipv6]]
+
+===== Automatische Einrichtung =====
+  * Die Einrichtung des Internet-Anschlusses lässt sich nicht automatisch gestalten, aber Dinge wie Portforwards: [[doc:howto:user.beginner.lazy]]. Wir raten davon ab!

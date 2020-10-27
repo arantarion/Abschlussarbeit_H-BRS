@@ -1,0 +1,675 @@
+====== Использование 3g/UMTS USB модема для WAN соединений ======
+Эта статья объясняет, как установить и настроить OpenWrt для использования с USB 3G/UMTS модемами для подключения WAN. Вы можете настроить ''[[docs:guide-user:network:wan:multiwan:multiwan_package]]'' пакет и использовать 3G одновременно с другими подключениями к Интернету.
+
+Рекомендуется, использовать OpenWrt 10.03.1-rc3 'Backfire' или более свежую версию.
+
+:!: Необходимо помнить, что сотовые данные могут быть легко перехвачены. Помните, что это беспроводное соединение. Кроме того, некоторые провайдеры могут блокировать определенные порты (подробности можно узнать у Вашего оператора сотовой связи).
+
+:!: Если у Вас Huawei E367 (который будет работать), или Huawei E585 (который в настоящее время не работает), Вы можете прочитать статью (в которой так же описано почему вы не можете использовать встроенный кардридер): [[http://www.draisberghof.de/usb_modeswitch/bb/viewtopic.php?t=836]]
+
+:!: Не устанавливайте **usb-modeswitch** на Ваши WRT устройства, если Вы отключили в модеме функцию встроенного CD-ROM. Переключить Ваш 3G-модем в нужный режим работы можно с помощью соответствующих AT команд.
+
+:!: Некоторые модемы работают как USB Сетевая карта. (Например, Huawei E367) В этом случае [[docs:guide-user:network:wan:smartphone.usb.tethering|usb tethering]] Вам в помощь.
+
+===== Подготовка =====
+==== Необходимые пакеты ====
+Первым делом поставьте необходимые пакеты.
+
+Драйверы для USB из списка (если Вы качали образ под конкретный маршрутизатор, то скорее всего нужные пакеты уже установлены):
+    *//kmod-usb2// (aka EHCI);
+    *//kmod-usb3// (aka XHCI);
+    *//kmod-usb-ohci//  - основной вариант драйвера USB 1.1;
+    *//kmod-usb-uhci//  - устаревший вариант драйвера USB 1.1.
+
+В Backfire:
+  *//comgt// [[http://dev.man-online.org/man1/comgt/|manpage for comgt]]
+  *Поддержка USB-serial для управления вашим модемом. 
+  *//kmod-usb-serial//, и
+  *//kmod-usb-serial-option//, и
+  *//kmod-usb-serial-wwan//, или 
+  *//kmod-usb-acm// , Зависит от вашего оборудования. 
+    *//kmod-usb-serial-option// недоступен на ядре версии  2.4, Установите //kmod-usb-serial// и добавьте  "usbserial vendor=0x12d1 product=0x1003 maxSize=2048" в /etc/modules.d/60-usb-serial заменив значения vendor и product на свои.
+  *modeswitching tools, если в ваш модем еще и кардридер:
+    *//usb-modeswitch// и //usb-modeswitch-data// (//рекомендуется//) Утилиты смены режима модема. **Внимание**! Если вы планируете использовать модуль памяти в кардридере модема для [[ru:docs:guide-user:additional-software:extroot_configuration|extroot]]а - утилита [[ru:docs:guide-user:additional-software:extroot_configuration#extroot_на_карту_памяти_в_слоте_usb-модема|usb-modeswitch может нарушить работу монтируемой файловой системы]].
+    *//sdparm// - Утилита для посылки SCSI команнд (только на Ovation MC935D)
+  * //luci-proto-3g// Для нормального отображения в luci в RC6 и старше
+
+В Barrier Breaker (14.07):
+  * //luci-proto-3g// - вставляет в веб-интерфейс выбор "UMTS/GSM/CDMA-EVDO" при создании интерфейса;
+  * //kmod-usb-serial-option// - добавляет поддержку переключаемых USB-устройств (модемов);
+  * //usb-modeswitch// - программа для переключения режима модема;
+  * //kmod-usb-serial-ipw// - поддержка модемов GSM, 3G и 4G;
+  * остальные пакеты устанавливаются по зависимостям.
+
+==== Зависимости ===
+Если вы делаете off-line установку , Вам могут понадобиться следующие пакеты
+  *//kmod-usb-core//, есть во всех релизах от 10.03 RC3
+  *//chat//, зависимость //comgt//
+  *//ppp//, зависимость //chat//, есть во всех релизах от 10.03 RC3 
+  *//kmod-usb-serial//, зависимость //kmod-usb-serial-option//
+  *//libusb// [[http://www.draisberghof.de/usb_modeswitch/#download|или "совместимая" библиотека]] из //libusb-1.0//, зависимость //usb-modeswitch//
+
+===== Установка =====
+Теперь подключите ваш модем в USB порт и перезагрузите роутер.
+
+Проверяем dmesg ("Kernel log" в LUCI):
+<code>
+USB Serial support registered for generic
+usbserial_generic 1-1:1.0: generic converter detected
+USB Serial support registered for generic
+usbserial_generic 1-1:1.0: generic converter detected
+usb 1-1: generic converter now attached to ttyUSB0
+usbserial_generic 1-1:1.1: generic converter detected
+usb 1-1: generic converter now attached to ttyUSB1
+...
+usbcore: registered new interface driver usbserial_generic
+usbserial: USB Serial Driver core
+USB Serial support registered for GSM modem (1-port)
+usbcore: registered new interface driver option
+option: v0.7.2:USB Driver for GSM modems
+</code>
+
+Если вместо листинга сверху вы видите похожий на это:
+
+<code>
+scsi1 : SCSI emulation for USB Mass Storage devices
+usb-storage: device found at 4
+usb-storage: waiting for device to settle before scanning
+scsi 1:0:0:0: CD-ROM            Novatel  Mass Storage     2.31 PQ: 0 ANSI: 0
+scsi 1:0:0:0: Attached scsi generic sg1 type 5
+usb-storage: device scan complete
+</code>
+
+значит на вашем модеме не переключен режим из CD на рабочий.
+
+Если в протоколе ядра нет ''usbserial'' или ''ttyUSB0'', это означает, что не установлен один из драйверов  Вашего модема. Попробуйте найти его среди пакетов kmod-usb-...
+
+Попробуйте подгрузить usbserial module (<vid> и  <pid> это Vendor и Product ID вашего свистка):
+
+<code bash>
+rmmod usbserial # optional
+insmod /lib/modules/`uname -r`/usbserial.ko vendor=0x<vid> product=0x<pid>
+</code>
+
+Кроме того вы можете использовать альтернативный драйвер вашего модема. Альтернативный драйвер является более надежным, так как умеет различать последовательный порт модема(COM) и порт картридера (StoragePort), а также распознаёт поддержку CDC (NCM) - модемный интерфейс ethernet.
+
+<code bash>
+insmod option # пропустите если драйвер уже загружен
+echo '<vid> <pid> ff' > /sys/bus/usb-serial/drivers/option1/new_id
+</code>
+
+Что бы устрйоство автоматически примонтировалось при запуске системы, отредактируйтеt ''/etc/rc.local'' и добавьте ''echo '<vid> <pid> ff' > /sys/bus/usb-serial/drivers/option1/new_id'' перед  ''exit 0''.
+
+| FIXME: Добавьте правильный синтаксис команды  ''echo '<vid> <pid> ff' > /sys/bus/usb-serial/drivers/option1/new_id'' для автомонтирования при подключении устройства. |
+
+Снова проверяем dmesg:
+
+<code>
+usbcore: registered new interface driver usbserial
+USB Serial support registered for generic
+usbserial_generic 1-1.3:1.0: generic converter detected
+usb 1-1.3: generic converter now attached to ttyUSB0
+usbserial_generic 1-1.3:1.1: generic converter detected
+usb 1-1.3: generic converter now attached to ttyUSB1
+usbcore: registered new interface driver usbserial_generic
+usbserial: USB Serial Driver core
+</code>
+
+Так же проверяем отладчик ядра USB, загружены ли драйверы:
+
+<code>
+# cat /sys/kernel/debug/usb/devices
+
+T:  Bus=01 Lev=01 Prnt=01 Port=00 Cnt=01 Dev#=  3 Spd=480  MxCh= 0
+D:  Ver= 2.00 Cls=00(>ifc ) Sub=00 Prot=00 MxPS=64 #Cfgs=  1
+P:  Vendor=1c9e ProdID=9800 Rev= 0.00
+S:  Manufacturer=USB Modem
+S:  Product=USB Modem
+S:  SerialNumber=1234567890ABCDEF
+C:* #Ifs= 4 Cfg#= 1 Atr=e0 MxPwr=500mA
+I:* If#= 0 Alt= 0 #EPs= 2 Cls=ff(vend.) Sub=ff Prot=ff Driver=option
+E:  Ad=81(I) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+E:  Ad=01(O) Atr=02(Bulk) MxPS= 512 Ivl=4ms
+I:* If#= 1 Alt= 0 #EPs= 3 Cls=ff(vend.) Sub=ff Prot=ff Driver=option
+E:  Ad=82(I) Atr=03(Int.) MxPS=  64 Ivl=2ms
+E:  Ad=83(I) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+E:  Ad=02(O) Atr=02(Bulk) MxPS= 512 Ivl=4ms
+I:* If#= 2 Alt= 0 #EPs= 2 Cls=ff(vend.) Sub=ff Prot=ff Driver=option
+E:  Ad=84(I) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+E:  Ad=03(O) Atr=02(Bulk) MxPS= 512 Ivl=4ms
+I:* If#= 3 Alt= 0 #EPs= 2 Cls=08(stor.) Sub=06 Prot=50 Driver=usb-storage
+E:  Ad=04(O) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+E:  Ad=85(I) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+</code>
+
+==== Переключение режима USB ====
+=== Метод usb-modeswitch  ===
+Программа  ''usb_modeswitch''  переключает модем USB в рабочий режим. Читайте [[http://www.draisberghof.de/usb_modeswitch/|статью]])([[http://rus-linux.net/MyLDP/hard/modeswitch.html|перевод]]) о том, как использовать этот пакет.
+
+Установите пакет ''usb-modeswitch'' (ранее Barriaer Breaker был нужен ещё и ''usb-modeswitch-data''). Установщик пакета  автоматически запускает программу. Теперь ваш модем должен обнаруживаться ядром (см. протокол - вывод dmesg). Если до сих пор он не обнаружен, читайте статью и экспериментируйте с ручным запуском ''usb-modeswitch''.
+
+Например, DX 7.2M HSDPA 3G SIM Card USB Item# 80032, сообщил scsi ID это 12d1:1001; запущен "usb_modeswitch  -v 12d1 -p 1001", в результате чего появились 4 устройства ttyUSB:
+<code>
+[426955.836000] option 1-1.2:1.0: GSM modem (1-port) converter detected
+[426955.844000] usb 1-1.2: GSM modem (1-port) converter now attached to ttyUSB0
+[426955.860000] option 1-1.2:1.1: GSM modem (1-port) converter detected
+[426955.868000] usb 1-1.2: GSM modem (1-port) converter now attached to ttyUSB1
+[426955.884000] option 1-1.2:1.2: GSM modem (1-port) converter detected
+[426955.892000] usb 1-1.2: GSM modem (1-port) converter now attached to ttyUSB2
+[426955.908000] option 1-1.2:1.3: GSM modem (1-port) converter detected
+[426955.916000] usb 1-1.2: GSM modem (1-port) converter now attached to ttyUSB3
+[426955.936000] scsi17 : usb-storage 1-1.2:1.4
+[426956.940000] scsi 17:0:0:0: CD-ROM            HSDPA    CDROM Storage    2.31PQ: 0 ANSI: 2
+[426956.948000] scsi 17:0:0:0: Attached scsi generic sg0 type 5
+[426956.960000] scsi 17:0:0:1: Direct-Access     HSDPA    MMC Storage      2.31PQ: 0 ANSI: 2
+[426956.968000] sd 17:0:0:1: Attached scsi generic sg1 type 0
+[426956.992000] sd 17:0:0:1: [sda] Attached SCSI removable disk
+</code>
+
+Если ваше устройство не работает с usb_modeswitch, попробуйте метод sdparm.
+
+=== sdparm method ===
+| FIXME: Автор перевода статьи не использовал этот метод на практике. Поэтому, если у вас есть реальный опыт использования данного метода, отредактируйте статью, если что то не так. |
+
+Этот метод использует ''sdparm'', чтобы подать SCSI команду отмонтировать диск который эмулирует CDROM. Этого достаточно, что поставить некоторые модемы в рабочий режим. Это проверено автором оригинала (см Англ. вариант статьи) на ''Ovation MC935D''.
+
+Прежде чем начать, было бы полезно узнать VID и PID устройства:
+
+<code>
+# cat /proc/bus/usb/devices
+...
+P:  Vendor=1410 ProdID=5020 Rev= 0.00
+S:  Manufacturer=Novatel Wireless, Inc.
+...
+</code>
+
+(Или установите пакет usbutils и запустите команду lsusb.)
+
+Первое, Находим адрес устройства, в данном примере ''sg0'', и выполняем команду:
+
+<code bash>
+sdparm --eject /dev/sg0
+</code>
+
+Затем проверьте, изменились ли PID и VID вашего устройства:
+
+<code>
+# cat /proc/bus/usb/devices
+...
+P:  Vendor=1410 ProdID=7001 Rev= 0.00
+S:  Manufacturer=Novatel Wireless, Inc.
+S:  Product=Qualcomm Configuration
+...
+I:* If#= 0 Alt= 0 #EPs= 3 Cls=ff(vend.) Sub=ff Prot=ff Driver=(none)
+...
+</code>
+
+===== Конфигурация =====
+Показанная конфигурация заменяет "интерфейс" WAN, поэтому нет необходимости редактировать настройки firewall и пр. Заметьте, что если вы хотите оставить штатный интерфейс WAN, то Вам придётся обозначить новый как WAN2 (или как-то иначе, чтобы Вам было понятно) и сделать соответствующие изменения в брандмауэре.
+
+==== Настраиваем сеть =====
+Редактируем '/etc/config/[[doc:uci:network]]' файл: (смотрите [[docs:guide-user:network:wan:wan_interface_protocols#protocol_3g_ppp_over_ev-do_cdma_umts_or_gprs|сети 3G]] для получения более подробной информации)
+
+<code bash>
+config interface wan
+        option ifname  ppp0
+        option pincode 1234
+        option device  /dev/ttyUSB0
+        option apn     your.apn
+        option service umts
+        option proto   3g
+</code>
+
+Заменяем 'pincode' на корректный пинкод  SIM-карты. Замечание! Если на СИМ-карте отключена проверка пинкода, то могут возникнуть проблеммы, обязательно активируйте проверку пинкода СИМ-карты.
+Если вы подключаетесь через телефон, то необходимости проверять пин код нет, так как он был проверен при включении телфона
+
+Замените 'device' на правильный USB port вашего модема. на телфонах скорей всего будет /dev/ttyACM0.
+
+Замените 'apn' на корректный APN вашего 3g/umts провайдера.
+
+Все операторы России требует авторизации пользователя, поэтому добавляем еще 2 строчки 
+
+<code bash>
+        option username yourusername
+        option password yourpassword
+</code>
+
+заменяем 'username' и 'password' на правильный. Если у вас нет информации (apn, username и password) Вам прямая дорога в [[http://git.gnome.org/browse/mobile-broadband-provider-info/tree/serviceproviders.xml|mobile-broadband-provider-info database]] .
+
+|FIXME: Автор перевода статьи не понял о какой функции идет речь. Пожалуйста поправьте строчки ниже и добавьте комментариев. |
+
+For some providers, apperently it is neccessary to add 'noipdefault' to 'pppd_options'. If logread shows that the connection was established and CHAP authentication was successful, but the connection was immediately dropped after, then try:
+
+<code bash>
+         option 'pppd_options' 'noipdefault'
+</code>
+
+If your provider supports PAP authentication only then you need to disable all other protocols via these added options:
+
+<code bash>
+         option 'pppd_options' 'noipdefault refuse-chap refuse-mschap refuse-mschap-v2 refuse-eap' 
+</code>
+
+Поздравляю!!! Вы настроили сетевой интерфейс.
+
+==== Настройка Chat  =====
+Теперь нам нужно проверить работает chatscript, или нет с нашим провайдером.
+
+Находим файл '/etc/chatscripts/3g.chat', и смотрим, что там написано:
+<code>
+ABORT   BUSY
+ABORT   'NO CARRIER'
+ABORT   ERROR
+REPORT  CONNECT
+TIMEOUT 12
+""      "AT&F"
+OK      "ATE1"
+OK      'AT+CGDCONT=1,"IP","$USE_APN"'
+ABORT   'NO CARRIER'
+TIMEOUT 15
+OK      "ATD*99***1#"
+CONNECT ' '
+</code>
+
+Если вашему модему нужны специфичныые АТ команды, Вы можете добавить их в этот список. Так же вы можете отредактировать телефон дозвона (в большинстве модемов GPRS, EDGE и 3G достаточно просто *99#).
+
+===== Управление соединениями =====
+Набираем в консоли ''ifup wan''
+
+Теперь проверяем в протоколе работы маршрутизатора (команда ''logread'' или страничка "System log" в LUCI), что модемное соединение подключено:
+<code>
+pppd 2.4.4 started by root, uid 0
+abort on (BUSY)
+abort on (ERROR)
+report (CONNECT)
+timeout set to 12 seconds
+send (AT&F^M)
+expect (OK)
+AT&F^M^M
+OK
+ -- got it
+send (ATE1^M)
+expect (OK)
+^M
+ATE1^M^M
+OK
+ -- got it
+send (AT+CGDCONT=1,"IP","your.apn"^M)
+abort on (NO CARRIER)
+timeout set to 15 seconds
+expect (OK)
+^M
+AT+CGDCONT=1,"IP","your.apn"^M^M
+OK
+ -- got it
+send (ATD*99***1#^M)
+expect (CONNECT)
+^M
+ATD*99***1#^M^M
+CONNECT
+ -- got it
+send ( ^M)
+Serial connection established.
+Using interface 3g-wan
+Connect: 3g-wan <--> /dev/ttyUSB0
+Could not determine remote IP address: defaulting to x.x.x.x
+local  IP address x.x.x.x
+remote IP address  x.x.x.x
+primary   DNS address  x.x.x.x
+secondary DNS address  x.x.x.x
+adding wan (3g-wan) to firewall zone wan
+</code>
+
+Вот и все! Вы подключены.
+
+Если вы хотите подключаться при включении маршрутизатора, просто добавьте строку ''ifup wan'' в ''/etc/rc.local''.
+
+===== Troubleshooting (Поиск неисправностей) =====
+Для поиска неисправностей и поиска лучшего положения модема вы можете использовать 
+<code>gcom info -d /dev/ttyUSBx</code> 
+из консоли. Эта команда показывает не только уровень сигнала, но и регистрацию в сети и сим статус
+Если команда возвращает ошибку port-in-use значит соединение поднято, попробуйте <code>gcom -d /dev/ttyUSBx</code> где ''x'' номер порта вашего модема.
+
+|FIXME: Дальше идет рассуждение о жизни на других планетах замеченных автором исходника. Если вы считаете информацию ниже полезной, пожалуйста переведите и дополните статью. Так же, автор перевода не настраивал эту функцию, поэтому в переводе этой части статьи полезен не больше чем google. Пожалуйста, если вы настраивали данный тип подключения переведите, или напишите свою статью об этом. |
+
+''gcom'' returns the signal quality in RSSI ([[wp>Received signal strength indication]]) and in BER ([[wp>Bit error rate]], reported in percent). A higher RSSI value represents a stronger signal - scale is from 0 to 99, where 1 is the lowest detectable signal and 31 a very good signal. Don't expect your signal to go all the way up to 99, though. If BER returns 99 it means not known or not detectable.
+
+| FIXME: Although I found the above information all across the net, I made different observations: My 3G modem is a ZTE K3565-Z which features a LED to show it's status (Not Connected, GPRS, UMTS). With a reported RSSI value of around 17 I only get GPRS while a value of 4 allows for UMTS access. |
+
+You can also add the AT command 
+<code>
+""      "AT+CSQ"
+</code>
+to your [[docs:guide-user:network:wan:wwan:3gdongle#chat.configuration|chat script]] to check signal quality. 
+
+Command return is "+CSQ: <rssi>,<ber>" and looks like this in ''logread'':
+<code>
+send (AT+CSQ^M)
+expect (OK)
+^M
+AT+CSQ^M^M
++CSQ: 11,99^M
+^M
+OK
+-- got it
+</code>
+
+If you have problems establishing a connection and multiple modem devices (''/dev/ttyUSB0'', ''/dev/ttyUSB1'', ...) are present, try **all** of them. Some may not work at all while others seem to work at first, but will give a ''NO CARRIER'' during the connection process.
+
+===== AICCU interaction =====
+''/etc/hotplug.d/iface/30-aiccu'' starts aiccu when the WAN connection is established. It seems however that, in the case of 3G connections, the start scripts are started just a bit too early and the start of aiccu fails. I have butchered the script a bit:
+
+<code bash>
+#!/bin/sh
+
+[ "$ACTION" = "ifup" -a "$INTERFACE" = "wan" ] && /etc/init.d/aiccu enabled && sleep 15; /etc/init.d/aiccu restart
+</code>
+
+Note that sixxs really frowns upon quick re-re-restarts of aiccu, it may get your account blocked for unjust use of resources. Be careful with these scripts.
+
+===== Installing multiple 3G dongles =====
+|FIXME: Если вы считаете информацию ниже полезной, пожалуйста переведите и дополните статью. Так же, автор перевода не настраивал эту функцию, поэтому в переводе этой части статьи полезен не больше чем google. Пожалуйста, если вы настраивали данный тип подключения переведите, или напишите свою статью об этом. |
+
+You can use many usb 3G dongles with easy using active USB hub.
+
+We assume You have at least one 3g dongle configured and active and You have working internet connection. If not - You'll need to install modules for 3g support before going to connect any 3g dongle. Check [[docs:guide-user:network:wan:wwan:3gdongle]] for more information.
+
+1. Connect active USB hub to openWrt router. Check if hub power supply is big enough to power total count of 3g dongles. Roughly You'll need 500+ mAmp per one 3g dongle. Remember that modem can slightly exceed its declared power consumption in HDSPA+ modes. Be generous and pick USB hub with some power source overhead.
+
+2. Connect all 3g dongles and start.
+
+3. Browse through logread to check if modems are properly recognized and /ttyUSB ports are assigned.
+
+4. Usually 3g modem have few ports - one for connection and others are service types. IE Huawei E1750 have 3 ports. First is communication port and last is service one. If You have only one modem it will be recognized as /ttyUSB0, /ttyUSB1 and /ttyUSB2. You need to configure interface using /ttyUSB0 (first one). Huawei E372 have 5 ports but similar to other Huawei communication port is the first one.
+
+5. You need to configure interfaces. Ive configured first modem modifying existing Wan interface in "/etc/config/network": 
+
+<code bash>
+config 'interface' 'wan'
+	option 'proto' '3g'
+	option 'service' 'umts'
+	option 'device' '/dev/ttyUSB0'
+	option 'apn' 'internet'
+	option 'pincode' ''
+	option 'username' ''
+	option 'password' ''
+</code>
+
+Usually You need to provide APN name in "option 'apn' 'Name-Of-APN-HERE'".
+If Your sim card have PIN or need to use username or pass - put it respectively there.
+This should gives You working internet connection.
+
+6. Check in log read next /ttyUSB[X] ports. In my case I have second modem starting with /ttyUSB3 (previous one use /ttyUSB0 to /ttyUSB2) so second interface looks like this:
+
+<code bash>
+config 'interface' 'wan2'
+	option 'proto' '3g'
+	option 'service' 'umts'
+	option 'maxwait' '0'
+	option 'device' '/dev/ttyUSB3'
+	option 'apn' 'internet'
+	option 'pincode' ''
+	option 'username' ''
+	option 'password' ''
+</code>
+7. remember to add second interface to zone in firewall "/etc/config/firewall": 
+
+<code bash>
+config 'zone'
+	option 'name' 'wan'
+	option 'input' 'REJECT'
+	option 'output' 'ACCEPT'
+	option 'forward' 'REJECT'
+	option 'masq' '1'
+	option 'mtu_fix' '1'
+	option 'network' 'wan wan2'
+</code>
+
+Look at last line - there is wan2 added.
+
+8. Now You have both interfaces configured and they should work.
+
+9. You can use both interfaces as a failover.
+
+==== LOADBALANCER / MULTIWAN ====
+|FIXME: Если вы считаете информацию ниже полезной, пожалуйста переведите и дополните статью. Так же, автор перевода не настраивал эту функцию, поэтому в переводе этой части статьи полезен не больше чем google. Пожалуйста, если вы настраивали данный тип подключения переведите, или напишите свою статью об этом. |
+
+loadbalncer - [[https://forum.openwrt.org/viewtopic.php?id=23904]]
+
+Заметьте: Похоже multiwan не лучшее решение для 3G модемов в плане стабильности. Модемы не перезапускаются автоматически HealthMonitor-ом. Кроме того, после ручного перезапуска модема, multiwan не будет его использовать до тех пор пока не будет перезапущен сам.
+
+multiwan - [[ru:doc:uci:multiwan]], [[ru:doc:howto:multiwan.failower]], [[docs:guide-user:network:wan:multiwan:multiwan_package]]
+
+Конфигурационные файлы пары 3G модемов объединенных в multiwan:
+ 
+Network (default route to 0 and peerdns to 0):
+
+<code bash>
+config 'interface' 'loopback'
+	option 'ifname' 'lo'
+	option 'proto' 'static'
+	option 'ipaddr' '127.0.0.1'
+	option 'netmask' '255.0.0.0'
+
+config 'interface' 'lan'
+	option 'ifname' 'eth0.1'
+	option 'type' 'bridge'
+	option 'proto' 'static'
+	option 'ipaddr' '192.168.1.1'
+	option 'netmask' '255.255.255.0'
+
+config 'interface' 'wan'
+	option 'proto' '3g'
+	option 'service' 'umts'
+	option 'device' '/dev/ttyUSB0'
+	option 'apn' 'vpn'
+	option 'pincode' ''
+	option 'username' 'vpn'
+	option 'password' 'vpn'
+	option 'maxwait' '20'
+	option 'defaultroute' '0'
+
+config 'interface' 'wan2'
+	option 'proto' '3g'
+	option 'service' 'umts'
+	option 'device' '/dev/ttyUSB3'
+	option 'apn' 'erainternet'
+	option 'pincode' ''
+	option 'username' 'erainternet'
+	option 'password' 'erainternet'
+	option 'maxwait' '10'
+	option 'defaultroute' '0'
+
+config 'switch'
+	option 'name' 'rtl8366s'
+	option 'reset' '1'
+	option 'enable_vlan' '1'
+	option 'blinkrate' '2'
+
+config 'switch_vlan'
+	option 'device' 'rtl8366s'
+	option 'vlan' '1'
+	option 'ports' '0 1 2 3 5t'
+
+config 'switch_port'
+	option 'device' 'rtl8366s'
+	option 'port' '1'
+	option 'led' '6'
+
+config 'switch_port'
+	option 'device' 'rtl8366s'
+	option 'port' '2'
+	option 'led' '9'
+
+config 'switch_port'
+	option 'device' 'rtl8366s'
+	option 'port' '5'
+	option 'led' '2'
+</code>
+
+Firewall  - add second wan zones
+
+<code bash>
+config 'defaults'
+	option 'syn_flood' '1'
+	option 'input' 'ACCEPT'
+	option 'output' 'ACCEPT'
+	option 'forward' 'REJECT'
+	option 'drop_invalid' '1'
+
+config 'zone'
+	option 'name' 'lan'
+	option 'network' 'lan'
+	option 'input' 'ACCEPT'
+	option 'output' 'ACCEPT'
+	option 'forward' 'REJECT'
+
+config 'zone'
+	option 'name' 'wan'
+	option 'input' 'REJECT'
+	option 'output' 'ACCEPT'
+	option 'forward' 'REJECT'
+	option 'masq' '1'
+	option 'mtu_fix' '1'
+	option 'network' 'wan'
+
+config 'rule'
+	option 'src' 'wan'
+	option 'proto' 'udp'
+	option 'dest_port' '68'
+	option 'target' 'ACCEPT'
+	option 'family' 'ipv4'
+
+config 'rule'
+	option 'src' 'wan'
+	option 'proto' 'icmp'
+	option 'icmp_type' 'echo-request'
+	option 'family' 'ipv4'
+	option 'target' 'ACCEPT'
+
+config 'rule'
+	option 'src' 'wan'
+	option 'proto' 'icmp'
+	list 'icmp_type' 'echo-request'
+	list 'icmp_type' 'destination-unreachable'
+	list 'icmp_type' 'packet-too-big'
+	list 'icmp_type' 'time-exceeded'
+	list 'icmp_type' 'bad-header'
+	list 'icmp_type' 'unknown-header-type'
+	list 'icmp_type' 'router-solicitation'
+	list 'icmp_type' 'neighbour-solicitation'
+	option 'limit' '1000/sec'
+	option 'family' 'ipv6'
+	option 'target' 'ACCEPT'
+
+config 'rule'
+	option 'src' 'wan'
+	option 'dest' '*'
+	option 'proto' 'icmp'
+	list 'icmp_type' 'echo-request'
+	list 'icmp_type' 'destination-unreachable'
+	list 'icmp_type' 'packet-too-big'
+	list 'icmp_type' 'time-exceeded'
+	list 'icmp_type' 'bad-header'
+	list 'icmp_type' 'unknown-header-type'
+	option 'limit' '1000/sec'
+	option 'family' 'ipv6'
+	option 'target' 'ACCEPT'
+
+config 'include'
+	option 'path' '/etc/firewall.user'
+
+config 'forwarding'
+	option 'dest' 'wan'
+	option 'src' 'lan'
+
+config 'rule'
+	option 'target' 'ACCEPT'
+
+config 'zone'
+	option 'name' 'wan2'
+	option 'forward' 'REJECT'
+	option 'output' 'ACCEPT'
+	option 'network' 'wan2'
+	option 'input' 'REJECT'
+	option 'masq' '1'
+	option 'mtu_fix' '1'
+
+config 'forwarding'
+	option 'dest' 'wan2'
+	option 'src' 'lan'
+</code>
+
+Multiwan - Additionally add 'option 'health_monitor' 'serial'' at the beggining to help healthmonitor check for dropped ppp interface (Proposed by Jolouis).
+
+<code bash>
+config 'multiwan' 'config'
+	option 'health_monitor' 'serial'
+	option 'default_route' 'fastbalancer'
+	option 'debug' '1'
+
+config 'interface' 'wan'
+	option 'health_fail_retries' '3'
+	option 'health_recovery_retries' '5'
+	option 'failover_to' 'fastbalancer'
+	option 'timeout' '10'
+	option 'dns' '8.8.8.8 8.8.4.4'
+	option 'weight' '10'
+	option 'health_interval' '120'
+	option 'icmp_hosts' 'gateway'
+
+config 'interface' 'wan2'
+	option 'timeout' '3'
+	option 'health_fail_retries' '3'
+	option 'health_recovery_retries' '5'
+	option 'failover_to' 'fastbalancer'
+	option 'dns' '208.67.222.222 208.67.220.220'
+	option 'weight' '10'
+	option 'health_interval' '120'
+	option 'icmp_hosts' 'gateway'
+
+config 'mwanfw'
+	option 'src' '192.168.1.150'
+	option 'wanrule' 'wan2'
+
+config 'mwanfw'
+	option 'wanrule' 'fastbalancer'
+</code>
+
+
+I have issues with auro reconnecting modems so Ive modified script for checking if modems are up. Script check modems separately.
+Ive based this on great tutorial found at http://eko.one.pl/?p=openwrt-3g#automatycznyrestartpoczenia
+
+Create script:
+
+<code bash>
+cat << "EOF" > /bin/tester.sh
+#!/bin/sh
+if ! ping -q -c 1 -W 10 -I 3g-wan 8.8.8.8 > /dev/null; then
+        (ifup wan; sleep 5; /etc/init.d/multiwan restart) &
+fi
+
+if ! ping -q -c 1 -W 10 -I 3g-wan2 8.8.8.8 > /dev/null; then
+        (ifup wan2; sleep 5; /etc/init.d/multiwan restart) &
+fi
+EOF
+
+chmod 755 /bin/tester.sh
+</code>
+
+Create CRON job:
+
+<code bash>
+echo "*/2 * * * * /bin/tester.sh" >> /etc/crontabs/root
+/etc/init.d/cron restart
+</code>
+
+Script will ping through two wans: 3g-wan and 3g-wan2 and if not recieving ping restart interface respectively.
+Additionally, It will wait 5 sec and force restart multiwan as it seems restarting modem wasnt recognized by multiwan automatically and it wasnt add to routing table.
+Restart of multiwan should take care of this situation.
+
+See also:
+[[docs:guide-user:base-system:dhcp_configuration|DNS and DHCP configuration examples]]
+
+===== Compile things yourself =====
+If you want to build an own firmware containing support for a UMTS Modem, maybe this BuildHowTo will help you: [[docs:guide-developer:build-image-with-3g-dongle-support|Wireless router with a 3G dongle and multiwan for failover on Wired, Wireless client (routed) and 3G]]

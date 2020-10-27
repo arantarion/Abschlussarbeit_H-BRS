@@ -1,0 +1,27 @@
+====== Build a package ======
+
+This page is about how to build a package for an existing OpenWrt distribution without rebuilding the whole world or using the SDK (because it doesn't work on your host system). The instructions come from the forum topic [[https://forum.openwrt.org/viewtopic.php?id=29313]]
+
+<code>
+git clone https://github.com/openwrt/openwrt.git
+./scripts/feeds update
+make defconfig
+make package/symlinks
+</code>
+
+If you get an error at "make defconfig" saying that ncurses.h wasn't found install libncurses5-dev package on your system.
+
+Then copy the config.x86_generic, or whichever you need, from the SDK into .config
+<code>
+make menuconfig
+make menuconfig -> check nano and libncurses
+make tools/install
+make toolchain/install
+make target/compile
+./scripts/feeds install owhttpd
+make package/owhttpd/prepare
+make package/owhttpd/compile
+make package/owhttpd/install
+
+make package/index
+</code>

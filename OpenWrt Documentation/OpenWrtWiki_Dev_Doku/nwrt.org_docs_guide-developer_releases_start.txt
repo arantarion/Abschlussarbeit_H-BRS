@@ -1,0 +1,10 @@
+====== Making OpenWrt releases ======
+
+
+{{pagequery> * ns:docs:guide-developer:releases:;
+    sort=title;
+    display={title};
+    bullet=disc;
+    hidestart;
+    hidejump;
+}}

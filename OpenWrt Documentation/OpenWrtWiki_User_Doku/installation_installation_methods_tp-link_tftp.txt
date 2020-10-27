@@ -1,0 +1,16 @@
+====== TP-Link TFTP ======
+
+  * -> [[http://forum.tp-link.com/showthread.php?81462-How-to-recovery-the-router-when-you-bricked-it]]
+  * -> [[docs:guide-user:installation:generic.flashing.tftp|Installing OpenWrt via TFTP]]
+
+FIXME //Identify devices with this installation method and update dataentries accordingly.//
+
+===== Devices with this installation method =====
+---- datatable ----
+cols       : Brand, Model, Versions, Supported Current Rel_releasecurrent, Installation method(s)_method-installations, Comment installation, Device Page_page, Device Techdata_pageid
+dynfilters : 1
+filter     : Model!=@@Model@@
+filter     : installation method(s)=TP-Link TFTP
+sort       : Brand
+limit      : 25
+----

@@ -1,0 +1,37 @@
+====== WireGuard performance ======
+See also:
+  * [[docs:guide-user:services:vpn:openvpn:performance|OpenVPN performance]]
+  * [[toh:views:toh_vpn_performance|Table of Hardware: VPN performance]]
+
+===== Results =====
+/* For syntax see: https://www.dokuwiki.org/plugin:gchart */
+
+<gchart 640x400 vbar #5674bf #efefef value left "WireGuard performance (Up/Down, Mbit)">
+x86 + AES = 900
+x86       = 0
+mvebu     = 0
+ipq806x   = 0
+ipq40xx   = 280
+cortex_a9 = 270
+mt7621    = 200
+qca9563    = 68
+vrx268    = 35
+bcm6328    = 16
+ar9344    = 0
+mt7628    = 0
+</gchart>
+
+FIXME //Please fill in real numbers for each target//
+
+//Note: GigE theoretical TCP throughput is ~940 Mbps (for standard 1500 MTU). WireGuard MTU reduces this to ~900 Mbps.//
+
+===== Testing =====
+Thanks to [[https://forum.openwrt.org/t/18-06-4-speed-fix-for-bt-homehub-5a/23643/23|bill888]] Heres a few iperf3 commands.
+
+<code bash>
+# Single-thread download
+iperf3 -c 192.168.111.2 -t 10 -R
+
+# Multi-thread download
+iperf3 -c 192.168.111.2 -t 10 -P 5 -R
+</code>

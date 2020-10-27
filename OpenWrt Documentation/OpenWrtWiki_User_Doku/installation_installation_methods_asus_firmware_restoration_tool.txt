@@ -1,0 +1,16 @@
+====== Asus Firmware Restoration Tool ======
+
+This is a TFTP-like rescue procedure with a manufacturer utility to be installed on a client PC. It works for both, installation and recovery.
+
+  * -> [[https://www.asus.com/support/FAQ/1000814/|Asus FAQ: How do I use the rescue mode of a router?]]
+
+
+===== Devices with this installation method =====
+---- datatable ----
+cols       : Brand, Model, Versions, Supported Current Rel_releasecurrent, Installation method(s)_method-installations, Comment installation, Device Page_page, Device Techdata_pageid
+dynfilters : 1
+filter     : Model!=@@Model@@
+filter     : installation method(s)*~Asus Firmware Restoration Tool
+sort       : Brand
+limit      : 25
+----

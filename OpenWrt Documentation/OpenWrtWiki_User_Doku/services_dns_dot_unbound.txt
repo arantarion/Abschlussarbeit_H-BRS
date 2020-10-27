@@ -1,0 +1,107 @@
+====== DNS over TLS with Unbound ======
+{{section>meta:infobox:howto_links#cli_skills&noheader&nofooter&noeditbutton}}
+
+/*
+This article is a simple how-to to enable DoT with Unbound.
+It should work with just copy-paste on the current OpenWrt stable release out of the box for most users.
+So let's leave advanced zone management, split DNS, manual config edits, etc. outside of the scope of this how-to to minimize the probability of mistakes and simplify the wiki maintenance.
+The link to the main Unbound article [[docs:guide-user:services:dns:unbound]] is already included in the [[#introduction]] section.
+*/
+
+===== Introduction =====
+  * This how-to describes the method for setting up [[wp>DNS_over_TLS|DNS over TLS]] on OpenWrt.
+  * It relies on [[docs:guide-user:services:dns:unbound|Unbound]] for performance and fault tolerance.
+  * Follow [[docs:guide-user:firewall:fw3_configurations:intercept_dns|DNS hijacking]] to intercept DNS traffic or use [[docs:guide-user:services:vpn:start|VPN]] to protect all traffic.
+
+===== Goals =====
+{{section>docs:guide-user:services:dns:dnscrypt_dnsmasq_dnscrypt-proxy#goals&noheader&nofooter&noeditbutton}}
+
+===== Instructions =====
+[[docs:guide-user:base-system:dhcp_configuration#disabling_dns_role|Disable]] Dnsmasq DNS role or remove it completely optionally [[docs:guide-user:base-system:dhcp_configuration#replacing_dhcp_role_with_odhcpd|replacing]] its DHCP role with odhcpd.
+
+Install the packages and configure DNS encryption.
+
+<code bash>
+# Install packages
+opkg update
+opkg install unbound-daemon
+
+# Enable DNS encryption
+while uci -q delete unbound.@zone[0]; do :; done
+uci set unbound.forward="zone"
+uci set unbound.forward.enabled="1"
+uci set unbound.forward.fallback="0"
+uci set unbound.forward.zone_type="forward_zone"
+uci set unbound.forward.tls_upstream="1"
+uci set unbound.forward.tls_index="dns.google"
+uci add_list unbound.forward.zone_name="."
+uci add_list unbound.forward.server="2001:4860:4860::8888"
+uci add_list unbound.forward.server="2001:4860:4860::8844"
+uci add_list unbound.forward.server="8.8.8.8"
+uci add_list unbound.forward.server="8.8.4.4"
+uci commit unbound
+/etc/init.d/unbound restart
+</code>
+
+LAN clients and local system should use Unbound as a primary resolver assuming that Dnsmasq is disabled.
+
+===== Testing =====
+{{section>docs:guide-user:services:dns:dnscrypt_dnsmasq_dnscrypt-proxy#testing&noheader&nofooter&noeditbutton}}
+
+===== Troubleshooting =====
+Collect and analyze the following information.
+
+<code bash>
+# Restart services
+/etc/init.d/log restart; /etc/init.d/unbound restart
+
+# Log and status
+logread -e unbound; netstat -l -n -p | grep -e unbound
+
+# Runtime configuration
+pgrep -f -a unbound
+
+# Persistent configuration
+uci show unbound
+</code>
+
+===== Extras =====
+==== Web interface ====
+Install the necessary packages if you want to manage the settings using web interface.
+
+<code bash>
+# Install packages
+opkg update
+opkg install luci-app-unbound
+</code>
+
+Navigate to **[[http://openwrt.lan/|LuCI]] -> Services -> Recursive DNS** to configure Unbound.
+
+==== DoT provider ====
+Unbound is configured with Google DNS.
+You can change it Cloudflare DNS or any other [[wp>Public_recursive_name_server|DoT provider]].
+Make sure the provider supports DNSSEC validation if required.
+Specify several servers to improve fault tolerance.
+
+<code bash>
+# Configure DoT provider
+uci set unbound.forward.tls_index="cloudflare-dns.com"
+uci -q delete unbound.forward.server
+uci add_list unbound.forward.server="2606:4700:4700::1111"
+uci add_list unbound.forward.server="2606:4700:4700::1001"
+uci add_list unbound.forward.server="1.1.1.1"
+uci add_list unbound.forward.server="1.0.0.1"
+uci commit unbound
+/etc/init.d/unbound restart
+</code>
+
+==== DNSSEC validation ====
+Enforce [[wp>Domain_Name_System_Security_Extensions|DNSSEC]] validation if your DNS provider does not support it, or you want to perform the validation yourself.
+Beware of performance issues.
+
+<code bash>
+# Enforce DNSSEC validation
+uci set unbound.@unbound[0].validator="1"
+uci commit unbound
+/etc/init.d/unbound restart
+</code>

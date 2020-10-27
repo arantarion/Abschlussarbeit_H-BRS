@@ -1,0 +1,1 @@
+Moved to [[docs:guide-developer:ubus:service|docs:guide-developer:ubus:service]]

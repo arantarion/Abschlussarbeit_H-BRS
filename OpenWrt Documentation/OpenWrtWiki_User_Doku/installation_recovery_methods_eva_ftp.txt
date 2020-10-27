@@ -1,0 +1,15 @@
+====== EVA FTP ======
+
+Recovery can be done via EVA FTP.
+
+  * -> [[docs:guide-user:installation:generic.flashing.ftp|Installing OpenWrt over FTP (generic)]]
+
+===== Devices with this recovery method =====
+---- datatable ----
+cols       : Brand, Model, Versions, Supported Current Rel_releasecurrent, Recovery method(s)_method-recovery, Comment recovery, Device Page_page, Device Techdata_pageid
+dynfilters : 1
+filter     : Model!=@@Model@@
+filter     : recovery method(s)=EVA FTP
+sort       : Brand
+limit      : 25
+----

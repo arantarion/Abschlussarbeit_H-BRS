@@ -1,0 +1,228 @@
+<WRAP center round info 80%>
+This page is obsolete and has been replaced by **[[docs:guide-user:services:dns:dnscrypt-proxy|dnscrypt-proxy]]** and **[[docs:guide-user:services:dns:dnscrypt_dnsmasq_dnscrypt-proxy|DNSCrypt via Dnsmasq and dnscrypt-proxy]]**.
+Please translate both pages, and afterwards delete this obsolete page.
+ --- //[[tmo26@gmx.de|tmomas]] 2019/09/17 20:56//
+</WRAP>
+
+====== DNSCrypt ======
+DNSCrypt предоставляет защиту от атак, связанных с модификацией и манипулированием транзитным трафиком DNS. Это достигается шифрованием канала связи между клиентом (вами) и DNS-сервером. Шифрование DNS-трафика позволит защитить клиента от атак "человек посередине" ([[google>MitM]]), при которых злоумышленник вклинивается в канал связи и притворяется DNS-сервером. Кроме того, шифрование положительно сказывается на приватности, предотвращая наблюдение за трафиком.
+
+Важно помнить, что технология DNSCrypt лишь помогает удостовериться, что получаемые от DNS-сервера ответы не подделаны злоумышленником, а действительно отправлены этим сервером. DNSCrypt не заменит VPN — ваш IP-адрес не маскируется. Если вы используете публичные DNS-серверы, эти серверы будут расшифровывать ваши DNS-запросы (потому что должны это сделать, чтобы обработать эти запросы). Если вы пытаетесь использовать DNSCrypt, чтобы предотвратить "утечку" DNS-запросов при использовании VPN, то это неудачное решение — вы и так уже доверили свои данные одной компании (VPN-провайдеру), зачем доверять ещё кому-то? Воспользуйтесь DNS-серверами, которые предоставил VPN-провайдер.
+
+===== Установка =====
+
+Начиная с Chaos Calmer 15.05, dnscrypt-proxy и libsodium присутствуют в официальном репозитории:
+
+  opkg update
+  opkg install dnscrypt-proxy
+
+Кроме того, существует пакет luci-app-dnscrypt-proxy, позволяющий настраивать dnscrypt-proxy через веб-интерфейс LuCi.
+  
+===== Специальная сборка для архитектуры ar71xx от black-roland =====
+Сборка от [[https://github.com/black-roland/exOpenWrt|black-roland]] имеет ряд преимуществ перед официальным репозиторием Chaos Calmer: пакеты dnscrypt-proxy и libsodium более свежие (и поддерживают Barrier Breaker), dnscrypt-proxy поддерживает использование эфемерных ключей, procd и позволяет одновременно запускать несколько копий себя (если первый DNS-сервер по каким-либо причинам будет недоступен, система использует второй).
+
+Добавляем в файл ''/etc/opkg.conf'' источник в зависимости от используемой версии OpenWrt. Для этого выполняем в консоли следующие команды:
+
+**Trunk:**
+
+Уже содержит актуальную версию dnscrypt-proxy с поддержкой запуска нескольких копий. Ничего добавлять не требуется.
+
+  opkg update
+  opkg install dnscrypt-proxy
+
+**Chaos Calmer:**
+
+  cd /tmp
+  wget 'http://exopenwrt.roland.black/exopenwrt.pub'
+  opkg-key add exopenwrt.pub
+  echo '/etc/opkg/keys/1a929a1dd62138c1' >> /etc/sysupgrade.conf
+  echo 'src/gz exopenwrt http://exopenwrt.roland.black/chaos_calmer/15.05.1/ar71xx/packages/exopenwrt' >> /etc/opkg.conf
+
+**Barrier Breaker:**
+
+  echo 'src/gz exopenwrt http://exopenwrt.roland.black/barrier_breaker/14.07/ar71xx/packages/exopenwrt' >> /etc/opkg.conf
+
+Обновляем список пакетов и устанавливаем ''dnscrypt-proxy'' и ''libsodium''. Примечание: без обновленной библиотеки служба не запустится (по крайней мере в мультисерверном варианте), при недостатке места библиотеку следует удалить принудительно.
+
+  opkg update
+  opkg remove libsodium --force-depends
+  opkg install dnscrypt-proxy libsodium
+
+[[https://forum.openwrt.org/viewtopic.php?id=36380|Тема на форуме]]
+
+===== Настройка =====
+По умолчанию ''dnscrypt-proxy'' использует адрес и порт ''127.0.0.1:5353''. Нужно настроить OpenWrt для отправки DNS-запросов на этот адрес.
+
+=== dnscrypt-proxy ===
+Настраиваем, редактируя файл ''/etc/config/dnscrypt-proxy'':
+
+|''config dnscrypt-proxy
+        option address '127.0.0.1'
+        option port    '5353'
+      # option resolver        'cisco'
+      # option resolvers_list  '/usr/share/dnscrypt-proxy/dnscrypt-resolvers.csv'
+      # option ephemeral_keys '1'
+''|
+
+Описание параметров:
+
+^ Название ^ Тип ^ Обязательность ^ Значение по умолчанию ^ Описание ^
+| ''address'' | string | да | ''127.0.0.1'' | IP-адрес, на который будем принимать DNS-запросы от клиентов. |
+| ''port'' | string | да | ''5353'' | Порт, на который будем принимать DNS-запросы от клиентов. |
+| ''resolver'' | string | нет | ''cisco'' | Имя одного из публичных DNS-серверов, содержащихся в файле, путь к которому указывает параметр 'resolvers_list'. Два сервера здесь указать не получится. Если эта строка закомментирована или отсутствует, будет использоваться сервер OpenDNS. |
+| ''resolvers_list'' | string | нет | ''/usr/share/dnscrypt-proxy/dnscrypt-resolvers.csv'' | Путь к файлу в формате CSV, содержащему информацию о публичных DNS-серверах, поддерживающих DNSCrypt. В случае возникновения проблем с запуском dnscrypt-proxy, удостоверьтесь, что указанный сервер присутствует в файле (''/usr/share/dnscrypt-proxy/dnscrypt-resolvers.csv''). Поскольку этот список обновляется чаще, чем в репозитории, имеет смысл сразу же обновить его, скачав свежую копию c [[https://raw.githubusercontent.com/dyne/dnscrypt-proxy/master/dnscrypt-resolvers.csv|GitHub]] и поместив по указанному пути. |
+| ''ephemeral_keys'' | boolean | нет | ''0'' | Усиление приватности за счёт использования [[https://ru.wikipedia.org/wiki/Эфемерный_ключ|эфемерного]] публичного ключа для каждого запроса. dnscrypt-proxy из репозитория Chaos Calmer не поддерживает эту настройку. Учтите, что использование эфемерного ключа увеличивает нагрузку на процессор (особенно на платформах с архитектурой, отличной от x86). Эта настройка бесполезна с большинством публичных серверов DNScrypt, поскольку они развёрнуты из образов Docker, где по умолчанию для сертификатов выставлен небольшой параметр TTL. |
+
+Следующие параметры поддерживаются только в Trunk:
+
+^ Название ^ Тип ^ Обязательность ^ Значение по умолчанию ^ Описание ^
+| ''client_key'' | string | нет | //отсутствует// | Идентификация клиента публичным ключом. По умолчанию (для затруднения отслеживания) клиент использует случайно сгенерированную ключевую пару. Эта настройка заставляет использовать статическую пару, что, например, позволяет DNS-провайдеру предлагать премиум-сервис клиентам, чьи запросы подписаны определёнными публичными ключами. Клиент не может расшифровать поступающие ответы без знания приватного ключа. Значение этой  настройки представляет собой путь к файлу, содержащему приватный ключ. Соответствующий ему публичный ключ вычисляется автоматически. |
+| ''syslog'' | boolean | нет | ''1'' | Отправка событий демону syslog. |
+| ''syslog_prefix'' | string | нет | ''dnscrypt-proxy'' | Строка, предваряющая записи в журнале. |
+
+Следующие параметры присутствуют в файле ''/etc/config/dnscrypt-proxy'', но не поддерживаются, поскольку (на данный момент) DNSCrypt в OpenWrt собирается без поддержки плагинов:
+
+^ Название ^ Тип ^ Обязательность ^ Значение по умолчанию ^ Описание ^
+| ''query_log_file'' | string | нет | //отсутствует// | Запись полученных DNS-запросов в файл. Позволяет в реальном времени оценивать происходящее в сети. Значение этого параметра представляет собой путь к файлу журнала. Имя файла может иметь префикс ltsv:, что позволяет сохранять журнал в формате LTSV (например, ltsv:/tmp/dns-queries.log). |
+| ''local_cache'' | boolean | нет | ''0'' | Кэширование ответов на популярные и последние запросы, ускоряет работу dnscrypt-proxy. |
+| ''block_ipv6'' | boolean | нет | ''0'' | Отключение поддержки IPv6, ускоряет работу dnscrypt-proxy. |
+| ''list blacklist'' | string | нет | //отсутствует// | Чёрные списки позволяют блокировать обращение к доменам и IP-адресам. Значение этого параметра определяет тип чёрного списка и путь к файлу (например, domains:/path/to/domains-blacklist-file.txt или ips:/path/to/ips-blacklist-file.txt). Можно указать несколько чёрных списков, добавив ещё параметры ''list blacklist''. |
+
+Дополнительные параметры, при необходимости, указываются в скрипте инициализации (файл ''/etc/init.d/dnscrypt-proxy'').
+
+//Обратите внимание: адрес и порт указывают на то, где будет доступен локальный DNS-сервер, а сервер DNSCrypt вы просто выбираете из списка доступных серверов, указываете его имя в строке resolver и раскомментируете строки с именем сервера и путём к списку серверов.//
+
+Добавляем dnscrypt-proxy в автозагрузку и запускаем:
+  /etc/init.d/dnscrypt-proxy enable
+  /etc/init.d/dnscrypt-proxy start
+  
+Обратите внимание: если dnscrypt-proxy не запускается автоматически после перезагрузки системы, возможно, он пытается запуститься ещё до того, как полностью поднят сетевой интерфейс. Добавьте в файл ''/etc/rc.local'' перед строчкой "exit 0":
+  sleep 10
+  /etc/init.d/dnscrypt-proxy start
+  
+Кроме того, на маршрутизаторе должно быть установлено точное время.
+
+=== dnsmasq ===
+Настраиваем ''dnsmasq'' для использования ''dnscrypt-proxy'' на 127.0.0.1:5353. Полужирным выделены строки, которые нужно изменить в файле ''/etc/config/dhcp'':
+
+|''config dnsmasq
+    option domainneeded         1
+    option boguspriv            1
+    option filterwin2k          0
+    option localise_queries     1
+    option rebind_protection    1
+    option rebind_localhost     1
+    option local                '/lan/'
+    option domain               'lan'
+    option expandhosts          1
+    option nonegcache           0
+    option authoritative        1
+    option readethers           1
+    option leasefile            '/tmp/dhcp.leases'
+**#   option resolvfile           '/tmp/resolv.conf.auto'**
+**    option noresolv             1**
+**    list server                 '127.0.0.1#5353'**
+**    list server                 '/pool.ntp.org/208.67.222.222'**
+#   list server                 '208.67.222.222'
+#   list server                 '208.67.220.220'
+''|
+
+  * отключили обработку файла ''/tmp/resolv.conf.auto'', поскольку он указывает ''dnsmasq'' использовать DNS-серверы провайдера.
+  * добавили настройку ''noresolv'', которая (по тем же причинам) отключает обработку файла ''/etc/resolv.conf''.
+  * ''127.0.0.1#5353'' — адрес из ''/etc/config/dnscrypt-proxy''.
+  * ''/pool.ntp.org/208.67.222.222'' добавляет исключение для адреса pool.ntp.org, который будет доступен через обычный незашифрованный DNS-канал. ''dnscrypt-proxy'' требует, чтобы на устройстве было установлено точное время, иначе сервис DNS не сможет работать, а также не получится синхронизировать время. В этом примере для доступа к pool.ntp.org используется публичный сервер OpenDNS. Вы можете использовать другой сервер (например, [[https://www.opennic.org/|OpenNIC]], [[https://1.1.1.1/|CloudFlare Public DNS]], [[https://developers.google.com/speed/public-dns/|Google Public DNS]], [[https://dns.yandex.ru/|Яндекс.DNS]]) или DNS-сервер провайдера.
+
+Перезапускаем ''dnsmasq'' (или перезагружаем маршрутизатор):
+  /etc/init.d/dnsmasq restart
+
+=== Использование нескольких серверов ===
+|{{:meta:icons:tango:48px-emblem-important.svg.png?nolink}} Работает с ''dnscrypt-proxy'' из стандартного репозитория Chaos Calmer 15.05.1, но для предыдущих выпусков, скорее всего, недоступно|
+
+Можно использовать несколько DNS-серверов. Тогда, если первый будет недоступен, система сможет автоматически переключиться на другой ([[https://wuffleton.com/hacks/dnscrypt-openwrt/|источник)]]).
+
+Добавляем дополнительный сервер в файл ''/etc/config/dnscrypt-proxy'' (обратите внимание, что они должны размещаться на разных портах):
+
+|'' config dnscrypt-proxy ns1
+	option address '127.0.0.1'
+	option port '5353'
+	option resolver 'fvz-anyone'
+	# option resolvers_list '/usr/share/dnscrypt-proxy/dnscrypt-resolvers.csv'
+	# option ephemeral_keys '0'
+
+config dnscrypt-proxy ns2
+	option address '127.0.0.1'
+	option port '5454'
+	option resolver 'd0wn-random-ns1'
+	# option resolvers_list '/usr/share/dnscrypt-proxy/dnscrypt-resolvers.csv'
+	# option ephemeral_keys '0'
+''|
+
+Создаём файл ''/etc/resolv-crypt.conf'', содержащий единственную строку: **options timeout:1**. Эта настройка заставляет ''dnsmasq'' после секундного ожидания ответа от первого DNS-сервера переключиться на следующий.
+
+В разделе **config dnsmasq** файла ''/​etc/​config/​dhcp'', удаляем или комментируем строку **option noresolv 1**, а также добавляем **option resolvfile '/etc/resolv-crypt.conf'** и дополнительный сервер:
+
+|''    option resolvfile           '/etc/resolv-crypt.conf'
+    list server                 '127.0.0.1#5353'
+    list server                 '127.0.0.1#5454'
+    list server                 '/pool.ntp.org/208.67.222.222'
+''|
+
+Перезагружаем маршрутизатор, либо перезапускаем ''dnscrypt-proxy'' и ''dnsmasq'':
+  /etc/init.d/dnscrypt-proxy restart
+  /etc/init.d/dnsmasq restart
+
+==== Очищаем кэш DNS на клиентских устройствах ====
+//Обратите внимание: команды должны быть выполнены в командной строке с правами администратора.//
+
+=== Linux ===
+  sudo /etc/init.d/nscd restart
+или
+  sudo /etc/init.d/networking restart
+
+=== Windows ===
+  ipconfig /flushdns
+
+=== Mac OS X ===
+  * 10.4 (Tiger)
+    * <code>lookupd -flushcache</code>
+  * 10.5/10.6 (Leopard/Snow Leopard)
+    * <code>dscacheutil -flushcache</code>
+
+===== При возникновении проблем =====
+==== Проверяем используемый DNS-сервер ====
+  - посмотреть IP-адрес используемого в настоящий момент сервера можно на сайтах [[https://www.dnsleaktest.com/|DNS leak test]] или [[https://www.dns-oarc.net/oarc/services/dnsentropy/|DNS randomness test]]. [[https://bgp.he.net|Здесь]] можно проверить какому сервису принадлежит IP-адрес (IP-адрес следует вводить в поле //search//).
+  - [[https://dnssec.vs.uni-due.de/|DNSSEC resolver test]] покажет поддерживает ли DNS-сервер проверку DNSSEC-подписей.
+  - если вы можете зайти на [[http://dnscrypt.bit|DNSCrypt.bit]], то DNS-сервер поддерживает доменные имена [[https://namecoin.org/|Namecoin]].
+
+==== Проверяем, отправляются ли DNS-запросы через ''dnscrypt-proxy'' ====
+Выполняем на маршрутизаторе:
+  pkill -STOP dnscrypt-proxy
+
+После этого DNS-запросы должны перестать работать.
+
+Возвращаем службу в рабочее состояние:
+  pkill -CONT dnscrypt-proxy
+
+==== Проверяем корректно ли работает ''dnscrypt-proxy'' ====
+Простейший способ — посмотреть системный журнал:
+  - проверяем, что ''dnsmasq'' использует только dnscrypt-proxy. Нас интересует только последний блок DNS-серверов:
+    * <code>logread | grep -n "using nameserver"</code>
+    * <code>132:Jan  1 01:01:00 openwrt daemon.info dnsmasq[1883]: using nameserver 208.67.222.222#53 for domain pool.ntp.org
+133:Jan  1 01:01:00 openwrt daemon.info dnsmasq[1883]: using nameserver 127.0.0.1#5353</code>
+  - проверяем, что ''dnscrypt-proxy'' работает:
+    * <code>logread | grep "Proxying from"</code>
+    * <code>Jul 1 12:00:00 openwrt daemon.info dnscrypt-proxy[1831]: Proxying from 127.0.0.1:5353 to 208.67.220.220:443</code>
+
+При возникновении проблем убедитесь, что порт, используемый ''dnscrypt-proxy'', не занят другим процессом (например mDNS ZeroConf Daemon (avahi)).
+
+==== Получен подозрительный сертификат ====
+При наличии сообщений о "подозрительном" сертификате
+|''root@OpenWrtRouter:/tmp# ./dnscrypt-proxy -R dnscrypt.eu-nl -a 127.0.0.1:5353
+[INFO] Generating a new key pair
+[INFO] Done
+[ERROR] Suspicious certificate received
+[ERROR] No useable certificates found
+[INFO] Refetching server certificates
+[ERROR] Suspicious certificate received
+[ERROR] No useable certificates found''|
+проверяем точность даты и времени, установленных на маршрутизаторе.

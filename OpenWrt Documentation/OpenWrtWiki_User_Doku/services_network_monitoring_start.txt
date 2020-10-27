@@ -1,0 +1,3 @@
+====== Network Monitoring ======
+
+{{pagequery>@:docs:guide-user:services:network_monitoring *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

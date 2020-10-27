@@ -1,0 +1,14 @@
+====== see forum ======
+
+The recovery method is described in the OpenWrt forum.
+
+
+===== Devices with this recovery method =====
+---- datatable ----
+cols       : Brand, Model, Versions, Supported Current Rel_releasecurrent, Recovery method(s)_method-recoverys, Comment recovery, OWrt forum topic URL_url, Forum search_search-forum, Device Page_page, Device Techdata_pageid
+dynfilters : 1
+filter     : Model!=@@Model@@
+filter     : recovery method(s)*~see forum
+sort       : Brand
+limit      : 25
+----

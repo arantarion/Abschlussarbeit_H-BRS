@@ -1,0 +1,12 @@
+====== DNS (aka Domain Name System) ======
+===== Encryption =====
+<pagelist&list&nodate&nouser>
+  * [[docs:guide-user:services:dns:doh_dnsmasq_https-dns-proxy]]
+  * [[docs:guide-user:services:dns:dot_dnsmasq_stubby]]
+  * [[docs:guide-user:services:dns:dot_unbound]]
+  * [[docs:guide-user:services:dns:dnscrypt_dnsmasq_dnscrypt-proxy]]
+  * [[docs:guide-user:services:dns:dnscrypt_dnsmasq_dnscrypt-proxy2]]
+</pagelist>
+
+===== All articles =====
+{{pagequery>@:docs:guide-user:services:dns *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

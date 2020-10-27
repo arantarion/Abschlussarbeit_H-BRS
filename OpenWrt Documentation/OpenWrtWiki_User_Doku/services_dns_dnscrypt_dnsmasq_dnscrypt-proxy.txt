@@ -1,0 +1,138 @@
+====== DNSCrypt with Dnsmasq and dnscrypt-proxy ======
+{{section>meta:infobox:howto_links#cli_skills&noheader&nofooter&noeditbutton}}
+
+===== Introduction =====
+  * This how-to describes the method for setting up [[wp>DNSCrypt]] on OpenWrt.
+  * It relies on [[docs:guide-user:base-system:dhcp.dnsmasq|Dnsmasq]] and [[docs:guide-user:services:dns:dnscrypt-proxy|dnscrypt-proxy]] for resource efficiency.
+  * Follow [[docs:guide-user:firewall:fw3_configurations:intercept_dns|DNS hijacking]] to intercept DNS traffic or use [[docs:guide-user:services:vpn:start|VPN]] to protect all traffic.
+
+===== Goals =====
+  * Encrypt your DNS traffic improving security and privacy.
+    * Prevent DNS leak and DNS hijacking.
+  * Bypass regional restrictions using public DNS providers.
+    * Escape DNS-based content filters and internet censorship.
+
+===== Instructions =====
+Install the packages and configure DNS encryption.
+
+<code bash>
+# Install packages
+opkg update
+opkg install dnsmasq dnscrypt-proxy
+
+# Configure DNSCrypt provider
+uci set dnscrypt-proxy.@dnscrypt-proxy[0].resolver="cisco"
+uci set dnscrypt-proxy.@dnscrypt-proxy[0].address="127.0.0.1"
+uci set dnscrypt-proxy.@dnscrypt-proxy[0].port="5253"
+uci commit dnscrypt-proxy
+/etc/init.d/dnscrypt-proxy restart
+
+# Enable DNS encryption
+uci -q delete dhcp.@dnsmasq[0].server
+DNSCRYPT_ADDR="$(uci get dnscrypt-proxy.@dnscrypt-proxy[0].address)"
+DNSCRYPT_PORT="$(uci get dnscrypt-proxy.@dnscrypt-proxy[0].port)"
+DNSCRYPT_SERV="${DNSCRYPT_ADDR//[][]/}#${DNSCRYPT_PORT}"
+uci add_list dhcp.@dnsmasq[0].server="${DNSCRYPT_SERV}"
+
+# Enforce DNS encryption for LAN clients
+uci set dhcp.@dnsmasq[0].noresolv="1"
+uci commit dhcp
+/etc/init.d/dnsmasq restart
+</code>
+
+LAN clients should use Dnsmasq as a primary resolver.
+Dnsmasq forwards DNS queries to dnscrypt-proxy which encrypts DNS traffic.
+
+===== Testing =====
+Verify that domain name resolution works.
+
+<code bash>
+nslookup openwrt.org localhost
+</code>
+
+Check your DNS provider.
+Make sure there is no DNS leak.
+  * [[https://dnsleaktest.com/]]
+Test DNSSEC validation.
+  * [[https://dnssec.vs.uni-due.de/]]
+
+===== Troubleshooting =====
+Collect and analyze the following information.
+
+<code bash>
+# Restart services
+/etc/init.d/log restart; /etc/init.d/dnsmasq restart; /etc/init.d/dnscrypt-proxy restart
+
+# Log and status
+logread -e dnsmasq; netstat -l -n -p | grep -e dnsmasq
+logread -e dnscrypt-proxy; netstat -l -n -p | grep -e dnscrypt-proxy
+
+# Runtime configuration
+pgrep -f -a dnsmasq; pgrep -f -a dnscrypt-proxy
+
+# Persistent configuration
+uci show dhcp; uci show dnscrypt-proxy
+</code>
+
+===== Extras =====
+==== Web interface ====
+Install the necessary packages if you want to manage the settings using web interface.
+
+<code bash>
+# Install packages
+opkg update
+opkg install luci-app-dnscrypt-proxy
+</code>
+
+  * Navigate to **[[http://openwrt.lan/|LuCI]] -> Network -> DHCP and DNS** to configure Dnsmasq.
+  * Navigate to **[[http://openwrt.lan/|LuCI]] -> Services -> DNSCrypt-Proxy** to configure dnscrypt-proxy.
+
+==== DNSCrypt provider ====
+dnscrypt-proxy is configured with Cisco DNS.
+You can change it to DNSCrypt.eu or any other [[https://github.com/openwrt/packages/blob/master/net/dnscrypt-proxy/files/dnscrypt-resolvers.csv|DNSCrypt provider]].
+Make sure the provider supports DNSSEC validation if required.
+Specify several servers to improve fault tolerance.
+
+<code bash>
+# Update DNSCrypt provider database
+sed -i -e "/^dnscrypt\.eu-nl,/a $(sed -n -e "
+/^dnscrypt\.eu-nl,/{
+s/dnscrypt\.eu-nl/\0-ipv6/
+s/DNSCrypt\.eu Holland/\0 over IPv6/
+s/176\.56\.237\.171/[2a00:d880:3:1::a6c1:2e89]:443/p}
+" /usr/share/dnscrypt-proxy/dnscrypt-resolvers.csv)" \
+/usr/share/dnscrypt-proxy/dnscrypt-resolvers.csv
+
+# Configure DNSCrypt provider
+while uci -q delete dnscrypt-proxy.@dnscrypt-proxy[0]; do :; done
+uci set dnscrypt-proxy.dns6a="dnscrypt-proxy"
+uci set dnscrypt-proxy.dns6a.resolver="dnscrypt.eu-dk-ipv6"
+uci set dnscrypt-proxy.dns6a.address="[::1]"
+uci set dnscrypt-proxy.dns6a.port="5253"
+uci set dnscrypt-proxy.dns6b="dnscrypt-proxy"
+uci set dnscrypt-proxy.dns6b.resolver="dnscrypt.eu-nl-ipv6"
+uci set dnscrypt-proxy.dns6b.address="[::1]"
+uci set dnscrypt-proxy.dns6b.port="5254"
+uci set dnscrypt-proxy.dnsa="dnscrypt-proxy"
+uci set dnscrypt-proxy.dnsa.resolver="dnscrypt.eu-dk"
+uci set dnscrypt-proxy.dnsa.address="127.0.0.1"
+uci set dnscrypt-proxy.dnsa.port="5255"
+uci set dnscrypt-proxy.dnsb="dnscrypt-proxy"
+uci set dnscrypt-proxy.dnsb.resolver="dnscrypt.eu-nl"
+uci set dnscrypt-proxy.dnsb.address="127.0.0.1"
+uci set dnscrypt-proxy.dnsb.port="5256"
+uci commit dnscrypt-proxy
+/etc/init.d/dnscrypt-proxy restart
+
+uci -q delete dhcp.@dnsmasq[0].server
+while
+DNSCRYPT_ADDR="$(uci -q get dnscrypt-proxy.@dnscrypt-proxy[0].address)"
+DNSCRYPT_PORT="$(uci -q get dnscrypt-proxy.@dnscrypt-proxy[0].port)"
+DNSCRYPT_SERV="${DNSCRYPT_ADDR//[][]/}#${DNSCRYPT_PORT}"
+uci -q delete dnscrypt-proxy.@dnscrypt-proxy[0]
+do uci add_list dhcp.@dnsmasq[0].server="${DNSCRYPT_SERV}"
+done
+uci revert dnscrypt-proxy
+uci commit dhcp
+/etc/init.d/dnsmasq restart
+</code>

@@ -1,0 +1,67 @@
+======= OpenWrt as Docker container host =======
+
+As of OpenWrt 20.xx release (or snapshot images), OpenWrt can be used as Docker host at least on x86_64 (PC/server) architecture.
+
+There are two main ways to use Docker as a host, install Docker Community Edition, or use native OpenWrt tools that support Docker container specification.
+
+You will probably need to [[docs:guide-user:storage:usb-drives|set up storage first]] as a place to store the containers and data.
+
+Also in most cases you will be running the container as a specific user and will give it access to some folder outside the container, where it can store its configuration and the data.
+So you will probably need to [[docs:guide-user:additional-software:create-new-users|create new users and groups for applications or system services]], create the folders for the configuration and data, and then change the owner of these folders to the user you will run the container as.
+
+===== Install Docker Community Edition =====
+install **docker-ce** package for the commandline tools\\
+install **luci-app-dockerman** package to get a control panel for docker containers in Luci
+
+the default folder for docker in the dockerman luci interface is **/opt/docker** so you want to mount your storage at **/opt** or change the folder in **Docker** --> **Overview** --> **Docker Root Dir** and then restart the whole device, or the dockerd service.
+
+==== Add an image ====
+To add an image, search it from Docker Hub, and then copy the image name from the **docker pull** text box. For example if the full text is **docker pull linuxserver/transmission**, you will need to copy **linuxserver/transmission**.
+Go in the **Docker** --> **Images** and paste that text in the **Pull Image** box, then press **Pull** button. The page will show the download progress.
+
+Then go to **Docker** --> **Containers** and press on the **Add** button.
+
+In the new container page, you can select the docker image you want to use from the **Docker Image** menu, and then set all other parameters (usually, the available/useful parameters are described in the description of the container on Docker Hub), then press Submit to create the container
+===== Use native OpenWrt tools =====
+Procd init system now supports Open Container Initiative Runtime Specification, extending its slim containers ('ujail') capability.\\
+The uxc command line tool handles the basic operations on containers as defined by the spec.\\
+This allows to use it as a drop-in replacement for Docker's 'runc' (or 'crun') on OpenWrt hosts with a significantly reduced footprint.
+
+==== install packages ====
+<code>
+opkg install kmod-veth uxc ujail-console
+</code>
+
+==== create veth pair for container ====
+<code>
+uci batch <<EOF
+set network.veth0=device
+set network.veth0.type='veth'
+set network.veth0.name='vhost0'
+set network.veth0.peer_name='virt0'
+add_list network.lan.ifname='vhost0'
+set network.virt0=interface
+set network.virt0.ifname='virt0'
+set network.virt0.proto='none'
+# set proto='none' assuming DHCP client inside container
+# use 'static' otherwise and also set ipaddr, gateway and dns
+set network.virt0.jail='container1'
+set network.virt0.jail_ifname='host0'
+commit network
+EOF
+</code>
+
+====import a OCI runtime container====
+(assuming OCI run-time bundle with config.json in /mnt/sda3/debian)
+<code>
+uxc create container1 /mnt/sda3/debian true
+uxc start container1
+
+uxc list
+uxc state container
+</code>
+If the container uses a stdio console, you can attach it using
+<code>
+ujail-console -c container1
+</code>
+(there is no buffer, so if you like to see the complete bootlog of a container, make sure to attach a console after the 'create' call but before starting it)

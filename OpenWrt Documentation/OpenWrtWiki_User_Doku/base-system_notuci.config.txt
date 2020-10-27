@@ -1,0 +1,38 @@
+====== System configuration not handled by UCI ======
+A lot of stuff can (and therefore should be) configured with [[docs:guide-user:base-system:uci]] via any of its interfaces.
+This page concerns itself with everything built into OpenWrt that cannot be configured with UCI.
+Note that most third party applications, installed with [[docs:guide-user:additional-software:opkg|opkg]] or otherwise, typically also have their own configuration methods.
+Users experienced with GNU/Linux distribution will know all of this by heart.
+For beginners this should be useful.
+
+===== Configuration files =====
+^ Configuration ^ Description ^
+| ''/etc/banner'' | Login welcome banner. |
+| ''[[man>crontab|/etc/crontabs]]'' | See: [[docs:guide-user:base-system:cron|Cron]] |
+| ''[[man>dnsmasq|/etc/dnsmasq.conf]]'' | See: [[docs:guide-user:base-system:dhcp.dnsmasq#Configuration|Dnsmasq]] |
+| ''[[man>ethers(5)|/etc/ethers]]'' | See: [[docs:guide-user:base-system:dhcp.dnsmasq#Configuration|Dnsmasq]] |
+| ''/etc/firewall.user'' | See: ''[[docs:guide-user:firewall:firewall_configuration#includes|Firewall]]'' |
+| ''[[man>fstab|/etc/fstab]]'' | A [[wp>Symlink#POSIX_and_Unix-like_operating_systems|symlink]] to ''/tmp/fstab'' which is being created and configured by UCI in ''[[docs:guide-user:storage:fstab|/etc/config/fstab]]''. |
+| ''/etc/fw_env.config'' | See: [[docs:techref:bootloader:uboot.config]] |
+| ''[[man>group|/etc/group]]'' | This is an ASCII file which defines the groups to which users belong to. |
+| ''[[man>hosts|/etc/hosts]]'' | See: [[docs:guide-user:base-system:dhcp.dnsmasq#Configuration|Dnsmasq]] |
+| ''[[man>hosts.allow|/etc/hosts.allow]]'' | |
+| ''[[man>hosts.deny|/etc/hosts.deny]]'' | |
+| ''/etc/hotplug.d'' | See: [[docs:guide-user:base-system:hotplug|Hotplug]] |
+| ''/etc/init.d/rcS'' | Executed by [[docs:techref:process.boot#init]] every boot. |
+| ''[[man>inittab|/etc/inittab]]'' | [[http://git.busybox.net/busybox/tree/examples/inittab|inittab examples]] |
+| ''[[man>ip-route|/etc/iproute2/rt_tables]]'' | Routing tables configuration. See: [[wp>iproute2]] |
+| ''[[man>mtab|/etc/mtab]]'' | [[docs:techref:filesystems]], [[docs:techref:flash.layout]], [[wp>procfs]], [[wp>sysfs]], [[wp>devpts]] |
+| ''/etc/opkg.conf'' | See: [[docs:guide-user:additional-software:opkg|Opkg]] |
+| ''[[man>passwd(5)|/etc/passwd]]'' | |
+| ''/etc/preinit'' | In OpenWrt the Kernel is executed by the [[docs:techref:bootloader]] with the option ''init=/etc/preinit'' (instead of the usual ''init=/sbin/init''). So the Kernel executes ''[[https://dev.openwrt.org/browser/trunk/package/base-files/files/etc/preinit|/etc/preinit]]''. See: [[docs:techref:process.boot]] |
+| ''[[man>profile|/etc/profile]]'' | |
+| ''[[man>protocols|/etc/protocols]]'' | |
+| ''/etc/rc.common'' | Part of the [[wp>Shebang (Unix)]] of many shell scripts in ''/etc/init.d''. It checks the start scripts for mistakes. E.g. since [[https://dev.openwrt.org/changeset/27797|R27797]] it checks whether //"start"// and //"stop"// are defined. |
+| ''[[man>rc.local|/etc/rc.local]]'' | This file gets executed by ''/etc/rc.d/S95done'' on every boot up. You should treat this file as a shell script. |
+| ''[[man>resolv.conf|/etc/resolv.conf]]'' | A symlink to ''/tmp/resolv.conf''. |
+| ''[[man>services|/etc/services]]'' | |
+| ''[[man>shells|/etc/shells]]'' | |
+| ''[[man>sysctl.conf|/etc/sysctl.conf]]'' | ''[[https://dev.openwrt.org/browser/trunk/package/base-files/files/etc/sysctl.conf|/etc/sysctl.conf]]'' gets called every boot up by ''/etc/rc.d/S99sysctl''. |
+| ''/etc/sysupgrade.conf'' | This file contains files and directories that should be preserved during an upgrade. See: [[docs:techref:sysupgrade|Sysupgrade]] |
+| ''/etc/TZ'' | A symlink to ''/tmp/TZ'' which is being created and configured with UCI in ''[[docs:guide-user:base-system:system_configuration|/etc/config/system]]'' |

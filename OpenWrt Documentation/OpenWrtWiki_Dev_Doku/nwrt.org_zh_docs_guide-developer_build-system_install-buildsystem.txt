@@ -1,0 +1,131 @@
+====== 构建系统 – 安装 ======
+构建系统可用运行在Linux, BSD or MacOSX操作系统上. 它需要大小写敏感的文件系统.
+
+推荐使用一个Linux发行版 (例如 [[wp>Debian]]), 可以是独立安装的系统, 也可以是虚拟环境 ([[wp>Virtualbox]], [[wp>VMware]] 或 [[wp>Qemu]]).
+
+[[wp>Windows Subsystem for Linux]]下运行的Ubuntu不是官方支持的环境, 但好像也可以很好地运行构建. 通过测试, 我可以保证第一次运行时就像魔法一般, 对我来说比完整的Linux系统(Ubuntu 18.04)还好. 不支持[[wp>Cygwin]](Windows)因为文件系统大小写不敏感.
+
+===== 先决条件 =====
+要生成一个大小为8MB(假设)的可烧录的固件镜像文件, 需要:
+  * 为构建系统准备约 200 MB的磁盘空间
+  * 为构建系统 + package feeds准备约 300 MB的磁盘空间
+  * 构建过程中, 为从package feeds下载的源软件包准备约 2.1 GB的磁盘空间
+  * 为构建(如. 交叉编译)以及生成固件文件准备约 3-4 GB磁盘空间
+  * 编译阶段需要约1-4 GB内存空间.(编译x86固件需要4GB内存)
+
+===== Linux上的安装过程 =====
+
+  - 安装 ''[[wp>Git (software)|git]]'' , 可以很方便的下载源码, 以及你用的发行版默认的 ''[[wp>GNU build system|build tools]]'' 元包来执行交叉编译过程\\ 
+  - 有些feeds也许不能通过git, 只能用 ''[[wp>Apache Subversion|subversion]]'' (short: ''svn'') 或 ''[[wp>Mercurial|mercurial]]''. 如果需要获取它们的源码, 则还需要安装svn和mercurial
+  - 安装其他先决软件包, 在下面的表格里有明确定义:
+  - 设置 (或取消) 恰当的环境变量:
+    * 不能设置''SED''.  如果已经设置, 请在编译之前运行 ''`unset SED`''. (详见 [[https://dev.openwrt.org/ticket/10612|Ticket 10612]].)
+    * ''GREP_OPTIONS'' 不能包含 ''--initial-tab'' 或其他会影响其输出的选项
+
+===== 已知的先决条件表 =====
+下表包含了不同GNU/Linux以及类Unix发行版所需的构建先决软件包名.
+
+  * 目前的Debian/Ubuntu发行版中, 对构建系统来说, 需要Python 3 和 Python 2 (2018年5月). 一般会安装 ''python2.7-dev'' 元包 (如果可以的话, 也能是更新的版本).
+  * 最前沿的发行版, 如[[https://forum.openwrt.org/t/solved-build-from-master-on-archlinux-gives-error-for-freadahead-c/18693/6?u=brianbaligad|Archlinux may fail to build base-files]] 如果''Global build settings''中的 ''Cryptographically signed package lists''是启用状态
+
+^ 先决条件 ^ Debian ^ SUSE ^ Red Hat ^ OS X (via MacPorts) ^ Fedora ^ Arch ^ Gentoo ^
+| asciidoc         | asciidoc | asciidoc | asciidoc | asciidoc | asciidoc | asciidoc | app-text/asciidoc |
+| [[wp>Bash (Unix shell)|GNU Bash]] | bash |bash| bash | bash | bash| bash| app-shells/bash |
+| [[wp>GNU Binutils]] | binutils | binutils| binutils| binutils| binutils| binutils| sys-devel/binutils |
+| [[wp>bzip2]]     | bzip2 | bzip2| bzip2| bzip2| bzip2| bzip2| app-arch/bzip2 |
+| [[wp>flex lexical analyser|flex]]  | flex|flex| flex | flex| flex| flex| sys-devel/flex |
+| [[wp>Git (software)|git]] | git-core| git-core| git | git-core | git | git| dev-vcs/git |
+| [[wp>GNU C++ Compiler]]  | %%g++%% | %%gcc-c++%% | %%gcc-c++%% | ? | %%gcc-c++%% | gcc | sys-devel/gcc |
+| [[wp>GNU C Compiler]]    | gcc| gcc| gcc| ?| gcc| gcc| sys-devel/gcc |
+| GNU Time         |          ? |          ? |          ? |     ? |          ? |          ? | sys-process/time |
+| getopt           | util-linux | util-linux | util-linux | getopt| util-linux | util-linux | sys-apps/util-linux |
+| [[wp>GNU awk]]   | gawk| gawk| gawk| gawk| gawk| gawk| sys-apps/gawk |
+| help2man | help2man | ? | ? | ? | ? | ? | ? |
+| intltool-update  | intltool| intltool| intltool| intltool| intltool| intltool | dev-util/intltool |
+| libelf-dev   | libelf-dev | ? | ? | ? | ? | ? | ? |
+| libz, libz-dev   | zlib1g-dev | zlib-devel| zlib-devel| zlib| zlib-devel| zlib | sys-libs/zlib |
+| make             | make | make| make | gmake| make| make | sys-devel/make |
+| [[wp>ncurses]]   | libncurses5-dev| ncurses-devel| ncurses-devel| ncurses| ncurses-devel| ncurses | sys-libs/ncurses |
+| openssl/ssl.h    | libssl-dev| libopenssl-devel| openssl-devel| openssl| openssl-devel| openssl | dev-libs/openssl |
+| patch| patch     | patch | patch | patchutils| patch| patch | sys-devel/patch |
+| perl-ExtUtils-MakeMaker| perl-modules | perl-ExtUtils-MakeMaker| perl-ExtUtils-MakeMaker| p5-extutils-makemaker| perl-ExtUtils-MakeMaker| perl-extutils-makemaker | virtual/perl-ExtUtils-MakeMaker |
+| perl-Thread-Queue | ? | ? | ? | ? | perl-Thread-Queue | ? | ? |
+| python2-dev    | python2-dev | python-devel| ?| python2| python-devel | python2 | dev-lang/python:2 |
+| unzip            | unzip| unzip| unzip| unzip| unzip| unzip | app-arch/unzip |
+| [[wp>GNU Wget]]  | wget | wget| wget| wget| wget| wget | net-misc/wget |
+| xgettext         | gettext| gettext-tools| gettext | gettext| gettext| gettext | sys-devel/gettext |
+| xsltproc         | xsltproc| libxslt-tools| ?| libxslt| libxslt| libxslt | dev-libs/libxslt |
+| zlib, zlib-static| zlib1g-dev| zlib-devel-static | zlib-devel | zlib-devel| zlib-devel,zlib-static | zlib | sys-libs/zlib (USE=static-libs)|
+
+---
+
+很不幸, 并非所有依赖都能被''make config''检查, 特别针对软件包.\\ 
+你可能会遇到编译错误, 因为你的系统中缺少一些特定的库, 解决这些编译错误唯一的办法就是翻阅编译错误日志, 来查找缺失了哪些库, 并看看你的发新版中的哪些软件包含了它们.\\
+下表包含了一部分依赖信息:
+^ 软件包 ^ 先决条件 ^ Debian (8) ^ SUSE ^ Red Hat ^ OS X ^ Fedora ^ Arch ^ Gentoo ^
+| boost    | bjam / boost-jam   | libboost1.55-dev   | | | | boost-jam | boost | dev-util/boost-build |
+| intltool | [Perl] XML::Parser | libxml-parser-perl | | perl-XML-Parser | | perl-XML-Parser | intltool | dev-perl/XML-Parser |
+| libftdi  | libusb-config      | libusb-dev | | | | libusb-devel | libusb | dev-libs/libusb-compat |
+| lilo     | as86,ld86          | bin86 | | | | dev86 | bin86 | sys-devel/bin86 |
+| lilo     | bcc                | bcc | | | | dev86 | [[https://aur.archlinux.org/packages/bcc/|aur/bcc]] | sys-devel/dev86 |
+| lilo     | uudecode           | sharutils | | | | sharutils | sharutils | app-arch/sharutils |
+| classpath| javac, gcj         | openjdk-7-jdk | | | | java-1.7.0-openjdk-devel | jdk7-openjdk | dev-java/oracle-jdk-bin, sys-devel/gcc[gcj], and one (or both) of dev-java/icedtea-bin:7 and dev-java/icedtea:7 |
+| mac80211 | b43-fwcutter       | | | | | b43-fwcutter | b43-fwcutter | net-wireless/b43-fwcutter |
+| jamvm    | zip                | | | | | zip | | app-arch/zip |
+
+==== 软件包安装示例 ====
+  * **Arch Linux**<code>pacman -S --needed asciidoc bash bc binutils bzip2 fastjar flex git gcc util-linux gawk intltool zlib make cdrkit ncurses openssl patch perl-extutils-makemaker rsync unzip wget gettext libxslt boost libusb bin86 sharutils b43-fwcutter findutils time</code>
+  * **Alpine Linux 3.7**<code>apk add asciidoc bash bc binutils bzip2 cdrkit coreutils diffutils findutils flex g++ gawk gcc gettext git grep intltool libxslt linux-headers make ncurses-dev patch perl python2-dev tar unzip  util-linux wget zlib-dev</code>
+  * **Debian 7 Wheezy**<code>apt-get install libncurses5-dev zlib1g-dev gawk</code>
+  * **Debian 8 Jessie**<code>sudo apt-get install build-essential libncurses5-dev gawk git libssl-dev gettext unzip zlib1g-dev file python</code>
+  * **Debian 9.4 Stretch**<code>sudo apt install build-essential libncurses5-dev gawk git libssl-dev gettext zlib1g-dev swig unzip time</code>
+  * **Fedora 24**<code>dnf install binutils bzip2 gcc gcc-c++ gawk gettext git-core flex ncurses-devel ncurses-compat-libs zlib-devel zlib-static make patch unzip perl-ExtUtils-MakeMaker perl-Thread-Queue \
+ glibc glibc-devel glibc-static quilt sed sdcc intltool sharutils bison wget openssl-devel</code>
+  * **Fedora 29**<code>dnf install @c-development @development-tools @development-libs zlib-static wget python2</code>
+  * **openSUSE 13.2**<code>zypper install asciidoc bash bc binutils bzip2 fastjar flex git-core gcc-c++ gcc util-linux gawk intltool zlib-devel mercurial make genisoimage ncurses-devel libopenssl-devel patch perl-ExtUtils-MakeMaker python-devel rsync sdcc unzip wget gettext-tools libxslt-tools zlib-devel</code>
+  * **openSUSE 42.3**<code>zypper install patterns-openSUSE-devel_basis zlib-devel-static git-core</code>
+  * **Ubuntu 12.04 LTS**<code>sudo apt-get install build-essential git-core libncurses5-dev zlib1g-dev gawk flex quilt libssl-dev xsltproc libxml-parser-perl mercurial bzr ecj cvs unzip</code>
+  * **Ubuntu, Kubuntu 17.10**<code>sudo apt-get install build-essential libncurses5-dev zlib1g-dev gawk gcc-multilib flex git-core gettext libssl-dev unzip python</code>
+  * **Ubuntu, Kubuntu 18.10**<code>sudo apt install build-essential libncurses-dev unzip python</code>
+  * **Centos x86-64 (some packages require EPEL)**<code>yum install binutils bzip2 gcc gcc-c++ gawk gettext flex ncurses-devel zlib-devel zlib-static make patch unzip perl-ExtUtils-MakeMaker glibc glibc-devel glibc-static ncurses-libs sed sdcc intltool sharutils bison wget git-core openssl-devel xz</code>
+  * **Gentoo**<code bash>$ echo \
+    app-arch/{bzip2,fastjar,sharutils,unzip,zip} sys-process/time \
+    app-text/asciidoc dev-java/{icedtea:7,jikes,oracle-jdk-bin} \
+    dev-libs/{libusb-compat,libxslt,openssl} dev-util/intltool \
+    dev-vcs/{git,mercurial} net-misc/{rsync,wget} \
+    net-wireless/b43-fwcutter sys-apps/{gawk,util-linux} \
+    sys-devel/{bc,bin86,binutils,dev86,flex,gcc[gcj],gettext} \
+    sys-libs/{ncurses,zlib} virtual/{cdrtools,perl-ExtUtils-MakeMaker} \
+    x11-libs/gtk+:2 \
+        | sed 's/\s/\n/g' \
+            | sort \
+                | sudo tee /etc/portage/sets/openwrt-prerequisites \
+                    && sudo emerge -DuvNa '@openwrt-prerequisites'</code>
+
+                    
+===== 下载源码 =====
+使用以下命令克隆Git仓库.\\
+:!: 请使用普通用户来完成所有的操作, 不用使用root用户或sudo!\\ 
+:!: 请不用将代码下载到绝对路径中有空格的目录中!
+
+==== Master 或 HEAD (开发主分支) ====
+开发分支包含了针对LEDE的最新附加代码, 可能有 **实验** 或 **不稳定** 的代码.
+
+<code bash>git clone https://git.openwrt.org/openwrt/openwrt.git</code>
+
+注: 也许你会在帖子或其他参考资料中会看到, LEDE的git仓库在''https://git.lede-project.org/source.git'', 现在已经重定向到上面的URL了.
+
+附加软件包可以在这些feeds (Luci, packages, routing, management等.)中找到. 当你更新package feeds之后, 构建系统会克隆正确的feeds.
+
+==== 特定的分支 ====
+每个分支都包含了针对发布版本的基准代码 (例如. 17.01, 18.06) 以及独立发布版本 (例如. 17.01.1, 17.01.2, 18.06.1, etc). 每个分支都会预期包含**稳定**版代码, 它们会仔细地选择修复内容以及从开发分支回源的代码.
+
+要使用某个分支, 需要先使用**git clone**命令克隆git仓库, 如下所示. 然后再使用 **git checkout** 命令移动到分支上.
+
+For LEDE 17.01:
+<code bash>git checkout lede-17.01</code>
+
+For OpenWrt 18.06:
+<code bash>git checkout openwrt-18.06</code>
+
+:!: 改变分支时, 建议使用**make distclean** 命令对你的源进行全面清理. 以确保源中不包含以前构建产生的项目或配置文件.

@@ -1,0 +1,3 @@
+====== DDNS (aka Dynamic Domain Name Server) ======
+
+{{pagequery>@:docs:guide-user:services:ddns *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

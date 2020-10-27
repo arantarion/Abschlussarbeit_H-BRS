@@ -1,0 +1,58 @@
+====== Bridge firewall ======
+{{section>meta:infobox:howto_links#cli_skills&noheader&nofooter&noeditbutton}}
+
+===== Introduction =====
+  * This how-to describes the method for setting up [[wp>Bridging_(networking)|bridge]] firewall on OpenWrt.
+  * Follow [[docs:guide-user:network:vlan:creating_virtual_switches|Splitting VLANs]] to be able to filter traffic between VLAN ports.
+  * Follow [[docs:guide-user:network:wifi:basic|Wireless configuration]] to isolate wireless clients from each other.
+
+===== Goals =====
+  * Filter traffic between bridged interfaces.
+    * Isolate LAN clients from each other.
+
+===== Instructions =====
+Install the packages and enable bridge firewall.
+
+<code bash>
+# Install packages
+opkg update
+opkg install kmod-br-netfilter
+
+# Configure kernel parameters
+cat << EOF >> /etc/sysctl.conf
+net.bridge.bridge-nf-call-arptables=1
+net.bridge.bridge-nf-call-iptables=1
+net.bridge.bridge-nf-call-ip6tables=1
+EOF
+/etc/init.d/sysctl restart
+</code>
+
+===== Testing =====
+Use [[man>ping]], [[man>ping6]] or [[man>nmap]] between LAN clients to verify your firewall configuration.
+
+===== Troubleshooting =====
+Collect and analyze the following information.
+
+<code bash>
+# Log and status
+/etc/init.d/firewall restart
+
+# Runtime configuration
+iptables-save; ip6tables-save; brctl show
+lsmod | grep -e br_netfilter; sysctl net.bridge
+
+# Persistent configuration
+uci show firewall; grep -v -e "^#" -e "^$" /etc/sysctl.conf
+</code>
+
+===== Extras =====
+==== Isolating clients ====
+Isolate LAN clients from each other.
+
+<code bash>
+# Disable LAN to LAN forwarding
+uci rename firewall.@zone[0]="lan"
+uci set firewall.lan.forward="REJECT"
+uci commit firewall
+/etc/init.d/firewall restart
+</code>

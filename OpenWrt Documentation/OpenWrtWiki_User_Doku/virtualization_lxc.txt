@@ -1,0 +1,43 @@
+FIXME ** Esta página aún no está completamente traducida. Ayude a completar la traducción. ** \\ // (elimine este párrafo una vez que la traducción haya finalizado)//
+
+====== OpenWrt en contenedores LXC======
+
+OpenWrt puede ejecutarse dentro de un contenedor LXC, utilizando el mismo kernel que se ejecuta en el sistema host. Esto puede resultar útil tanto para el desarrollo como para el alojamiento de máquinas virtuales.
+
+
+===== Privilegiado vs no privilegiado =====
+Consulte su distribución para obtener instrucciones actualizadas sobre la configuración de cualquiera de las funciones de HostOS.
+
+===== Descripción básica =====
+
+A continuación, se ofrece una idea aproximada de cómo poner las cosas en marcha. Antes que nada, instale LXC en la máquina host y asegúrese de que admita la ejecución de contenedores sin privilegios. Es probable que también necesite funcionalidad de puente y / o subsistemas relacionados subyacentes adicionales (macvlan, etc.) si se utilizan.
+
+Actualmente no hay una plantilla para OpenWrt disponible, por lo que se requieren algunos pasos manuales.
+  - Cree la carpeta VM manualmente en''.local/share/lxc/<vm-name>/''
+  - Descargue una instantánea rootfs de OpenWrt y descomprímala en ''.local/share/lxc/<vm-name>/rootfs''
+  - Crear un''.local/share/lxc/<vm-name>/config'' que contiene el siguiente contenido:\\ <code>
+lxc.include = /etc/lxc/default.conf
+lxc.include = /usr/share/lxc/config/common.conf
+lxc.include = /usr/share/lxc/config/userns.conf
+lxc.arch = linux64
+
+# encuentra tus identificadores a través de
+# cat  /etc/s*id|grep $USER
+lxc.idmap = u 0 100000 65536
+lxc.idmap = g 0 100000 65536
+
+lxc.mount.auto = proc:mixed sys:ro cgroup:mixed
+
+# interfaz lan
+lxc.net.0.type = veth
+
+# interfaz wan 
+lxc.net.1.type = veth
+lxc.net.1.link = lxcbr0
+
+# cambiar <user> y <vm-name>
+lxc.rootfs.path = dir:/home/<user>/.local/share/lxc/<vm-name>/rootfs
+</code>
+  - run ''chmod'' on the rootfs folder with the id you obtained earlier
+  - run ''lxc-start -n <vm-name>''
+  - run ''lxc-attach -n <vm-name>''

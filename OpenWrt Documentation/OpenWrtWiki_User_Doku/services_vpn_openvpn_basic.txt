@@ -1,0 +1,217 @@
+FIXME **This page is not fully translated, yet. Please help completing the translation.**\\ //(remove this paragraph once the translation is finished)//
+
+====== OpenVPN 基础 ======
+{{section>meta:infobox:howto_links#cli_skills&noheader&nofooter&noeditbutton}}
+
+===== 简介 =====
+  * 如何在OpenWrt上配置运行[[wp>OpenVPN|OpenVPN]]服务器.
+  * 生成易于在不同的客户端设备间导入导出的OpenVPN客户端配置文件(profiles).
+  * 客户端的设置参考[[docs:guide-user:services:vpn:openvpn:client|OpenVPN client]]，更多OpenVPN的高级特性的调整参考[[docs:guide-user:services:vpn:openvpn:extras|OpenVPN extras]].
+
+===== 目标 =====
+  * 使用加密的网络连接模式来增强安全性和私密性
+    * 避免在客户端发生的数据泄露(Data leak)和流量欺骗(Traffic spoofing)
+  * 绕过地区性限制
+    * 摆脱针对客户端侧的内容审查和过滤
+  * 在访问局域网内服务的同时，避免通过端口映射将指定端口提供的服务直接暴露向公共网络
+
+===== 指导 =====
+==== 1. 防火墙 ====
+Consider VPN network as private and assign VPN interface to LAN zone to minimize firewall setup.
+Allow access to VPN server from WAN zone.
+
+<code bash>
+# Configure firewall
+uci set firewall.@zone[0].device="tun0"
+uci -q delete firewall.vpn
+uci set firewall.vpn="rule"
+uci set firewall.vpn.name="Allow-OpenVPN"
+uci set firewall.vpn.src="wan"
+uci set firewall.vpn.dest_port="1194"
+uci set firewall.vpn.proto="udp"
+uci set firewall.vpn.target="ACCEPT"
+uci commit firewall
+service firewall restart
+</code>
+
+==== 2. PKI（公钥基础设施） ====
+使用[[https://github.com/OpenVPN/easy-rsa#overview|EasyRSA]]来处理[[docs:guide-user:services:vpn:openvpn:extras#pki|PKI]]相关的事务。如果需要，可以给私钥加上密码保护.
+
+<code bash>
+# Install packages
+opkg update
+opkg install openvpn-easy-rsa
+
+# Configuration parameters
+export EASYRSA_PKI="/etc/easy-rsa/pki"
+export EASYRSA_REQ_CN="vpnca"
+
+# Remove and re-initialize the PKI directory
+easyrsa --batch init-pki
+
+# Generate DH parameters
+# May take a while to complete (~25m on WRT3200ACM)
+easyrsa --batch gen-dh
+
+# Create a new CA
+easyrsa --batch build-ca nopass
+
+# Generate a key pair and sign locally for vpnserver
+easyrsa --batch build-server-full vpnserver nopass
+
+# Generate a key pair and sign locally for vpnclient
+easyrsa --batch build-client-full vpnclient nopass
+</code>
+==== 3. VPN服务器的配置 ====
+安装并配置VPN服务器.
+
+<code bash>
+# Install packages
+opkg update
+opkg install openvpn-openssl
+
+# Generate TLS PSK
+EASYRSA_PKI="/etc/easy-rsa/pki"
+openvpn --genkey --secret "${EASYRSA_PKI}/tc.pem"
+
+# Configuration parameters
+VPN_DEV="$(uci get firewall.@zone[0].device)"
+VPN_POOL="192.168.8.0 255.255.255.0"
+VPN_DNS="${VPN_POOL%.* *}.1"
+VPN_DOMAIN="$(uci get dhcp.@dnsmasq[0].domain)"
+EASYRSA_PKI="/etc/easy-rsa/pki"
+DH_KEY="$(cat "${EASYRSA_PKI}/dh.pem")"
+TC_KEY="$(sed -e "/^#/d;/^\w/N;s/\n//" "${EASYRSA_PKI}/tc.pem")"
+CA_CERT="$(openssl x509 -in "${EASYRSA_PKI}/ca.crt")"
+NL=$'\n'
+
+# Configure VPN server
+grep -l -r -e "TLS Web Server Authentication" "${EASYRSA_PKI}/issued" \
+| sed -e "s/^.*\///;s/\.\w*$//" \
+| while read VPN_ID
+do
+VPN_CONF="/etc/openvpn/${VPN_ID}.conf"
+VPN_CERT="$(openssl x509 -in "${EASYRSA_PKI}/issued/${VPN_ID}.crt")"
+VPN_KEY="$(cat "${EASYRSA_PKI}/private/${VPN_ID}.key")"
+cat << EOF > "${VPN_CONF}"
+verb 3
+user nobody
+group nogroup
+dev ${VPN_DEV}
+port 1194
+proto udp
+server ${VPN_POOL}
+topology subnet
+client-to-client
+keepalive 10 120
+persist-tun
+persist-key
+push "dhcp-option DNS ${VPN_DNS}"
+push "dhcp-option DOMAIN ${VPN_DOMAIN}"
+push "redirect-gateway def1"
+push "persist-tun"
+push "persist-key"
+<dh>${NL}${DH_KEY}${NL}</dh>
+<tls-crypt>${NL}${TC_KEY}${NL}</tls-crypt>
+<ca>${NL}${CA_CERT}${NL}</ca>
+<cert>${NL}${VPN_CERT}${NL}</cert>
+<key>${NL}${VPN_KEY}${NL}</key>
+EOF
+chmod "u=rw,g=,o=" "${VPN_CONF}"
+done
+service openvpn restart
+</code>
+
+See also: [[docs:guide-user:services:vpn:openvpn:extras#instance_management|Instance management]], [[docs:guide-user:services:vpn:openvpn:extras#dual-stack_gateway|Dual-stack gateway]]
+
+==== 4. 客户端的配置文件(profiles) ====
+为VPN客户端生成配置文件(profiles)。 如果需要，也可以设置 [[docs:guide-user:services:ddns:client|DDNS client]]。 
+
+<code bash>
+# Fetch WAN IP address
+source /lib/functions/network.sh
+network_find_wan NET_IF
+network_get_ipaddr VPN_SERV "${NET_IF}"
+
+# Fetch FQDN from DDNS client
+VPN_FQDN="$(uci -q get "$(uci -q show ddns \
+| sed -n -e "/\.enabled='1'$/s//.lookup_host/p" \
+| sed -n -e "1p")")"
+if [ -n "${VPN_FQDN}" ]
+then
+VPN_SERV="${VPN_FQDN}"
+fi
+
+# Configuration parameters
+VPN_CONF="/etc/openvpn/vpnserver.conf"
+VPN_PORT="$(sed -n -e "/^port\s/s///p" "${VPN_CONF}")"
+VPN_PROTO="$(sed -n -e "/^proto\s/s///p" "${VPN_CONF}")"
+VPN_DEV="$(sed -n -e "/^dev\s/s///p" "${VPN_CONF}")"
+EASYRSA_PKI="/etc/easy-rsa/pki"
+TC_KEY="$(sed -e "/^#/d;/^\w/N;s/\n//" "${EASYRSA_PKI}/tc.pem")"
+CA_CERT="$(openssl x509 -in "${EASYRSA_PKI}/ca.crt")"
+NL=$'\n'
+
+# Generate VPN client profiles
+grep -l -r -e "TLS Web Client Authentication" "${EASYRSA_PKI}/issued" \
+| sed -e "s/^.*\///;s/\.\w*$//" \
+| while read VPN_ID
+do
+VPN_CONF="/etc/openvpn/${VPN_ID}.ovpn"
+VPN_CERT="$(openssl x509 -in "${EASYRSA_PKI}/issued/${VPN_ID}.crt")"
+VPN_KEY="$(cat "${EASYRSA_PKI}/private/${VPN_ID}.key")"
+cat << EOF > "${VPN_CONF}"
+verb 3
+dev ${VPN_DEV%%[0-9]*}
+nobind
+client
+remote ${VPN_SERV} ${VPN_PORT} ${VPN_PROTO}
+auth-nocache
+remote-cert-tls server
+<tls-crypt>${NL}${TC_KEY}${NL}</tls-crypt>
+<ca>${NL}${CA_CERT}${NL}</ca>
+<cert>${NL}${VPN_CERT}${NL}</cert>
+<key>${NL}${VPN_KEY}${NL}</key>
+EOF
+chmod "u=rw,g=,o=" "${VPN_CONF}"
+done
+ls /etc/openvpn/*.ovpn
+</code>
+
+Perform OpenWrt [[docs:guide-user:troubleshooting:backup_restore|backup]].
+Extract client profiles from the archive and import them to your clients.
+
+See also: [[docs:guide-user:services:vpn:openvpn:extras#client_fixes|Client fixes]], [[docs:guide-user:services:vpn:openvpn:extras#recommended_clients|Recommended clients]]
+===== 测试 =====
+建立VPN连接。检查客户端的流量全部经过VPN服务器的网关。
+
+<code bash>
+traceroute openwrt.org
+traceroute6 openwrt.org
+</code>
+
+检查客户端的公网IP地址：  * [[https://ipleak.net/]]
+
+确保在客户端一侧没有DNS leak。  * [[https://dnsleaktest.com/]]
+
+Delegate a public IPv6 prefix to VPN6 network to use IPv6 by default.  * [[https://ipv6-test.com/]]
+
+===== Troubleshooting =====
+Collect and analyze the following information.
+
+<code bash>
+# Restart services
+service log restart; service openvpn restart; sleep 10
+
+# Log and status
+logread -e openvpn; netstat -l -n -p | grep -e openvpn
+
+# Runtime configuration
+pgrep -f -a openvpn
+ip address show; ip route show table all
+ip rule show; ip -6 rule show; iptables-save; ip6tables-save
+
+# Persistent configuration
+uci show network; uci show firewall; uci show openvpn
+head -n -0 /etc/openvpn/*.conf
+</code>

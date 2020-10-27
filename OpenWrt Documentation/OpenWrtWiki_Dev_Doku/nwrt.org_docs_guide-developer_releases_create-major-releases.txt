@@ -1,0 +1,34 @@
+====== How to create a major release ======
+
+Here is an example how to create the major release 19.07.
+
+  - **main repo** create a branch **openwrt-19.07**
+  - create the ** openwrt-19.07** on packages, routing, telephony, 
+
+
+===== Create a branch openwrt-19.07  =====
+
+First create the release branch on
+
+  * source.git (main repo)
+  * package.git
+  * routing.git
+  * telephony.git
+  * lucy.git
+
+===== Create a commit changing the defaults =====
+
+==== feeds.conf.default: ====
+src-git packages https://git.lede-project.org/feed/packages.git;openwrt-19.07
+
+==== include/version.mk: ====
+  VERSION_NUMBER = 19.07-SNAPSHOT
+  VERSION_REPO = "http://downloads.lede-project.org/releases/19.07-SNAPSHOT"
+
+==== package/base-files/image-config.in ====
+  VERSION_REPO:
+    default: http://downloads.lede-project.org/releases/19.07-SNAPSHOT
+
+TODO: put this patching step into maketag.sh (https://github.com/KanjiMonster/maintainer-tools)
+
+    

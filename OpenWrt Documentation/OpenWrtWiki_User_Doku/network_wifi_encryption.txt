@@ -1,0 +1,147 @@
+====== Configure Wi-Fi encryption ======
+OpenWrt supports WPA/WPA2 PSK ("WPA Personal"), 802.11i ("WPA Enterprise") and WEP encryption.
+The used encryption protocol is defined per network in the ''wifi-iface'' sections of the wireless configuration.
+
+All encryption settings can also be changed via the [[doc:howto:LuCI]] (Network > Wi-Fi).
+
+
+===== WPA encryption =====
+<color red>//**Only WPA2 is secure**; 1st gen WPA is not//</color>
+
+==== Broadcom proprietary Wi-Fi ====
+For Broadcom wireless chips using the proprietary driver you have to install the nas package.
+
+<code bash>
+opkg update
+opkg install nas
+</code>
+
+==== Atheros and generic mac80211 Wi-Fi ====
+For Atheros and mac80211 supported wireless chips, the //wpad//, //hostapd// or //wpa_supplicant// package is required.
+There are several WPA packages with different [[http://www.fixithere.net/bt-customer-services/how-to-change-bt-wi-fi-password/|support]] options available.
+
+The table below outlines the features supported by the packages and since which OpenWrt version they're available.
+
+^ Package ^ AP support ^ Client support ^ WPA Enterprise ^ OpenWrt Version ^
+| wpad | yes | yes | yes | 10.03+ |
+| wpad-mini **(recommended)** | yes | yes | no | 10.03+ |
+| hostapd | yes | no | yes | 7.06+ |
+| hostapd-mini | yes | no | no | 8.09+ |
+| wpa-supplicant | no | yes | yes | 7.06+ |
+| wpa-supplicant-mini | no | yes | no | 8.09+ |
+
+If not installed yet, choose the appropriate package for the desired configuration.
+
+<code bash>
+opkg update
+opkg install wpad-mini
+</code>
+
+==== Configure WPA (PSK) ====
+Configure WPA (PSK) encryption using UCI.
+
+<code bash>
+uci set wireless.@wifi-iface[0].encryption=psk
+uci set wireless.@wifi-iface[0].key="your_password"
+uci commit wireless
+wifi
+</code>
+
+:!: The length must be between 8 and 63 characters. If the key length is 64 characters, it is treated as hex encoded.
+
+==== Configure WPA2 (PSK) ====
+Configure WPA2 (PSK) encryption using UCI.
+
+<code bash>
+uci set wireless.@wifi-iface[0].encryption=psk2
+uci set wireless.@wifi-iface[0].key="your_password"
+uci commit wireless
+wifi
+</code>
+
+:!: The length must be between 8 and 63 characters. If the key length is 64 characters, it is treated as hex encoded.
+
+==== Configure WPA2 Enterprise (EAP-TLS with external RADIUS server) ====
+:!: The default ''-mini'' packages for Atheros hardware will not work with Enterprise mode. (See the [[#atheros.and.generic.mac80211.wifi|table above]].)
+
+The example below defines WPA2 Enterprise encryption in AP mode with authentication against an external RADIUS server at 192.168.1.200, port 1812.
+
+<code bash>
+uci set wireless.@wifi-iface[0].encryption=wpa2
+uci set wireless.@wifi-iface[0].key="shared_secret"
+uci set wireless.@wifi-iface[0].server=192.168.1.200
+uci set wireless.@wifi-iface[0].port=1812
+uci commit wireless
+wifi
+</code>
+
+==== Configure WPA2 Enterprise Client, PEAP-GTC using One Time Password (OTP) ====
+:!: The default ''-mini'' packages for Atheros hardware will not work with Enterprise mode. (See the [[#atheros.and.generic.mac80211.wifi|table above]].)
+
+  *Enter the following:
+<code bash>
+uci set wireless.@wifi-iface[0].encryption=wpa2
+uci set wireless.@wifi-iface[0].mode="sta"
+uci set wireless.@wifi-iface[0].ssid="SET_AS_NEEDED"
+uci set wireless.@wifi-iface[0].encryption=wpa2+ccmp
+uci set wireless.@wifi-iface[0].eap_type=peap
+uci set wireless.@wifi-iface[0].auth=gtc
+uci set wireless.@wifi-iface[0].identity="SET_AS_NEEDED"
+uci commit wireless
+wifi
+</code>
+  *Modify the generated wpa_supplicant.conf file in the /var/run folder to remove the //password=""// line using your favorite editor.
+  *Enter the following:
+<code bash>
+wpa_cli -p /var/run/wpa_supplicant-wlan0
+>status
+</code>
+  *note the id of your interface (usually 0 in single interface systems)
+  *Enter the following at the wpa_cli prompt
+<code bash>
+>reconfigure
+>reassociate
+</code>
+  *When prompted for you OTP PIN enter the following at the wpa_cli prompt (if necessary replace the //0// with your desired interface id):
+<code bash>
+>otp 0 YOUR_PASSWORD_HERE
+</code>
+  
+
+===== WEP encryption (NOT recommended) =====
+Some notes for the WEP key format:
+
+  * The format for the WEP key for the key1 option is HEX.
+If you wish to use raw hex keys then you can skip to the UCI commands paragraph below.  Raw hex keys have 10 hex digits (''0''..''9'', ''a''..''f'') for 64-bit WEP keys and 26 hex digits for 128-bit WEP keys.
+
+If you do not wish to use raw hex keys then follow the instructions below.
+
+  * The length of a 64bit WEP key must be exact 5 characters
+  * The length of a 128bit WEP key must be exact 13 characters
+  * Allowed characters are letters (upper and lower case) and numbers
+
+Generate a 64bit WEP key:
+
+<code bash>
+# echo -n 'awerf' | hexdump -e '5/1 "%02x" "\n"'
+6177657266
+</code>
+
+Generate a 128bit WEP key:
+
+<code bash>
+# echo -n 'xdhdkkewioddd' | hexdump -e '13/1 "%02x" "\n"'
+786468646b6b6577696f646464
+</code>
+
+Now use UCI to configure WEP encryption with the hex key you just generated.
+
+<code bash>
+uci set wireless.@wifi-iface[0].encryption=wep
+uci set wireless.@wifi-iface[0].key1="786468646b6b6577696f646464"
+uci set wireless.@wifi-iface[0].key=1
+uci commit wireless
+wifi
+</code>
+
+You can configure up to four WEP keys.

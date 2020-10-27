@@ -1,0 +1,68 @@
+====== 使用SDK ======
+[[wp>Software_development_kit|SDK]] 是个预编译[[wp>Toolchain|工具链]], 它被设计用于[[wp>Cross_compile|交叉编译]]特定的软件包, 而不用从头编译整个系统.
+
+可以利用SDK来完成:
+  * 为特定的发布版编译自定义软件, 并保证二进制代码和功能的兼容性
+  * 为特定的发布版编译某个软件的新版本
+  * 使用自定义补丁或其他功能来重新编译现有的软件包
+
+
+=== 先决条件 ===
+
+SDK需要与基础构建系统相同的先决条件, 请参考[[docs:guide-developer:build-system:install-buildsystem|Build system – Installation]], 并安装必要的软件, 以便使用SDK进行软件包的构建.
+
+注: 在某些环境下, 需要安装**ccache**包
+
+:!: 请使用普通用户来完成所有的操作, 不要使用root用户或sudo!\\ 
+:!: 请不要在绝对路径中有空格的目录中进行构建\\ 
+===== 获取SDK =====
+可以下载预编译SDK, 也可以从源码编译. 源码编译很简单, 只需要开启menuconfig的选项: ''Build the OpenWrt SDK'' (CONFIG_SDK).
+当为你的设备下载固件镜像的相同目录中, 可以找到预编译SDK.
+
+==== 下载 ====
+  * [[https://downloads.openwrt.org/snapshots/targets/| Trunk SDK]] ->  [[docs:platforms:start|Platforms]] -> Supplementary Files -> openwrt-sdk-<Platform>_gcc-<version>_musl.Linux-x86_64.tar.xz
+  * [[https://downloads.openwrt.org/releases/18.06.2/targets/| 18.06.2]] -> [[docs:platforms:start|Platforms]] -> Supplementary Files -> openwrt-sdk-<Platform>_gcc-<version>_musl.Linux-x86_64.tar.xz
+  * [[https://downloads.openwrt.org/releases/17.01.6/targets/| LEDE 17.01.6]] -> [[docs:platforms:start|Platforms]] -> Supplementary Files -> lede-sdk-17.01.6-<Platform>_gcc-<version>_musl-<version>.Linux-x86_64.tar.xz
+
+
+==== Package Feeds ====
+解压SDK压缩包之后, 可以编辑''feeds.conf.default''文件来添加自己的package feeds. 默认情况下, 里面包含了SDK构建时会用到的feeds. 可以添加自己的feeds(本地或远程), 就像使用buildroot一样.  如果只是重新编译额外的软件包, 则不需要进行这步操作.
+
+==== 加载软件包列表 ====
+
+ * 使用 ''./scripts/feeds update -a'' 命令来获取和更新软件包的定义信息.
+ * 软件包定义信息更新完成后, 使用''./scripts/feeds install <packagename>'' 来准备软件包和它所需的依赖.
+
+''./scripts/feeds install -a'' 可以将所有软件包置为可用, 再次和buildroot一样.
+
+===== 用法 =====
+
+==== 选择软件包 ====
+
+在SDK的目录下打开一个终端, 然后使用''make menuconfig''命令打开SDK的菜单.  SDK menuconfig 系统和buildroot一样.  在上面有说明, 也可用通过''?''键获取帮助.
+
+//也许//你会想要禁用掉一些默认配置, 因为它们会构建所有的软件包.  
+进入 ''Global Build Settings'' 在子菜单中, 取消/排除以下选项:
+  * ''Select all target specific packages by default''
+  * ''Select all kernel module packages by default''
+  * ''Select all userspace packages by default''
+
+还是在菜单中, 找到你想要构建的软件包, 按"m"来选中它, 这样也会包含所有的依赖, 而且也能看到它们在菜单中都被标识为"<M>". 也可以选择多个软件包.
+
+保存配置并退出菜单. 
+
+==== 编译软件包 ====
+建好Makefile之后, 就可以使用常规的buildroot命令:
+
+  * ''make package///example///download'' - 下载 //example// 的源码
+  * ''make package///example///prepare'' - 提取源码, 如果需要的话再下载补丁源码并使用
+  * ''make package///example///compile'' - 编译 //example//, 如果需要的话,先进行download和prepare
+  * ''make package///example///clean'' - 清除源码
+  * ''make package/index'' - 构建仓库索引, 将输出目录变成一个本地的//opkg//源
+
+或者直接运行 ''make'' 来构建所有被选中的东西.  (可以用''make -j5'' 来加快构建, 或选择合适你的宿主机的参数)
+
+编译完成后, 生成的.ipk会被移动到SDK的解压目录的 bin/packages 和 bin/targets 目录中.
+
+===== 故障 =====
+:!: 某些版本的SDK会有bugs....

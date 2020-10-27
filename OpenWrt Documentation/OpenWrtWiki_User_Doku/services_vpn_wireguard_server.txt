@@ -1,0 +1,131 @@
+====== WireGuard server ======
+{{section>meta:infobox:howto_links#cli_skills&noheader&nofooter&noeditbutton}}
+
+===== Introduction =====
+  * This how-to describes the method for setting up [[wp>WireGuard|WireGuard]] server on OpenWrt.
+  * Follow [[docs:guide-user:services:vpn:wireguard:client|WireGuard client]] for client setup and [[docs:guide-user:services:vpn:wireguard:extras|WireGuard extras]] for additional tuning.
+
+===== Goals =====
+  * Encrypt your internet connection to enforce security and privacy.
+    * Prevent data leak and traffic spoofing on the client side.
+  * Bypass regional restrictions using commercial providers.
+    * Escape client side content filters and internet censorship.
+  * Access your LAN services remotely without port forwarding.
+
+===== Instructions =====
+==== 1. Preparation ====
+Set up [[docs:guide-user:services:ddns:client|DDNS client]] if required.
+Install the packages and specify the VPN server configuration parameters.
+
+<code bash>
+# Install packages
+opkg update
+opkg install wireguard
+
+# Configuration parameters
+WG_IF="vpn"
+WG_PORT="51820"
+WG_ADDR="192.168.9.1/24"
+WG_ADDR6="fdf1:e8a1:8d3f:9::1/64"
+</code>
+
+==== 2. Key management ====
+Generate server keys and a pre-shared key.
+[[docs:guide-user:services:vpn:wireguard:start#key_management|Exchange]] the keys between the server and the client using [[docs:guide-user:troubleshooting:backup_restore|file transfer]] or copy-paste.
+
+<code bash>
+# Generate keys
+umask go=
+wg genkey | tee wgserver.key | wg pubkey > wgserver.pub
+wg genpsk > wgserver.psk
+
+# Server private key
+WG_KEY="$(cat wgserver.key)"
+
+# Pre-shared key
+WG_PSK="$(cat wgserver.psk)"
+
+# Client public key
+WG_PUB="$(cat wgclient.pub)"
+</code>
+
+==== 3. Firewall ====
+Consider VPN network as private and assign VPN interface to LAN zone to minimize firewall setup.
+Allow access to VPN server from WAN zone.
+
+<code bash>
+# Configure firewall
+uci rename firewall.@zone[0]="lan"
+uci rename firewall.@zone[1]="wan"
+uci del_list firewall.lan.network="${WG_IF}"
+uci add_list firewall.lan.network="${WG_IF}"
+uci -q delete firewall.wg
+uci set firewall.wg="rule"
+uci set firewall.wg.name="Allow-WireGuard"
+uci set firewall.wg.src="wan"
+uci set firewall.wg.dest_port="${WG_PORT}"
+uci set firewall.wg.proto="udp"
+uci set firewall.wg.target="ACCEPT"
+uci commit firewall
+/etc/init.d/firewall restart
+</code>
+
+==== 4. Network ====
+Set up VPN interface and peers.
+
+<code bash>
+# Configure network
+uci -q delete network.${WG_IF}
+uci set network.${WG_IF}="interface"
+uci set network.${WG_IF}.proto="wireguard"
+uci set network.${WG_IF}.private_key="${WG_KEY}"
+uci set network.${WG_IF}.listen_port="${WG_PORT}"
+uci add_list network.${WG_IF}.addresses="${WG_ADDR}"
+uci add_list network.${WG_IF}.addresses="${WG_ADDR6}"
+
+# Add VPN peers
+uci -q delete network.wgclient
+uci set network.wgclient="wireguard_${WG_IF}"
+uci set network.wgclient.public_key="${WG_PUB}"
+uci set network.wgclient.preshared_key="${WG_PSK}"
+uci add_list network.wgclient.allowed_ips="${WG_ADDR%.*}.2/32"
+uci add_list network.wgclient.allowed_ips="${WG_ADDR6%:*}:2/128"
+uci commit network
+/etc/init.d/network restart
+</code>
+
+===== Testing =====
+Establish the VPN connection.
+Verify your client traffic is routed via VPN gateway.
+
+<code bash>
+traceroute openwrt.org
+traceroute6 openwrt.org
+</code>
+
+Check your client public IP addresses.
+  * [[https://ipleak.net/]]
+Make sure there is no DNS leak on the client side.
+  * [[https://dnsleaktest.com/]]
+Delegate a public IPv6 prefix to VPN6 network to use IPv6 by default.
+  * [[https://ipv6-test.com/]]
+
+===== Troubleshooting =====
+Collect and analyze the following information.
+
+<code bash>
+# Restart services
+/etc/init.d/log restart; /etc/init.d/network restart; sleep 10
+
+# Log and status
+logread -e vpn; netstat -l -n -p | grep -e "^udp\s.*\s-$"
+
+# Runtime configuration
+pgrep -f -a wg; wg show; wg showconf vpn
+ip address show; ip route show table all
+ip rule show; ip -6 rule show; iptables-save; ip6tables-save
+
+# Persistent configuration
+uci show network; uci show firewall
+grep -v -e "^#" -e "^$" /etc/crontabs/root
+</code>

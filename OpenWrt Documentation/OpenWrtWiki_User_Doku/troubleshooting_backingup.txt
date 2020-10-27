@@ -1,0 +1,17 @@
+FIXME **This page is not fully translated, yet. Please help completing the translation.**\\ //(remove this paragraph once the translation is finished)//
+
+====== 备份你的路由器配置 ======
+
+在改动路由器配置之前做备份是个好主意，它能方便你返回到旧的配置上。制作备份:
+
+  - Optional, if you have custom configurations outside /etc/config: Go to **System > Backup/Flash Firmware > Configuration** tab. This will allow you to add your custom configuration files to the [[docs:guide-user:base-system:notuci.config#etcsysupgradeconf|/etc/sysupgrade.conf]] file that is read by sysupgrade when it is backing up files. Click “Submit” when done editing.
+  - 进入 **System->Backup\Flash Firmware**
+  - 单击“Generate Archive”将配置保存到你的电脑上。文件名的格式为“backup-LEDE-YYYY-MM-DD.tar.gz”.
+  
+===== 恢复设置 =====
+
+可以通过预先保存的备份文件来使路由器恢复到旧的状态上:
+
+  - 进入 **System->Backup\Flash Firmware**
+  - 单击**Restore backup:**旁的"Choose file"按钮，选择所需的备份文件。
+  - 单击"Upload Archive"按钮. 之前备份的设置就会被恢复了。

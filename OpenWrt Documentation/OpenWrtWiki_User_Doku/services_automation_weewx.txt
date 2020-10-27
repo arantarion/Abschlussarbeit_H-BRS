@@ -1,0 +1,13 @@
+====== Weather station control with WeeWX ======
+===== What is WeeWX =====
+{{gh>https://github.com/weewx/weewx/blob/master/README}}
+
+===== Installation and configuration =====
+See [[https://github.com/weewx/weewx/wiki/weewx-on-openwrt]] on how to install and configure WeeWX on OpenWrt.
+
+===== Links =====
+  * [[http://weewx.com/]]
+  * [[https://github.com/weewx/weewx]]
+  * [[https://github.com/weewx/weewx/wiki]]
+
+

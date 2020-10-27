@@ -1,0 +1,1224 @@
+====== Configurando repetidores Wi-Fi com vários SSIDs ======
+ --- //[[og.openwrt@gmail.com|a humbly committed student]] 2019/01/19 10:31//
+
+O objetivo deste artigo é mostrar aos usuários como configurar um roteador principal e vários pontos de acesso para repetir vários SSIDs por meio do uso de comutadores VLAN marcados.
+
+Este exemplo contém um roteador principal que fornecerá os SSIDs Wi-Fi e o serviço DHCP e dois roteadores configurados como pontos de acesso. Neste exemplo, o roteador Linksys WRT 3200acm com OpenWrt 18.01 foi usado para todos os dispositivos.
+
+Esses procedimentos podem ser realizados principalmente na GUI LuCi, mas, como não consigo anexar capturas de tela, eu fiz a configuração através dos arquivos de configuração dos roteadores localizados em /etc/config durante uma sessão SSH em cada roteador.
+
+Recomenda-se familiarizar-se com os seguintes artigos do wiki para executar esta tarefa.
+
+  * [[docs:guide-user:network:vlan:creating_virtual_switches|Como fazer: Criando um switch virtual adicional em um roteador doméstico típico]]
+  * [[docs:guide-user:network:wifi:relay_configuration|Configuração de Extensor ou Repetidor ou Ponte Wi-Fi]]
+  * [[docs:guide-user:network:wifi:routedap|AP roteado]]
+  * [[docs:guide-user:network:wifi:mesh:80211s|Rede em malha sem fio baseada em 802.11s]]
+
+===== Cenário de casos de uso =====
+Esta é uma topologia de rede para este exemplo:
+
+[[https://creately.com/diagram/jqvt7mog/XMLuTm22lf8t2ZGA2XqaZx0sSn8%3D|Exemplo de topologia de rede]]
+
+==== Divisão de configuração de Wi-Fi e VLAN ====
+Os SSIDs foram criados e conectados à respectiva interface de rede. Cada interface de rede foi adicionada ao seu próprio ID de VLAN específico.
+
+Os dois pontos de acesso foram configurados para usar a porta WAN para receber a conexão de uplink marcada da porta de interface marcada do roteador/hop anterior. Fiz isso para me permitir utilizar as 4 portas da LAN, o que me deu mais portas para conectar dispositivos.
+
+Torna-se um jogo compatível para garantir que o número de ID da VLAN anexado a cada uma das interfaces Wi-Fi seja consistente em todos os dispositivos, ou seja, privado na VLAN1 (eth0.1), convidado na VLAN3 (eth0.3), ou seja, na VLAN4 (eth0.4) etc. para que cada roteador saiba a existência das VLANs.
+
+Lista de SSIDs de Wi-Fi:
+
+  * Privado: SSID = Magick Mushroom, Jogos
+  * Convidado: SSID = Escravo
+  * Tor: SSID = tor
+
+
+==== Procedimentos de configuração do roteador principal: ====
+
+=== Detalhes do Switch ===
+
+^ VLAN ID      ^ Upstream side:HW switch ↔ eth1 driver^^ Downstream side:HW switch↔physical ports^^^^^
+|      | CPU (eth0)    |  cpu (eth1)        |LAN1|LAN2|LAN3|LAN4|WAN|
+|     1     | tagged     | off        |untagged|untagged|untagged|tagged|off|
+|     2     | off | tagged |off|off|off|off|untagged|
+|     3     | tagged     | off        |off|off|off|tagged|off|
+|     4     | tagged     | off        |off|off|off|tagged|off|
+
+*//Dica: Para determinar a CPU da WAN dos roteadores quando houver várias CPUs listadas, use a GUI Luci e navegue até Rede > Switch e veja qual linha tem a CPU marcada e a WAN sem marcação, juntas, por padrão. Outra maneira é usar a GUI Luci para navegar em Rede > Interfaces e ver qual interface é usada nas Configurações físicas da WAN //
+
+1. Crie VLANs extras para corresponder à tabela acima. A interface LAN4 foi configurada para ser identificada com números de ID da VLAN. A LAN4 está retransmitindo o uplink para o próximo roteador (o roteador de médio porte).
+<hidden onHidden="/etc/config/network" onVisible="Clique para ver menos"><code>
+config interface 'loopback'
+	option ifname 'lo'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+
+config globals 'globals'
+	option ula_prefix 'fdfb:7e04:aca7::/48'
+
+config interface 'lan'
+	option type 'bridge'
+	option ifname 'eth0.1'
+	option proto 'static'
+	option netmask '255.255.255.0'
+	option ip6assign '60'
+	option ipaddr '192.168.0.1'
+	option gateway '192.168.0.1'
+	option broadcast '192.168.0.255'
+	option dns '8.8.8.8'
+
+config interface 'wan'
+	option ifname 'eth1.2'
+	option proto 'dhcp'
+	option hostname 'infraverse.network'
+
+config interface 'wan6'
+	option ifname 'eth1.2'
+	option proto 'dhcpv6'
+
+config switch
+	option name 'switch0'
+	option reset '1'
+	option enable_vlan '1'
+
+config switch_vlan
+	option device 'switch0'
+	option vlan '1'
+	option vid '1'
+	option ports '0t 1 2 3 5t'
+
+config switch_vlan
+	option device 'switch0'
+	option vlan '2'
+	option ports '4 6t'
+	option vid '2'
+
+config interface 'slave'
+	option type 'bridge'
+	option proto 'static'
+	option ipaddr '172.16.0.1'
+	option netmask '255.255.0.0'
+	option ifname 'eth0.3 radio1'
+	option gateway '172.16.0.1'
+	option broadcast '172.16.255.255'
+
+config interface 'tor'
+	option proto 'static'
+	option ipaddr '10.1.1.1'
+	option netmask '255.0.0.0'
+	option type 'bridge'
+	option ifname 'eth0.4'
+
+config switch_vlan
+	option device 'switch0'
+	option vlan '3'
+	option vid '3'
+	option ports '0t 5t'
+
+config switch_vlan
+	option device 'switch0'
+	option vlan '4'
+	option vid '4'
+	option ports '0t 5t'
+
+</code></hidden>
+
+2. Crie interfaces Wi-Fi. 
+
+:!: Certifique-se de tornar os nomes e senhas SSID idênticos aos configurados no roteador principal
+
+<hidden onHidden="/etc/config/wireless" onVisible="Clique para ver menos"><code>
+config wifi-device 'radio0'
+	option type 'mac80211'
+	option channel '36'
+	option hwmode '11a'
+	option path 'soc/soc:pcie/pci0000:00/0000:00:01.0/0000:01:00.0'
+	option htmode 'VHT80'
+	option country 'US'
+	option legacy_rates '1'
+
+config wifi-iface 'default_radio0'
+	option device 'radio0'
+	option network 'lan'
+	option mode 'ap'
+	option ssid 'Gaming'
+	option encryption 'psk-mixed'
+	option key 'supersecretpassword'
+	option wpa_disable_eapol_key_retries '1'
+
+config wifi-device 'radio1'
+	option type 'mac80211'
+	option hwmode '11g'
+	option path 'soc/soc:pcie/pci0000:00/0000:00:02.0/0000:02:00.0'
+	option country 'US'
+	option legacy_rates '1'
+	option distance '7.7'
+	option channel '11'
+	option htmode 'HT20'
+
+config wifi-iface 'default_radio1'
+	option device 'radio1'
+	option network 'lan'
+	option mode 'ap'
+	option ssid 'Magick Mushroom'
+	option encryption 'psk-mixed'
+	option key 'supersecretpassword'
+	option wpa_group_rekey '0'
+
+config wifi-iface
+	option device 'radio1'
+	option mode 'ap'
+	option encryption 'none'
+	option ssid 'Slave'
+	option isolate '1'
+	option network 'slave'
+
+config wifi-iface
+	option device 'radio1'
+	option mode 'ap'
+	option encryption 'none'
+	option ssid 'tor'
+	option network 'tor'
+
+</code></hidden>
+
+3. Crie regras de firewall
+<hidden onHidden="/etc/config/firewall" onVisible="Clique para ver menos"><code>
+
+config defaults
+	option syn_flood '1'
+	option input 'ACCEPT'
+	option output 'ACCEPT'
+	option forward 'REJECT'
+
+config zone
+	option name 'lan'
+	list network 'lan'
+	option input 'ACCEPT'
+	option output 'ACCEPT'
+	option forward 'ACCEPT'
+
+config zone
+	option name 'wan'
+	list network 'wan'
+	list network 'wan6'
+	option input 'REJECT'
+	option output 'ACCEPT'
+	option forward 'REJECT'
+	option masq '1'
+	option mtu_fix '1'
+
+config rule
+	option name 'Allow-DHCP-Renew'
+	option src 'wan'
+	option proto 'udp'
+	option dest_port '68'
+	option target 'ACCEPT'
+	option family 'ipv4'
+
+config rule
+	option name 'Allow-Ping'
+	option src 'wan'
+	option proto 'icmp'
+	option icmp_type 'echo-request'
+	option family 'ipv4'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-IGMP'
+	option src 'wan'
+	option proto 'igmp'
+	option family 'ipv4'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-DHCPv6'
+	option src 'wan'
+	option proto 'udp'
+	option src_ip 'fc00::/6'
+	option dest_ip 'fc00::/6'
+	option dest_port '546'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-MLD'
+	option src 'wan'
+	option proto 'icmp'
+	option src_ip 'fe80::/10'
+	list icmp_type '130/0'
+	list icmp_type '131/0'
+	list icmp_type '132/0'
+	list icmp_type '143/0'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-ICMPv6-Input'
+	option src 'wan'
+	option proto 'icmp'
+	list icmp_type 'echo-request'
+	list icmp_type 'echo-reply'
+	list icmp_type 'destination-unreachable'
+	list icmp_type 'packet-too-big'
+	list icmp_type 'time-exceeded'
+	list icmp_type 'bad-header'
+	list icmp_type 'unknown-header-type'
+	list icmp_type 'router-solicitation'
+	list icmp_type 'neighbour-solicitation'
+	list icmp_type 'router-advertisement'
+	list icmp_type 'neighbour-advertisement'
+	option limit '1000/sec'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-ICMPv6-Forward'
+	option src 'wan'
+	option dest '*'
+	option proto 'icmp'
+	list icmp_type 'echo-request'
+	list icmp_type 'echo-reply'
+	list icmp_type 'destination-unreachable'
+	list icmp_type 'packet-too-big'
+	list icmp_type 'time-exceeded'
+	list icmp_type 'bad-header'
+	list icmp_type 'unknown-header-type'
+	option limit '1000/sec'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-IPSec-ESP'
+	option src 'wan'
+	option dest 'lan'
+	option proto 'esp'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-ISAKMP'
+	option src 'wan'
+	option dest 'lan'
+	option dest_port '500'
+	option proto 'udp'
+	option target 'ACCEPT'
+
+config include
+	option path '/etc/firewall.user'
+
+config include 'miniupnpd'
+	option type 'script'
+	option path '/usr/share/miniupnpd/firewall.include'
+	option family 'any'
+	option reload '1'
+
+config zone
+	option name 'slave'
+	option forward 'REJECT'
+	option output 'ACCEPT'
+	option network 'slave'
+	option input 'REJECT'
+
+config rule
+	option target 'ACCEPT'
+	option proto 'tcp udp'
+	option dest_port '53'
+	option name 'Slave dns'
+	option src 'slave'
+
+config rule
+	option target 'ACCEPT'
+	option proto 'udp'
+	option dest_port '67-68'
+	option name 'slave dhcp'
+	option src 'slave'
+
+config zone
+	option name 'tor'
+	option forward 'REJECT'
+	option output 'ACCEPT'
+	option network 'tor'
+	option input 'ACCEPT'
+	option syn_flood '1'
+	option conntrack '1'
+
+config rule
+	option src 'tor'
+	option proto 'udp'
+	option dest_port '67'
+	option target 'ACCEPT'
+	option name 'tor DHCP'
+
+config rule
+	option src 'tor'
+	option proto 'tcp'
+	option dest_port '9040'
+	option target 'ACCEPT'
+	option name 'tor transport'
+
+config rule
+	option src 'tor'
+	option proto 'udp'
+	option dest_port '9053'
+	option target 'ACCEPT'
+	option name 'tor dns'
+
+config redirect
+	option name 'Redirect-Tor-Traffic'
+	option src 'tor'
+	option src_dip '!10.1.1.1'
+	option dest_port '9040'
+	option proto 'tcp'
+	option target 'DNAT'
+
+config redirect
+	option name 'Redirect-Tor-DNS'
+	option src 'tor'
+	option src_dport '53'
+	option dest_port '9053'
+	option proto 'udp'
+	option target 'DNAT'
+
+config forwarding
+	option dest 'wan'
+	option src 'lan'
+
+config forwarding
+	option dest 'wan'
+	option src 'tor'
+
+config forwarding
+	option dest 'tor'
+	option src 'wan'
+
+config forwarding
+	option dest 'wan'
+	option src 'slave'
+
+</code></hidden>
+
+4. Crie configurações DHCP
+<hidden onHidden="/etc/config/dhcp" onVisible="Clique para ver menos"><code>
+config dnsmasq
+	option domainneeded '1'
+	option localise_queries '1'
+	option rebind_protection '1'
+	option rebind_localhost '1'
+	option local '/lan/'
+	option domain 'lan'
+	option expandhosts '1'
+	option authoritative '1'
+	option readethers '1'
+	option leasefile '/tmp/dhcp.leases'
+	option resolvfile '/tmp/resolv.conf.auto'
+	option nonwildcard '1'
+	option localservice '1'
+	option serversfile '/tmp/adb_list.overall'
+        list server '8.8.8.8'
+        list server '8.8.4.4'
+
+config dhcp 'lan'
+	option interface 'lan'
+	option leasetime '12h'
+	option dhcpv6 'server'
+	option ra 'server'
+	option start '2'
+	option limit '254'
+	option ra_management '1'
+
+config dhcp 'slave'
+	option leasetime '12h'
+	option interface 'slave'
+	option start '2'
+	option limit '254'
+
+config dhcp 'tor'
+	option leasetime '12h'
+	option interface 'tor'
+	option start '2'
+	option limit '254'
+
+config dhcp 'wan'
+	option interface 'wan'
+	option ignore '1'
+
+config odhcpd 'odhcpd'
+	option maindhcp '0'
+	option leasefile '/tmp/hosts/odhcpd'
+	option leasetrigger '/usr/sbin/odhcpd-update'
+	option loglevel '4'
+
+</code></hidden>
+
+=== 2º, AP de médio alcance ===
+
+=== Detalhes do Switch ===
+
+^ VLAN ID      ^ Upstream side:HW switch ↔ eth1 driver^^ Downstream side:HW switch↔physical ports^^^^^
+|      | CPU (eth0)    |  cpu (eth1)        |LAN1|LAN2|LAN3|LAN4|WAN|
+| 1     | tagged     | tagged     |untagged|untagged|untagged|tagged|tagged|
+| 2     | off | off        |off|off|off|off|off|
+| 3     | tagged     | tagged     |off|off|off|tagged|tagged|
+| 4     | tagged     | tagged     |off|off|off|tagged|tagged|
+
+1. Crie VLANs extras para corresponder à tabela acima. As interfaces WAN e LAN4 foram configuradas para serem marcadas com números de ID da VLAN. A WAN está recebendo o uplink do roteador principal e o LAN4 está retransmitindo o uplink para o próximo roteador (o roteador AP de alcance traseiro).
+<hidden onHidden="/etc/config/network" onVisible="Clique para ver menos"><code>
+config interface 'loopback'
+	option ifname 'lo'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+
+config globals 'globals'
+	option ula_prefix 'fdfb:7e04:aca7::/48'
+
+config interface 'lan'
+	option type 'bridge'
+	option ifname 'eth0.1'
+	option proto 'static'
+	option netmask '255.255.255.0'
+	option ip6assign '60'
+	option ipaddr '192.168.0.1'
+	option gateway '192.168.0.1'
+	option broadcast '192.168.0.255'
+	option dns '8.8.8.8'
+
+config interface 'wan'
+	option ifname 'eth1.2'
+	option proto 'dhcp'
+	option hostname 'infraverse.network'
+
+config interface 'wan6'
+	option ifname 'eth1.2'
+	option proto 'dhcpv6'
+
+config switch
+	option name 'switch0'
+	option reset '1'
+	option enable_vlan '1'
+
+config switch_vlan
+	option device 'switch0'
+	option vlan '1'
+	option vid '1'
+	option ports '0t 1 2 3 5t'
+
+config switch_vlan
+	option device 'switch0'
+	option vlan '2'
+	option ports '4 6t'
+	option vid '2'
+
+config interface 'slave'
+	option type 'bridge'
+	option proto 'static'
+	option ipaddr '172.16.0.1'
+	option netmask '255.255.0.0'
+	option ifname 'eth0.3 radio1'
+	option gateway '172.16.0.1'
+	option broadcast '172.16.255.255'
+
+config interface 'tor'
+	option proto 'static'
+	option ipaddr '10.1.1.1'
+	option netmask '255.0.0.0'
+	option type 'bridge'
+	option ifname 'eth0.4'
+
+config switch_vlan
+	option device 'switch0'
+	option vlan '3'
+	option vid '3'
+	option ports '0t 5t'
+
+config switch_vlan
+	option device 'switch0'
+	option vlan '4'
+	option vid '4'
+	option ports '0t 5t'
+
+</code></hidden>
+
+2. Crie interfaces Wi-Fi. 
+
+:!: Certifique-se de tornar os nomes e senhas SSID idênticos aos configurados no roteador principal
+<hidden onHidden="/etc/config/wireless" onVisible="Clique para ver menos"><code>
+config wifi-device 'radio0'
+	option type 'mac80211'
+	option channel '36'
+	option hwmode '11a'
+	option path 'soc/soc:pcie/pci0000:00/0000:00:01.0/0000:01:00.0'
+	option htmode 'VHT80'
+	option country 'US'
+	option legacy_rates '1'
+
+config wifi-iface 'default_radio0'
+	option device 'radio0'
+	option network 'lan'
+	option mode 'ap'
+	option ssid 'Gaming'
+	option encryption 'psk-mixed'
+	option key 'supersecretpassword'
+	option wpa_disable_eapol_key_retries '1'
+
+config wifi-device 'radio1'
+	option type 'mac80211'
+	option hwmode '11g'
+	option path 'soc/soc:pcie/pci0000:00/0000:00:02.0/0000:02:00.0'
+	option country 'US'
+	option legacy_rates '1'
+	option distance '7.7'
+	option channel '11'
+	option htmode 'HT20'
+
+config wifi-iface 'default_radio1'
+	option device 'radio1'
+	option network 'lan'
+	option mode 'ap'
+	option ssid 'Magick Mushroom'
+	option encryption 'psk-mixed'
+	option key 'supersecretpassword'
+	option wpa_group_rekey '0'
+
+config wifi-iface
+	option device 'radio1'
+	option mode 'ap'
+	option encryption 'none'
+	option ssid 'Slave'
+	option isolate '1'
+	option network 'slave'
+
+config wifi-iface
+	option device 'radio1'
+	option mode 'ap'
+	option encryption 'none'
+	option ssid 'tor'
+	option network 'tor'
+
+</code></hidden>
+
+3. Create firewall rules
+<hidden onHidden="/etc/config/firewall" onVisible="Clique para ver menos"><code>
+
+config defaults
+	option syn_flood '1'
+	option input 'ACCEPT'
+	option output 'ACCEPT'
+	option forward 'REJECT'
+
+config zone
+	option name 'lan'
+	list network 'lan'
+	option input 'ACCEPT'
+	option output 'ACCEPT'
+	option forward 'ACCEPT'
+
+config zone
+	option name 'wan'
+	list network 'wan'
+	list network 'wan6'
+	option input 'REJECT'
+	option output 'ACCEPT'
+	option forward 'REJECT'
+	option masq '1'
+	option mtu_fix '1'
+
+config rule
+	option name 'Allow-DHCP-Renew'
+	option src 'wan'
+	option proto 'udp'
+	option dest_port '68'
+	option target 'ACCEPT'
+	option family 'ipv4'
+
+config rule
+	option name 'Allow-Ping'
+	option src 'wan'
+	option proto 'icmp'
+	option icmp_type 'echo-request'
+	option family 'ipv4'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-IGMP'
+	option src 'wan'
+	option proto 'igmp'
+	option family 'ipv4'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-DHCPv6'
+	option src 'wan'
+	option proto 'udp'
+	option src_ip 'fc00::/6'
+	option dest_ip 'fc00::/6'
+	option dest_port '546'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-MLD'
+	option src 'wan'
+	option proto 'icmp'
+	option src_ip 'fe80::/10'
+	list icmp_type '130/0'
+	list icmp_type '131/0'
+	list icmp_type '132/0'
+	list icmp_type '143/0'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-ICMPv6-Input'
+	option src 'wan'
+	option proto 'icmp'
+	list icmp_type 'echo-request'
+	list icmp_type 'echo-reply'
+	list icmp_type 'destination-unreachable'
+	list icmp_type 'packet-too-big'
+	list icmp_type 'time-exceeded'
+	list icmp_type 'bad-header'
+	list icmp_type 'unknown-header-type'
+	list icmp_type 'router-solicitation'
+	list icmp_type 'neighbour-solicitation'
+	list icmp_type 'router-advertisement'
+	list icmp_type 'neighbour-advertisement'
+	option limit '1000/sec'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-ICMPv6-Forward'
+	option src 'wan'
+	option dest '*'
+	option proto 'icmp'
+	list icmp_type 'echo-request'
+	list icmp_type 'echo-reply'
+	list icmp_type 'destination-unreachable'
+	list icmp_type 'packet-too-big'
+	list icmp_type 'time-exceeded'
+	list icmp_type 'bad-header'
+	list icmp_type 'unknown-header-type'
+	option limit '1000/sec'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-IPSec-ESP'
+	option src 'wan'
+	option dest 'lan'
+	option proto 'esp'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-ISAKMP'
+	option src 'wan'
+	option dest 'lan'
+	option dest_port '500'
+	option proto 'udp'
+	option target 'ACCEPT'
+
+config include
+	option path '/etc/firewall.user'
+
+config include 'miniupnpd'
+	option type 'script'
+	option path '/usr/share/miniupnpd/firewall.include'
+	option family 'any'
+	option reload '1'
+
+config zone
+	option name 'slave'
+	option forward 'REJECT'
+	option output 'ACCEPT'
+	option network 'slave'
+	option input 'REJECT'
+
+config rule
+	option target 'ACCEPT'
+	option proto 'tcp udp'
+	option dest_port '53'
+	option name 'Slave dns'
+	option src 'slave'
+
+config rule
+	option target 'ACCEPT'
+	option proto 'udp'
+	option dest_port '67-68'
+	option name 'slave dhcp'
+	option src 'slave'
+
+config zone
+	option name 'tor'
+	option forward 'REJECT'
+	option output 'ACCEPT'
+	option network 'tor'
+	option input 'ACCEPT'
+	option syn_flood '1'
+	option conntrack '1'
+
+config rule
+	option src 'tor'
+	option proto 'udp'
+	option dest_port '67'
+	option target 'ACCEPT'
+	option name 'tor DHCP'
+
+config rule
+	option src 'tor'
+	option proto 'tcp'
+	option dest_port '9040'
+	option target 'ACCEPT'
+	option name 'tor transport'
+
+config rule
+	option src 'tor'
+	option proto 'udp'
+	option dest_port '9053'
+	option target 'ACCEPT'
+	option name 'tor dns'
+
+config redirect
+	option name 'Redirect-Tor-Traffic'
+	option src 'tor'
+	option src_dip '!10.1.1.1'
+	option dest_port '9040'
+	option proto 'tcp'
+	option target 'DNAT'
+
+config redirect
+	option name 'Redirect-Tor-DNS'
+	option src 'tor'
+	option src_dport '53'
+	option dest_port '9053'
+	option proto 'udp'
+	option target 'DNAT'
+
+config forwarding
+	option dest 'wan'
+	option src 'lan'
+
+config forwarding
+	option dest 'wan'
+	option src 'tor'
+
+config forwarding
+	option dest 'tor'
+	option src 'wan'
+
+config forwarding
+	option dest 'wan'
+	option src 'slave'
+
+</code></hidden>
+
+4. Create DHCP configurations
+<hidden onHidden="/etc/config/dhcp" onVisible="Clique para ver menos"><code>
+config dnsmasq
+	option domainneeded '1'
+	option localise_queries '1'
+	option rebind_protection '1'
+	option rebind_localhost '1'
+	option local '/lan/'
+	option domain 'lan'
+	option expandhosts '1'
+	option authoritative '1'
+	option readethers '1'
+	option leasefile '/tmp/dhcp.leases'
+	option resolvfile '/tmp/resolv.conf.auto'
+	option nonwildcard '1'
+	option localservice '1'
+	option serversfile '/tmp/adb_list.overall'
+        list server '8.8.8.8'
+        list server '8.8.4.4'
+
+config dhcp 'lan'
+	option interface 'lan'
+	option leasetime '12h'
+	option dhcpv6 'server'
+	option ra 'server'
+	option start '2'
+	option limit '254'
+	option ra_management '1'
+
+config dhcp 'slave'
+	option leasetime '12h'
+	option interface 'slave'
+	option start '2'
+	option limit '254'
+
+config dhcp 'tor'
+	option leasetime '12h'
+	option interface 'tor'
+	option start '2'
+	option limit '254'
+
+config dhcp 'wan'
+	option interface 'wan'
+	option ignore '1'
+
+config odhcpd 'odhcpd'
+	option maindhcp '0'
+	option leasefile '/tmp/hosts/odhcpd'
+	option leasetrigger '/usr/sbin/odhcpd-update'
+	option loglevel '4'
+
+</code></hidden>
+
+
+==== 3º, AP de faixa traseira ====
+
+=== Detalhes do Switch ===
+
+^ VLAN ID      ^ Upstream side:HW switch ↔ eth1 driver^^ Downstream side:HW switch↔physical ports^^^^^
+|      | CPU (eth0)    | cpu (eth1)        | LAN1 | LAN2 | LAN3 | LAN4 | WAN |
+| 1     | tagged     | tagged        |untagged|untagged|untagged|untagged|tagged|
+| 2     | off | off |off|off|off|off|off|
+| 3     | tagged     | tagged        |off|off|off|off|tagged|
+| 4     | tagged     | tagged        |off|off|off|off|tagged|
+
+
+1. Crie VLANs extras para corresponder à tabela acima. A interface WAN foi configurada para ser identificada com números de ID da VLAN. A WAN está recebendo o uplink do roteador intermediário.
+<hidden onHidden="/etc/config/network" onVisible="Clique para ver menos"><code>
+
+config interface 'loopback'
+	option ifname 'lo'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+
+config globals 'globals'
+	option ula_prefix 'fdcb:2636:4335::/48'
+
+config interface 'lan'
+	option type 'bridge'
+	option ifname 'eth0.1'
+	option proto 'static'
+	option netmask '255.255.255.0'
+	option ip6assign '60'
+	option ipaddr '192.168.0.252'
+	option gateway '192.168.0.1'
+	option broadcast '192.168.0.255'
+
+config interface 'wan'
+	option ifname 'eth1.2'
+	option proto 'static'
+	option netmask '255.255.255.0'
+	option gateway '192.168.0.1'
+	option broadcast '192.168.1.255'
+	option ipaddr '192.168.0.252'
+
+config interface 'wan6'
+	option ifname 'eth1.2'
+	option proto 'dhcpv6'
+
+config switch
+	option name 'switch0'
+	option reset '1'
+	option enable_vlan '1'
+
+config switch_vlan
+	option device 'switch0'
+	option vlan '1'
+	option vid '1'
+	option ports '0 1 2 3 4t 5t 6t'
+
+config switch_vlan
+	option device 'switch0'
+	option vlan '2'
+	option vid '2'
+
+config switch_vlan
+	option device 'switch0'
+	option vlan '3'
+	option vid '3'
+	option ports '4t 5t 6t'
+
+config switch_vlan
+	option device 'switch0'
+	option vlan '4'
+	option vid '4'
+	option ports '4t 5t 6t'
+
+config interface 'slave'
+	option proto 'static'
+	option ipaddr '172.16.0.252'
+	option netmask '255.255.255.0'
+	option gateway '172.16.0.1'
+	option broadcast '172.16.255.255'
+	option type 'bridge'
+	option ifname 'eth0.3'
+
+config interface 'tor'
+	option proto 'static'
+	option ipaddr '10.1.1.252'
+	option netmask '255.0.0.0'
+	option type 'bridge'
+	option ifname 'eth0.4'
+
+</code></hidden>
+
+2. Crie interfaces Wi-Fi. 
+
+:!: Certifique-se de tornar os nomes e senhas SSID idênticos aos configurados no roteador principal
+<hidden onHidden="/etc/config/wireless" onVisible="Clique para ver menos"><code>
+
+config wifi-device 'radio0'
+	option type 'mac80211'
+	option hwmode '11a'
+	option path 'soc/soc:pcie/pci0000:00/0000:00:01.0/0000:01:00.0'
+	option htmode 'VHT80'
+	option country 'US'
+	option legacy_rates '1'
+	option channel '44'
+
+config wifi-iface 'default_radio0'
+	option device 'radio0'
+	option network 'lan'
+	option mode 'ap'
+	option ssid 'Gaming'
+	option encryption 'psk-mixed'
+	option key 'supersecretpassword'
+	option wpa_disable_eapol_key_retries '1'
+
+config wifi-device 'radio1'
+	option type 'mac80211'
+	option hwmode '11g'
+	option path 'soc/soc:pcie/pci0000:00/0000:00:02.0/0000:02:00.0'
+	option htmode 'HT20'
+	option country 'US'
+	option legacy_rates '1'
+	option channel '9'
+
+config wifi-iface 'default_radio1'
+	option device 'radio1'
+	option network 'lan'
+	option mode 'ap'
+	option ssid 'Magick Mushroom'
+	option encryption 'psk-mixed'
+	option key 'supersecretpassword'
+	option wpa_disable_eapol_key_retries '1'
+
+config wifi-device 'radio2'
+	option type 'mac80211'
+	option channel '36'
+	option hwmode '11a'
+	option path 'platform/soc/soc:internal-regs/f10d8000.sdhci/mmc_host/mmc0/mmc0:0001/mmc0:0001:1'
+	option htmode 'VHT80'
+	option disabled '1'
+
+config wifi-iface 'default_radio2'
+	option device 'radio2'
+	option network 'lan'
+	option mode 'ap'
+	option ssid 'OpenWrt'
+	option encryption 'none'
+
+config wifi-iface
+	option device 'radio1'
+	option mode 'ap'
+	option encryption 'none'
+	option ssid 'Slave'
+	option isolate '1'
+	option network 'slave'
+
+config wifi-iface
+	option device 'radio1'
+	option mode 'ap'
+	option encryption 'none'
+	option ssid 'tor'
+	option isolate '1'
+	option network 'tor'
+
+</code></hidden>
+
+3. Crie regras de firewall
+<hidden onHidden="/etc/config/firewall" onVisible="Clique para ver menos"><code>
+
+config defaults
+	option syn_flood '1'
+	option input 'ACCEPT'
+	option output 'ACCEPT'
+	option forward 'REJECT'
+
+config zone
+	option name 'lan'
+	option input 'ACCEPT'
+	option output 'ACCEPT'
+	option forward 'ACCEPT'
+	option network 'lan'
+
+config zone
+	option name 'wan'
+	option input 'REJECT'
+	option output 'ACCEPT'
+	option forward 'REJECT'
+	option masq '1'
+	option mtu_fix '1'
+	option network 'wan wan6'
+
+config forwarding
+	option src 'lan'
+	option dest 'wan'
+
+config rule
+	option name 'Allow-DHCP-Renew'
+	option src 'wan'
+	option proto 'udp'
+	option dest_port '68'
+	option target 'ACCEPT'
+	option family 'ipv4'
+
+config rule
+	option name 'Allow-Ping'
+	option src 'wan'
+	option proto 'icmp'
+	option icmp_type 'echo-request'
+	option family 'ipv4'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-IGMP'
+	option src 'wan'
+	option proto 'igmp'
+	option family 'ipv4'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-DHCPv6'
+	option src 'wan'
+	option proto 'udp'
+	option src_ip 'fc00::/6'
+	option dest_ip 'fc00::/6'
+	option dest_port '546'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-MLD'
+	option src 'wan'
+	option proto 'icmp'
+	option src_ip 'fe80::/10'
+	list icmp_type '130/0'
+	list icmp_type '131/0'
+	list icmp_type '132/0'
+	list icmp_type '143/0'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-ICMPv6-Input'
+	option src 'wan'
+	option proto 'icmp'
+	list icmp_type 'echo-request'
+	list icmp_type 'echo-reply'
+	list icmp_type 'destination-unreachable'
+	list icmp_type 'packet-too-big'
+	list icmp_type 'time-exceeded'
+	list icmp_type 'bad-header'
+	list icmp_type 'unknown-header-type'
+	list icmp_type 'router-solicitation'
+	list icmp_type 'neighbour-solicitation'
+	list icmp_type 'router-advertisement'
+	list icmp_type 'neighbour-advertisement'
+	option limit '1000/sec'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-ICMPv6-Forward'
+	option src 'wan'
+	option dest '*'
+	option proto 'icmp'
+	list icmp_type 'echo-request'
+	list icmp_type 'echo-reply'
+	list icmp_type 'destination-unreachable'
+	list icmp_type 'packet-too-big'
+	list icmp_type 'time-exceeded'
+	list icmp_type 'bad-header'
+	list icmp_type 'unknown-header-type'
+	option limit '1000/sec'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-IPSec-ESP'
+	option src 'wan'
+	option dest 'lan'
+	option proto 'esp'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-ISAKMP'
+	option src 'wan'
+	option dest 'lan'
+	option dest_port '500'
+	option proto 'udp'
+	option target 'ACCEPT'
+
+config include
+	option path '/etc/firewall.user'
+
+config zone
+	option name 'slave'
+	option input 'ACCEPT'
+	option forward 'REJECT'
+	option output 'ACCEPT'
+	option network 'slave'
+
+config zone
+	option name 'tor'
+	option input 'ACCEPT'
+	option forward 'REJECT'
+	option output 'ACCEPT'
+	option network 'tor'
+
+</code></hidden>
+
+4. Crie configurações DHCP
+<hidden onHidden="/etc/config/dhcp" onVisible="Clique para ver menos"><code>
+
+config dnsmasq
+	option domainneeded '1'
+	option boguspriv '1'
+	option filterwin2k '0'
+	option localise_queries '1'
+	option rebind_protection '1'
+	option rebind_localhost '1'
+	option local '/lan/'
+	option domain 'lan'
+	option expandhosts '1'
+	option nonegcache '0'
+	option authoritative '1'
+	option readethers '1'
+	option leasefile '/tmp/dhcp.leases'
+	option resolvfile '/tmp/resolv.conf.auto'
+	option nonwildcard '1'
+	option localservice '1'
+
+config dhcp 'lan'
+	option interface 'lan'
+	option dhcpv6 'server'
+	option ra 'server'
+	option ignore '1'
+	option ra_management '1'
+
+config dhcp 'wan'
+	option interface 'wan'
+	option ignore '1'
+
+config odhcpd 'odhcpd'
+	option maindhcp '0'
+	option leasefile '/tmp/hosts/odhcpd'
+	option leasetrigger '/usr/sbin/odhcpd-update'
+	option loglevel '4'
+
+</code></hidden>
+
+
+Recursos:
+  * https://openwrt.org/docs/guide-user/network/vlan/creating_virtual_switches
+  * https://openwrt.org/docs/guide-user/network/wifi/relay_configuration
+  * https://openwrt.org/docs/guide-user/network/wifi/routedap
+  * https://openwrt.org/docs/guide-user/network/wifi/mesh/80211s

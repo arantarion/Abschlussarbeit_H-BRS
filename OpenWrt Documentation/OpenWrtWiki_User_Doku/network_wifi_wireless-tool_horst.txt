@@ -1,0 +1,25 @@
+====== Horst ======
+Horst is a small, lightweight IEEE802.11 wireless LAN analyzer with a text interface. See [[https://github.com/br101/horst/blob/master/README|README]] and [[http://br1.einfach.org/tech/horst/|Homepage of Horst]].
+
+===== Installation =====
+With ''[[docs:guide-user:additional-software:opkg]]'':
+<code bash>
+opkg update
+opkg install horst
+</code>
+
+===== Usage =====
+  - As a newcomer, please consult [[docs:guide-user:network:wifi:wireless.overview]]. It is written for you!
+  - If your wireless drivers support it, use either ''[[docs:guide-user:network:wifi:basic|/etc/config/wireless]]'' or [[docs:guide-user:network:wifi:wireless-tool:wireless.utilities]] to put your WNIC into //monitor mode// then start horst on the default interface (wlan0):<code>
+iwconfig wlan0 mode monitor channel X
+horst
+</code>
+  - Or with newer mac80211 drivers you can use the “modern” way, using ‘iw’ to add a monitor interface while you can continue to use the existing interface:<code>
+iw dev wlan0 interface add mon0 type monitor
+horst -i mon0
+</code>
+  - To use the client/server mode you can start a server (-q without a user interface) with<code>
+horst -i wlan0 -C -q
+</code>
+  - and connect a client with<code>
+horst -c IP</code>Only one client is allowed at a time!

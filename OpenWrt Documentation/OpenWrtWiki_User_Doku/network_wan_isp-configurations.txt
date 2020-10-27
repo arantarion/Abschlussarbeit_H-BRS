@@ -1,0 +1,1085 @@
+====== ISP Configurations ======
+This page describes how to connect to networks of different commercial Internet service providers.
+At this time, most of the DSL configurations described below only apply to **modem**-router devices using Lantiq SoC. There is no DSL support for Broadcom devices.
+
+
+
+===== Australia =====
+
+==== TPG (ADSL2+) ====
+
+A good way to configure your internet is using two devices: A dedicated modem that just accepts all ATM traffic and bridges it to its ethernet port, and a second device that acts as a router to your internal LAN, and the WAN port authenticates to your ISP via pppoe, and is physically connected to the first device over ethernet cable.
+
+Below, I show two configs, one config for the modem, (here Netgear DM200 ADSL2+/VDSL modem) and the second config showing the necessary authentication to TPG ISP for the second device (another OpenWrt router).
+
+<code>package network                                                                 
+                                                                                
+config atm-bridge 'atm'                                                         
+        option vpi '8'                                                          
+        option vci '35'                                                         
+        option encaps 'llc'                                                     
+        option payload 'bridged'                                                
+                                                                                
+config dsl 'dsl'                                                                
+        option annex 'a2p'                                                      
+        option fwannex 'a'                                                      
+        option firmware '/lib/firmware/lantiq-vrx200-a.bin'                     
+        option xfer_mode 'atm'                                                  
+                                                                                
+config interface 'lan'                                                          
+        option type 'bridge'                                                    
+        option ifname 'eth0 nas0'                                               
+        option proto 'none'                                                     
+        option auto '1'                                                         
+                                                                                
+config device 'lan_dev'                                                         
+        option name 'eth0'                                                      
+        option macaddr 'yy.yy.yy.yy.yy.yy'                                      
+                                                                                
+config device 'wan_dev'                                                         
+        option name 'nas0'                                                      
+        option macaddr 'xx.xx.xx.xx.xx.xx'</code>
+        
+Second device authenticates to ISP with:
+
+<code>config interface 'wan'
+	option ifname 'eth1'
+	option proto 'pppoe'
+	option username 'xxxx@tpg.com.au'
+	option password 'zzzz'</code>
+
+==== TPG (NBN HFC) ====
+
+Plug an openwrt router into the supplied simple DOCSIS modem (or replace modem and call support to authenticate new DOCSIS serial number).
+The network settings for openwrt router needs to use VLAN 2 (ethX.2), probably best to spoof MAC to match supplied router WAN interface.
+
+<code>config interface 'wan'
+	option ifname 'eth1.2'
+	option proto 'pppoe'
+	option username 'xxxx@tpg.com.au'
+	option password 'zzzz'
+	option mtu '1500'
+	option macaddr 'xx:xx:xx:xx:xx:xx'
+	option pppd_options 'debug'
+	option ipv6 'auto'</code>
+
+==== TPG (NBN FTTC) ====
+Simply set the WAN port to use the PPPoE protocol and enter your TPG username and password. That's all.  No VLAN configuration, such as setting WAN to use VLAN2 was required.
+
+===== Austria =====
+
+==== A1 Telekom Austria / VDSL2 with down- and upstream vectoring ====
+
+on ''/etc/config/network'' we have to modify the WAN section to use vlan2
+
+<code>
+config interface 'wan'
+        option ifname 'dsl0.2'
+        option proto 'pppoe'
+        option username '**********'
+        option password '********'
+        option ipv6 '1'
+        option peerdns '0'
+        option keepalive '0'
+</code>
+
+in the DSL section we use the annex b
+(and optional if you have/need it, the firmware for your modem. In this case I use a FRITZBox 7362 SL)
+
+<code>
+config dsl 'dsl'
+        option annex 'b'
+        option ds_snr_offset '0'
+        option firmware '/lib/modules/vr9-B-dsl.bin'
+</code>
+
+
+===== Belgium =====
+
+==== EDPnet (VDSL) ====
+EDPnet provides VDSL services through PPPoE and VLAN tagging. Keep in mind the DSL state monopolist (Proximus) still manages the backbone and keeps a whitelist of allowed modems (a few third party models, mostly AVM FRITZ!Box, and their own Proximus B-Box models).
+
+The VLAN tagging is as follows:
+  * Internet: PPPoE over VLAN 10.
+  * VoIP: unclear.
+  * TV: EDPnet does not offer TV.
+
+The following works for an [[toh:avm:avm_7362_sl|AVM FRITZ!Box 7362 SL]] running master (stable support won't appear with a post 18.06 release) with the whitelisted Lantiq blobs pulled off my [[toh:avm:fritzbox.7490|7490]]. Besides this, the default VDSL values OpenWrt uses seem to be OK. You get reset to a fallback profile after a while, so there might be some additional background checks going on that go beyond the Lantiq driver version.
+
+Also a TPLink WR8890 was successfully tested with firmware taken from the xDarklight repository. Testing has shown that the 'certified' blobs perform worse on these models and should be avoided as they seem to make the line unstable. A patch can be done in the VDSL driver method to return a 'certified' version string so the modem can stay on a high speed profile.
+
+<code>
+config interface 'wan'
+    option ifname 'dsl0.10'
+    option proto 'pppoe'
+    option username 'b1xxxxxx'
+    option password 'xxxxxx'
+    option ipv6 '1'
+</code>
+
+
+===== Canada =====
+
+==== Bell Canada Fibe ====
+Bell Canada Fibe provides for fiber to the home (FTTH).
+
+They use VLAN tagging and PPPoE protocol. 
+
+The VLAN tagging is usually as follows:
+
+  * Phone: VLAN 34
+  * Internet: PPPoE over VLAN 35 
+  * TV:  VLAN 36
+
+<code>
+config interface 'wan'
+    option ifname 'eth1.35'
+    option proto 'pppoe'
+    option username 'b1xxxxxx'
+    option password 'xxxxxx'
+    option ipv6 'auto'
+
+config interface 'wan6'
+    option proto 'dhcpv6'
+    option reqaddress 'try'
+    option reqprefix 'auto'
+    option ifname '@wan'
+</code>
+
+==== MTU Settings ====
+
+[[https://www.dslreports.com/forum/r31118482-Yes-you-CAN-bypass-the-HomeHub-3000|Follow the MTU recommendations here]]:
+
+  * Fiddle with your MTU settings to make sure that your router doesn't have to fragment IP packets. (IP fragmentation will use more CPU on your router, increase overhead on your WAN connection, slightly degrade performance, and cause problems when connecting to networks behind misconfigured firewalls on the Internet). 
+  * At first I used all the default settings and was getting an MTU of 1480. 
+  * I increased the MTU on both my SFP interface and VLAN to 1520 and then set the advertised MTU and MRU settings on my PPPoE interface to 1500 and was able to get an actual MTU of 1500 on my WAN link. 
+  * You can verify your MTU value using ping or a webservice such as the MTU test at Let Me Check.it.
+
+
+==== References ====
+
+  * How to get Bell Fibe in Quebec/Ontario (Internet and IPTV) working with pfSense [[https://forum.netgate.com/topic/78892/how-to-get-bell-fibe-in-quebec-ontario-internet-and-iptv-working-with-pfsense]]
+  * How to bypass Bell hub and use your own Route [[http://forums.redflagdeals.com/please-sticky-how-bypass-bell-hub-use-your-own-router-1993629/]]
+  * Bell PPPoE and IPTV with FTTH, Guide, configuration and tidbits. [[https://community.ubnt.com/t5/EdgeRouter/Bell-PPPoE-and-IPTV-with-FTTH-Guide-configuration-and-tidbits/td-p/1686977]]
+  * [[http://blog.th0ma7.com/pages/Bell-Fibe-LAN|Bell Fibe WAN]] PPPoE (in French) [[http://blog.th0ma7.com/pages/Bell-Fibe-WAN-PPPoE]]
+  * [[https://www.idscomm.ca/blog/bell-fibe-with-your-own-router|Bell Fibe with your own Router]]
+
+
+===== Czech Republic =====
+
+==== O2 ====
+
+O2 provides documentation for Internet [[https://www.o2.cz/osobni/techzona-modemy-pro-adsl-vdsl/273154-ostatni_modemy_nikoli_od_o2.html?article=550534|here]].
+
+=== VDSL ===
+
+  * Protocol: PPPoE
+  * VLAN: 848
+  * Username: O2
+  * Password: O2
+
+<code>
+config interface 'wan'
+        option proto 'pppoe'
+        option username 'O2'
+        option ifname 'dsl0.848'
+        option ipv6 'auto'
+        option password 'O2'
+        
+config dsl 'dsl'
+        option annex 'a'
+        option ds_snr_offset '0'
+        option line_mode 'vdsl'
+        option tone 'av'        
+</code>
+
+=== O2TV (IPTV) ===
+
+O2 provides documentation for IPTV [[https://www.o2.cz/osobni/techzona-modemy-pro-adsl-vdsl/273154-ostatni_modemy_nikoli_od_o2.html?article=550539|here]].
+
+  * Bridge mode
+  * VLAN: 835
+
+Example configuration on TP-Link TD-W8980B / TD-9980B. IPTV is plugged in port 'LAN2'.
+
+<code>
+config interface 'iptv'
+        option type 'bridge'
+        option proto 'dhcp'
+        option hostname 'O2TV'
+        option peerdns '0'
+        option defaultroute '0'
+        option ifname 'dsl0.835 eth0.835'
+        
+config switch
+        option name 'switch0'
+        option reset '1'
+        option enable_vlan '1'
+
+config switch_vlan
+        option device 'switch0'
+        option vlan '1'
+        option ports '6t 5 2 4'
+        option vid '1'
+
+config switch_vlan
+        option device 'switch0'
+        option vlan '2'
+        option vid '835'
+        option ports '6t 0'        
+</code>
+
+===== Cyprus =====
+
+==== Epic (previously MTN) ====
+
+==== VDSL2+ ====
+
+  * Internet: PPPoE over VLAN 35.
+
+ Example configuration on AVM FritzBox 7360 V2  using dsl 
+<code>
+config dsl 'dsl'
+        option annex 'b'
+        option ds_snr_offset '0'
+        option firmware '/lib/firmware/vr9-B-dsl.bin' # Annex B Firmware for this device
+        option tone 'av'
+config interface 'wan'
+	option proto 'pppoe'
+	option ifname 'dsl0.35'
+	option username 'bits*****@home'
+	option password '*******'
+</code>
+
+===== Egypt =====
+
+==== ADSL ====
+
+=== WE (TE Data) ===
+
+//(If using ISP-provided router-modem)//
+
+  * Delete the WAN connection form your ISP router. Create another one as **Bridge**. Use the following data for the connection:\\ <code>
+VPI/VCI: 0/35
+Encapsulation Type: LLC
+Service Type: UBR
+Type: Bridge Connection
+</code>
+
+  * For OpenWrt, you will need to add or edit the following in ''/etc/config/network'' for interface WAN. You should replace the username and password with those given to you by your ISP.\\ <code>
+config interface 'WAN'
+        option proto 'pppoe'
+        option ifname 'eth0.2'
+        option username '******@tedata.net.eg'
+        option password '********'
+        option ipv6 'auto'
+        option mtu '1500'
+        option auto '0'
+</code>
+
+**Note**: Technical support say MTU should be 1420, but 1500 seem to do just fine.
+
+
+===== Germany =====
+==== Deutsche Telekom ====
+Deutsche Telekom provides a documentation for their network here:
+https://www.telekom.de/hilfe/geraete-zubehoer/telefone-und-anlagen/informationen-zu-telefonanlagen/schnittstellenbeschreibungen-fuer-hersteller
+=== ADSL ===
+  * ADSL LINK
+  * ATM
+    * VPI (Virtual Path Identifier): 1
+    * VCI (Virtual Channel Identifier): 32
+
+== Deutsche Telekom BNG ==
+BNG is short for Broadband Network Gateway and Deutsche Telekom's new platform. Customers are successively migrated and usually receive a letter in the mail announcing the change.
+
+On the old platform the customer can just setup PPPOE and the Internet connection comes up. With BNG the traffic that leaves the WAN port needs to be tagged with VLAN 7 ([[https://www.telekom.de/hilfe/netzumschaltung|Details]]).
+
+As an example suppose you have a modem in bridge mode that is unable to handle VLAN tagging. The router connected to the modem needs to add the VLAN tag in this case. Example for Archer C7 V2 below.
+
+Old platform:
+
+<code>
+config interface 'wan'
+        option proto 'pppoe'
+        option username '...@t-online.de'
+        option password '...'
+        option ipv6 'auto'
+        option ifname 'eth0.2'
+
+config switch_vlan             
+        option device 'switch0'
+        option vlan '2'        
+        option ports '1 6t'
+</code>
+
+BNG platform:
+
+<code>
+config interface 'wan'
+        option proto 'pppoe'
+        option username '...@t-online.de'
+        option password '...'
+        option ipv6 'auto'
+        option ifname 'eth0.7'
+
+config switch_vlan
+        option device 'switch0'
+        option vlan '7'
+        option ports '1t 6t'
+</code>
+
+So if you receive a letter about the platform change and your Internet access goes down, try adding the VLAN tag to the WAN port and see if it comes up again.
+
+Some more details that may be of interest:
+
+  * When you login into [[https://www.telekom.de/kundencenter/startseite|Telekom Kundencenter]] there are various configuration options available (DNS behavior, Easy Login, Auto Login, phone service configuration etc.).
+  * When using a SIP client from your Telekom landline connection you usually don't need to authenticate. Details are available on the Internet, for instance [[https://telekomhilft.telekom.de/t5/Telefonie-Internet/VoIP-Authentifizierung-nur-noch-ein-Fake/td-p/1379200|here]]. That means when connected to your LAN you (or somebody else) may be able to configure one of your landline phone numbers (for instance your main phone number) on a SIP client and make calls without a valid password. <color #ed1c24>This may be disturbing to some. LOL</color>
+
+
+== TAL.de TALDSL MAX VDSL2 on a Telekom line ==
+|VPI|1|
+|VCI|32|
+|VLAN-ID|7|
+|DCHPv4|n/a|
+|DHCPv6|n/a|
+|Encapsulation|PPPoE|
+|IPv4 address|PPPoE|
+|IPv4 gateway|PPPoE|
+|IPv4 nameserver|PPPoE|
+|IPv6 address|PPPoE (link-local with dynamic sub-prefix)|
+|IPv6 gateway|n/a (static route to WAN device needed)|
+|IPv6 nameserver|2a01:170::1|
+|IPv6 prefix delegation|n/a (assign 2a01:170:xxxx::/48 manually to LAN device(s))|
+
+<code>
+config interface 'wan'
+	option proto 'pppoe'
+	option ifname 'eth0.7'
+	option ipv6 '1'
+	option username '...#tal@bsa-vdsl'
+	option password '...'
+
+config route6
+	option interface 'wan'
+	option target '::0/0'
+
+config interface 'lan'
+	option type 'bridge'
+	option proto 'static'
+	option ipaddr '192.168.1.1'
+	option netmask '255.255.255.0'
+	option ifname 'br-lan'
+	option ip6addr '2a01:170:xxxx:yyyy::1/64'
+</code>
+
+== 1&1 or O² on a Telekom line with Annex J ==
+When migrating from Annex B to Annex J, connection properties seem to have changed to require using VLAN 7.
+
+The complete username (as opposed to the simplified form used by Fritz!Boxes '1und1/1234-567@t-online.de') can be obtained from a packet capture from a Fritz!Box (if internet is so far provided via one).
+  * Go to http://fritz.box/html/capture.html
+  * Press start on the '1. Internetverbindung'
+  * Log into the main Fritz!Box UI and press the reconnect button
+  * Wait until the connection is re-established
+  * Stop the capture and open it in Wireshark
+  * Use 'pap' as filter. You should be able to read the complete username and password in the detail view
+
+The configuration of the interfaces should look like this (tested on r6788-7ff31bed98):
+
+<code>
+config dsl 'dsl'
+	option tone 'bv'
+	option annex 'j'
+
+config interface 'wan'
+	option proto 'pppoe'
+	option password '***'
+	option delegate '0'
+	option ipv6 'auto'
+	option username '1und1/(***)1234-567@t-online.de'
+#or     option username 'DSL***@s92.bbi-o2.de'
+	option ifname 'dsl0.7'
+
+config device 'wan_dev'
+	option macaddr '***'
+	option name 'dsl0'
+</code>
+
+=== VDSL ===
+The network protocols are layered in this way:
+  - VDSL link (17a profile, G.993.5 depending on the DSLAM)
+  - PTM (Packet Transfer Mode)
+  - Ethernet with VLAN 7 (data + voice)
+  - PPPoE
+    - For some resale accounts an "H" has to be added in front of the pppoe user name, for 1und1 it looks like this "H1und1/1234-567@t-online.de"
+You global routed IPv4 address and a some IPv6 subnets
+
+When the network supports VDSL vectoring, but the VDSL modem does not support it, the device will be put into a fall back mode using only the lower 2.2 MHz of the band, this results in reduced rates like 13 MBit/s down and 1.4 MBit/s up instead of 50 MBit/s. Details: [[https://telekomhilft.telekom.de/t5/Telefonie-Internet/Fallbackprofil-bei-Vectoring/ta-p/2431567]]
+
+Example VDSL configuration for Lantiq based devices:
+
+<code>
+config dsl 'dsl'
+	option annex 'b'
+	option tone 'bv'
+	option xfer_mode 'ptm'
+
+config interface 'wan'
+	option proto 'pppoe'
+	option _orig_ifname 'ptm0'
+	option _orig_bridge 'false'
+	option ifname 'dsl0.7' # OpenWrt 18
+	# option ifname 'ptm0.7' # LEDE 17
+        option username 'H1und1/1234-567@t-online.de'
+	option password 'abcdefghijklm'
+	option ipv6 'auto'
+</code>
+
+=== 1&1 VDSL DS-Lite ===
+
+1and1 is migrating (new customers) towards DSlite (Dual-Stack Lite RFC6333), 
+
+  - PPPoe as above (VLAN7)
+  - package 'ds-lite' is needed
+  - the aftr address is negotiated automatically (at least since 19.07) by giving '::' as value. 
+  - note: that an interface 'WAN6_4' will apprear in LUCI, which is created dynamically upon connection.
+
+<code>
+config interface 'wan'
+        option ifname 'eth0.7'
+        option proto 'pppoe'
+        option password 'test123'
+        option username '1und1/ui1234-567@t-online.de'
+        option ipv6 '1'
+
+config interface 'wan6'
+        option proto 'dhcpv6'
+        option reqaddress 'try'
+        option reqprefix 'auto'
+        option ifname 'pppoe-wan'
+
+config interface 'wan4'
+        option proto 'dslite'
+        option peeraddr '::'
+        option ifname 'wan'
+        option encaplimit 'ignore'
+        option mtu '0'
+        option tunlink 'wan6'
+</code>
+(ifnames in example for router with external modem)
+
+note: WAN-mtu could be 1452, but ds-lite module currently sets 1280 (as of 19.07.4), even if option 'mtu' is specified in the config above.
+For a hotfix: add to the end of hotplug-script
+
+ /etc/hotplug.d/iface/00-netstate
+[..]
+<code>
+if [ ifup = "$ACTION" ] && [ wan6_4 = "$INTERFACE" ] ; then
+        ip link set ds-wan6_4 mtu 1452
+fi
+</code>
+
+
+===== Ireland =====
+
+=== Vodafone SIRO 1G ===
+
+* igmpproxy need to be installed for TV
+for my setup im using separated interface for STB, you can connect your and into LAN (but then plz change configuration of igmpproxy to point to LAN instead of eth3)
+config files:
+
+''/etc/config/network''
+<code>
+config interface 'loopback'
+	option ifname 'lo'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+
+config globals 'globals'
+	option ula_prefix 'fda0:8093:6a4c::/48'
+
+config interface 'lan'
+	option type 'bridge'
+	option proto 'static'
+	option netmask '255.255.255.0'
+	option ip6assign '60'
+	option ipaddr '192.168.0.1'
+	option stp '1'
+	option igmp_snooping '1'
+	option ifname 'eth1 eth3'
+
+config interface 'wan'
+	option proto 'pppoe'
+	option ifname 'eth0.10'
+	option username 'VODAFONE_ROUTER_SERIAL@vfieftth.ie'
+	option password 'broadband'
+	option ipv6 'auto'
+
+config interface 'wan6'
+	option ifname 'eth0'
+	option proto 'dhcpv6'
+
+
+config interface 'iptv'
+	option proto 'dhcp'
+	option delegate '0'
+	option broadcast '1'
+	option defaultroute '0'
+	option ifname 'eth0.10'
+
+config interface 'stb'
+	option proto 'static'
+	option ifname 'eth2'
+	option type 'bridge'
+	option igmp_snooping '1'
+	option ipaddr '192.168.2.1'
+	option ip6assign '64'
+	option netmask '255.255.255.128'
+
+</code>
+
+''/etc/config/igmpproxy''
+<code>
+config igmpproxy
+	option quickleave 1
+#	option verbose [0-3](none, minimal[default], more, maximum)
+
+config phyint
+	option network iptv
+	option zone wan
+	option direction upstream
+	list altnet 0.0.0.0/0
+
+config phyint
+	option network stb
+	option zone lan
+	option direction downstream
+</code>
+
+===== Netherlands =====
+==== Telfort ====
+Telfort [[https://www.telfort.nl/persoonlijk/service/netwerkinstellingen-met-eigen-modem.htm |provides settings]] for xDSL and glassfiber.
+They use VLAN tagging and IPoE protocol - so DHCP in OpenWrt.
+
+=== VDSL ===
+The network protocols are layered in this way:
+  - VDSL link (Annex B, Profile 17a, Line mode G.993.2)
+  - PTM (Packet Transfer Mode)
+  - Ethernet with VLAN 34 
+  - IPTV with VLAN 4
+
+A sample config for VDSL would look like (Tested with OpenWrt 18.06.1 r7258-5eb055306f)
+
+<code>
+config atm-bridge 'atm'
+        option encaps 'llc'
+        option payload 'bridged'
+        option nameprefix 'dsl'
+        option vci '34'
+        option vpi '0'
+
+config interface 'wan'
+        option proto 'dhcp'
+        option ifname 'dsl0.34'
+        # option ifname 'ptm0.34' # LEDE 17
+        option type 'bridge'        
+</code>
+
+
+=== Glassfiber ===
+A sample config for Ethernet with VLAN 34 would look like
+
+<code>
+config interface 'wan'
+        option ifname 'wan.34'
+        option proto 'dhcp'
+        option hwaddr 'AA:FB:BB:D7:CC:05'
+
+config interface 'wan6'
+        option ifname 'wan.34'
+        option proto 'dhcpv6'
+        option hwaddr 'AA:FB:BB:D7:CC:05'
+</code>
+
+Please note that the MAC address has to be set to a real one, this address is present on the physical Experia box, as well as visible via its web interface on the status page.
+
+==== Oxxio ====
+Oxxio is a virtual ISP, which uses exactly the same setup as Telfort.
+
+==== XS4ALL ====
+XS4ALL is another ISP from KPN like Telfort. They offer DSL and FTTH connections. For DSL it is possible to use your own router, but since latest techniques use profile 35b to get 200+ Mbit speeds over a single line, it's better (for speed) to put the provided FritzBox in bridge mode and use OpenWrt as if directly on FTTH connection.
+
+=== Internet ===
+FTTH (Fibre) and VDSL connections result in VLANs 6, and 4. That is, connecting the ethernet cable from the fibre's NTU or from the bridged VDSL modem, to your WAN port does nothing by itself. Internet is provided over a PPPoE connection over VLAN6, username and password don't matter here, as long as they are set.  Thus, to bring up your WAN device which gets your public IP addresses (XS4ALL does both IPv4 and IPv6), configure like this:
+
+<code>
+config interface 'wan'
+    option ifname 'eth0.6'
+    option proto 'pppoe'
+    option username 'FB7581@xs4all.nl'
+    option password '1234'
+    option ipv6 'auto'
+    option mtu '1508'  # only works for FTTH since FritzBox doesn't support higher MTU
+
+config interface 'wan6'
+    option proto 'dhcpv6'
+    option reqaddress 'try'
+    option reqprefix 'auto'
+    option ifname '@wan'
+</code>
+
+=== Telephony ===
+If you use telephony and use FTTH, easiest is to connect the (unused) provided FritzBox as regular client to your OpenWrt lan. You can configure the FritzBox to take internet from there and provide telephony (which is just SIP).
+
+=== IPTV ===
+If you use TV, in the old setup (before March 2019) you could just bridge VLAN4 to your STBs (the black receivers provided by XS4ALL).  This is called bridged mode.  However, starting from March 2019, bridged mode is no longer provided and instead, routed mode has to be setup.  The obvious change visible is the additions of "interactive TV" in the STBs.  Routed mode, is much like described in [[docs:guide-user:network:wan:udp_multicast|IPTV / UDP multicast]].  It has a small specific twist for XS4ALL though.  The official documentation for this can be found [[https://www.xs4all.nl/service/diensten/internet/installeren/modem-instellen/hoe-kan-ik-een-ander-modem-dan-fritzbox-instellen.htm|at XS4ALL's modem setup]] (Dutch).
+
+For this to work, you need to install igmpproxy.  For clarity, we use 3 different zones: wan, iptv and stbitv.
+  * wan: the ordinary internet connection, used for "interactive" features (e.g. YouTube)
+  * iptv: VLAN4-based connection, mostly used for multicast based live-streams, and STB software, some 10.200.x.x/22
+  * stbitv: the (client) network with the STBs in them, in this example 10.3.0.0/24
+
+First, configure an interface, DHCP client for iptv, the VLAN 4 interface.  Important, it needs to set Vendor Class Identifier to IPTV_RG, and ignore any default gateway or dns servers advertised.  The DNS is bogus (per the docs), the default route is what we don't want to use, because we want to use our real internet connection.  In the DHCP reply is an additional route, you don't see this in luci, but it's correctly added to your routing table, and it basically includes all the traffic that needs to go over VLAN 4.  This is basically why we don't need the default route.
+
+<code>
+config interface 'iptv'
+    option type 'bridge'
+    option ifname 'eth0.4'
+    option proto 'dhcp'
+    option defaultroute '0'
+    option peerdns '0'
+    option vendorid 'IPTV_RG'
+</code>
+
+Also create a firewall zone for this interface, that sets masquerading (like wan, we need to NAT some traffic over this interface):
+
+<code>
+config zone
+    option name 'iptv'
+    option input 'ACCEPT'
+    option output 'ACCEPT'
+    option network 'iptv'
+    option masq '1'
+    option mtu_fix '1'
+    option forward 'REJECT'
+</code>
+
+Next, configure a new interface for the STBs.  I isolated them on their own VLAN 7, but I think you could also plug them into an existing client network.  Since there will be multicast traffic over this, you do want to separate the traffic using igmp snooping.  Ensure you enable this, and if you use switches inbetween that they also enable this, else you'll flood your entire network.  This is particularly bad if you have wlans in your network.  The following is just what I used for this description.
+
+<code>
+config interface 'stbitv'
+    option type 'bridge'
+    option proto 'static'
+    option ifname 'eth0.7'
+    option ipaddr '10.3.0.1'
+    option netmask '255.255.255.0'
+    option igmp_snooping '1'
+</code>
+
+The STBs don't need any special DHCP tricks, so you just need to hand out IPs in the normal way. Only IPv4 is supported.
+Create firewall zone for this network, and "glue" that zone together with the iptv and wan zones, such that traffic can go both ways:
+
+<code>
+config zone
+    option input 'ACCEPT'
+    option forward 'REJECT'
+    option output 'ACCEPT'
+    option name 'stbitv'
+    option network 'stbitv'
+
+config forwarding
+    option dest 'wan'
+    option src 'stbitv'
+
+config forwarding
+    option dest 'iptv'
+    option src 'stbitv'
+</code>
+
+Now, the last remaining bit needs to be done, which is forwarding the multicast packets that the STBs request. Since the OpenWrt router now is the terminating node as seen from the XS4ALL network, any multicast traffic arriving at the router, needs to be forwarded to the STB in the network that requested it. This is done by igmpproxy. For the proxy, upstream is the XS4ALL network, downstream the STBs in the client network. Quickleave feature is necessary to quickly terminate unnecessary streams (happening when switching between channels, "zapping"). As such, the following configuration is sufficient:
+
+<code>
+config igmpproxy
+    option quickleave 1
+
+config phyint
+    option network iptv
+    option zone iptv
+    option direction upstream
+    list altnet 0.0.0.0/0
+
+config phyint
+    option network stbitv
+    option zone stbitv
+    option direction downstream
+</code>
+Final remaining thing is to enable and start igmpproxy using ''/etc/init.d/igmpproxy enable'' and ''/etc/init.d/igmpproxy start''.
+
+Once you applied all this, ensure you got a 10.200.x.y IP address on the iptv interface. Check with ''netstat -rn'' that there is a route for destination 213.75.112.0 (could be slightly different) added with gateway your 10.200.x.1 IP address. Interface should be ''br-iptv'' if you followed above example.  If that seems ok, and igmpproxy is running, shutdown your STBs and restart them.  They should come up quite normal and settings/system should now report "routed mode".  If you get any errors reported by the devices, check the multicast traffic gets forwarded (it attempts this while STB boots) using tcpdump or something.  Also check if regular internet works correctly from the STB client network.
+
+===== Portugal =====
+
+==== Altice (MEO/PT Empresas) ====
+
+=== GlobalConnect Pack ===
+
+This enterprise VoIP and Internet services package includes a Thomson/Technicolor gateway which can be configured (by the tecnician only) in bridge mode, at installation time. In this configuration, the connection presents itself untagged at the gateway's switch port 4.
+The Internet service is somewhat unusual, in the sense that it requires IP aliasing (it allows the provider to spare one public IP address per connection). The addressing is static, and the configuration provided is (as an example) something along these lines:
+
+  * Local WAN IP:	100.64.194.2
+  * Remote WAN IP:	100.64.194.1
+  * Internet IP:	62.10.20.30/32
+
+Both the Local and Remote WAN IP addresses belong to a /30 subnet. Inbound traffic arrives at the interface with the Internet IP address as the destination.
+To configure this connection on an OpenWrt device (let's assume interface eth1), on ''/etc/config/network'', we need:
+
+<code>
+config interface 'wan'
+	option ifname 'eth1'
+	option proto 'static'
+	list ipaddr '62.10.20.30/32'
+	list ipaddr '100.64.194.2/30'
+	option gateway '100.64.194.1'
+</code>
+
+Now, since the addressing is static, we can do source NAT instead of masquerading. To do so, we configure /etc/config/firewall as follows:
+
+<code>
+config nat
+	option name 'MEO SNAT'
+	option device 'eth1'
+	option src_dip '62.10.20.30'
+	option src 'wan'
+	option target 'SNAT'
+</code>
+
+
+===== Turkey =====
+
+==== Turknet ====
+
+[[https://turk.net/destek/nasil-yaparim/internet-baglantimla-ilgili-sorunlari-nasil-cozebilirim/modemimi-nasil-kurarim/adsl-ve-vdsl-modem-kurulum-degerleri.html|Turknet]] uses PPPoE for both ADSL and VDSL connections.
+
+=== VDSL ===
+These settings based on this post [[https://forum.openwrt.org/t/isp-configuration/72041|Link to owrt forum]]
+<code>
+config dsl 'dsl'
+	option annex 'b'
+	option xfer_mode 'ptm'
+	option line_mode 'vdsl'
+
+config interface 'wan'
+	option proto 'pppoe'
+	option username '***************@turk.net'
+	option password '****'
+	option mtu '1492'
+	option ifname 'dsl0.35'  # VLAN ID: 35
+
+</code>
+
+=== ADSL ===
+
+<code>
+config dsl 'dsl'
+	option annex 'a'
+	option xfer_mode 'atm'
+	option line_mode 'adsl'
+
+config atm-bridge 'atm'
+	option encaps 'llc'
+	option payload 'bridged'
+	option vci '35'
+	option vpi '8'
+
+config interface 'wan'
+	option proto 'pppoe'
+	option username '***************@turk.net'
+	option password '****'
+	option mtu '1492'
+	option ifname 'dsl0' 
+
+</code>
+
+
+
+
+===== United Kingdom =====
+
+The information below is reproduced from the 'OpenWrt/LEDE Installation Guide for the BT Home Hub 5A', which can be downloaded from:
+[[https://openwrt.ebilan.co.uk/viewtopic.php?f=7&t=266|Ebilan forum]]
+[[https://www.dropbox.com/sh/c8cqmpc6cacs5n8/AAA2f8htk1uMitBckDW8Jq88a?dl=0|Dropbox mirror]]
+
+
+==== ADSL ====
+  * ADSL LINK
+  * Annex A, Tone A
+  * ATM
+    * VPI (Virtual Path Identifier): 0
+    * VCI (Virtual Channel Identifier): 38
+
+Configuration examples for LEDE 17 and OpenWrt 18.
+
+Virtually all ISPs in the UK use PPPoA protocol.
+
+<code>
+config dsl 'dsl'
+    option annex 'a'
+    option tone 'a'
+    option xfer_mode 'atm'
+    option line_mode 'adsl'
+
+config interface 'wan'
+    option proto 'pppoa'
+    option username 'your username'
+    option password 'your password'
+    # option username 'bthomehub@btinternet.com' # BT ADSL
+    # option password ' ' # Apparently requires any non-empty password such as a space character or 'BT'
+    # option username 'install@o2broadband.co.uk' # Sky and NOW ADSL on ex-o2 enabled exchanges.
+    # option password ''
+    option vpi '0'
+    option vci '38'
+    option encaps 'vc'
+    option ipv6 'auto' 
+</code>
+
+Ensure that ATM Bridge section has been deleted, otherwise PPPoA will not connect to broadband service.  It can be deleted using LuCI.
+
+<code>
+config atm-bridge 'atm' # Remove entire section for PPPoA
+</code>
+
+BT group also supports PPPoE protocol.
+
+<code>
+config dsl 'dsl'
+    option annex 'a'
+    option tone 'a'
+    option xfer_mode 'atm'
+    option line_mode 'adsl'
+
+config atm-bridge 'atm'
+    option encaps 'llc'
+    option payload 'bridged'
+    option vci '38'
+    option vpi '0'
+
+config interface 'wan'
+    option ifname 'dsl0'
+    # option ifname 'nas0' # for LEDE 17.01
+    option proto 'pppoe'
+    option username 'your username'
+    option password 'your password'
+    # option username 'bthomehub@btinternet.com' # BT ADSL
+    # option password ' ' # Apparently requires any non-empty password such as a space character or 'BT'
+</code>
+
+==== VDSL ====
+The network protocols are layered in this way:
+  * VDSL link (17a profile, G.993.5)
+  * PTM (Packet Transfer Mode)
+  * Annex B, Tone A
+  * VLAN 101
+
+[[https://www.bt.com/broadband/fibre|BT Broadband]] uses PPPoE protocol.
+
+<code>
+config dsl 'dsl'
+    option annex 'b'
+    option tone 'a'
+
+config interface 'wan'
+    option ifname 'dsl0.101'
+    # option ifname 'ptm0.101' # for LEDE 17.01
+    option proto 'pppoe'
+    option ipv6 '1' # BT Broadband has IPv6. Replace '0' to disable IPv6
+    option mtu '1500'
+    option username 'bthomehub@btinternet.com'
+    option password ' ' # Apparently requires any non-empty password such as a space character or 'BT'.
+</code>
+
+[[https://ee.co.uk/help/help-new/broadband-and-landline/home-broadband/how-do-i-use-my-own-router-for-home-broadband|EE]] uses PPPoE protocol.
+
+<code>
+config dsl 'dsl'
+    option annex 'b'
+    option tone 'a'
+
+config interface 'wan'
+    option ifname 'dsl0.101'
+    # option ifname 'ptm0.101' # for LEDE 17.01
+    option proto 'pppoe'
+    option ipv6 '0' # EE has no IPv6. Replace '1' to enable IPv6
+    option mtu '1492'
+    option username '56@fs' ' # see https://ee.co.uk/help/help-new/broadband-and-landline/home-broadband/what-are-my-home-broadband-internet-settings
+    option password 'XXXXX' # password that came with your EE router
+</code>
+
+Sky and NOW Broadband use DHCP aka. IPoE. Refer to following thread for additional instructions:
+
+[[http://www.skyuser.co.uk/forum/sky-broadband-fibre-help/50483-generic-open-wrt-sky-fibre-mer-guide.html|SkyUser - obsolete instructions]]
+
+[[https://forum.openwrt.org/t/bt-homehub-5a-with-nowtv-fibre/50137/2|OpenWrt forum - newer instructions]] - see example config below
+[[https://forum.openwrt.org/t/nowtv-openwrt/74624/5|Additional info for NOW Broadband]]
+<code>
+config dsl 'dsl'
+        option annex 'b'
+        option tone 'a'
+        option xfer_mode 'ptm'
+        option line_mode 'vdsl'
+
+
+config interface 'wan'
+        option ifname 'dsl0.101'
+        # option ifname 'ptm0.101' # for LEDE 17.01
+        option proto 'dhcp'
+        option clientid 'anythingYouLike'   # Update: it may have to be in hexadecimal and/or of a minimum length
+#        option macaddr 'AA:BB:CC:DD:EE:FF'  # optional, replace with your Sky/NOW hub's WAN mac if included
+
+config device 'wan_dev'
+        option name 'dsl0'
+
+config interface 'wan6'
+        option proto 'dhcpv6'
+        option reqaddress 'try'
+        option reqprefix 'auto'
+        option ifname 'dsl0.101'
+        option delegate '1'
+</code>
+
+
+[[https://community.talktalk.co.uk/t5/Articles/Set-up-a-non-TalkTalk-router/ta-p/2205383|TalkTalk]] uses DHCP protocol. They use automated network authentication so there is no need for a username and password - IGMP V2/V3 proxy needs to be installed for TalkTalk TV for my setup im using separated LAN interface for this.
+
+<code>
+config dsl 'dsl'
+    option annex 'b'
+    option tone 'a'
+
+config interface 'wan'
+    option ifname 'dsl0.101'
+    # option ifname 'ptm0.101' # for LEDE 17.01
+    option proto 'dhcp'
+    option mtu '1500'
+    option ipv6 '0' # TalkTalk has no IPv6 support. Replace '0' to '1' to enable IPv6 for feature
+</code>
+
+[[https://forum.vodafone.co.uk/t5/Other-broadband-queries/How-to-Set-up-a-third-party-router-with-vodafone-2019/m-p/2621214|Vodafone UK]]
+uses PPPoE protocol with authentication needed.
+
+<code>
+config dsl 'dsl'
+    option annex 'b'
+    option tone 'a'
+
+config interface 'wan'
+    option ifname 'dsl0.101'
+    # option ifname 'ptm0.101' # for LEDE 17.01
+    option proto 'pppoe'
+    option ipv6 '0' # Vodafone UK has no IPv6. Replace '1' to enable IPv6
+    option mtu '1492'
+    option username 'XXX@broadband.vodafone.co.uk'
+    #option username 'XXXX@businessbroadband.vodafone.co.uk # for business customers
+    option password ' XXXXXX' # Need password for auth
+</code>
+
+[[https://www.zen.co.uk/broadband|Zen Internet]]
+uses PPPoE protocol with auth (Username and Password)
+
+<code>
+config dsl 'dsl'
+    option annex 'b'
+    option tone 'a'
+
+config interface 'wan'
+    option ifname 'dsl0.101'
+    # option ifname 'ptm0.101' # for LEDE 17.01
+    option proto 'pppoe'
+    option ipv6 '1' # Zen has IPv6. Replace '0' to disable IPv6
+    option mtu '1500'
+    option username 'zenXXXXXX@zen'
+    option password ' XXXXXX' # Need password for auth, can get this info from Zen Customer Portal or Mobile App.
+</code>
+
+====== General xDSL configuration (step by step) ======
+
+  - Connect to box:<code>ssh root@192.168.1.1</code>
+  - (optional) Patch DSL Firmware to appropriate Annex (not at all boxes):<code>
+cd /lib/firmware/
+ls
+bspatch lantiq-vrx200-a.bin firmware-b.bin lantiq-vrx200-a-to-b.bspatch</code>
+  - set Annex:<code>
+vi /etc/config/network
+
+config dsl 'dsl'
+	option annex 'j'	# try 'b' or 'j' in Germany/Austria
+	option firmware '..'	# (optional) set to '/lib/firmware/firmware-b.bin'
+</code>vi press: [d] -> delete line; [i] -> insert mode; [ESC] -> [:] -> [w][q] -> [return] -> write and quit
+  - Connect DSL	-> f.e. Germany: TAE middle port to box DSL port (cable both middle pins populated)
+  - Restart DSL-modem:<code>/etc/init.d/dsl_control restart</code>O²Box6431: did not need box reboot / SpeedportW504VTypeA: had to reboot box for DSL connection
+  - Check if firmware is loaded (if Annex is already set right there will be more values), repeat a few times:<code>
+(O²Box6431)
+root@OpenWrt:~# /etc/init.d/dsl_control status
+
+ATU-C Vendor ID:                          
+ATU-C System Vendor ID:                   
+Chipset:                                  Lantiq-VRX200
+Firmware Version:                         5.7.9.9.0.6
+API Version:                              4.17.18.6
+XTSE Capabilities:                        , , , , , , , 
+Annex:                                    
+Line Mode:                                
+Profile:                                  
+Line State:                               DOWN [0x200: silent]</code>
+  - Check connection attempts - repeat a few times:<code>
+/etc/init.d/dsl_control status
+
+Line State:
+
+DOWN [0x100: idle]
+DOWN [0x200: silent]
+
+[..]
+DOWN [0x300: handshake]
+
+[..]
+DOWN [0xff: idle request]
+
+[..]
+DOWN [0x300: handshake]
+
+[..till]
+UP [0x801: showtime_tc_sync]
+</code>Try an other Annex if it loops between idle and handshake -> f.e. O²Box6431: AnnexA not working due AnnexB/J in Germany -> Patch DSL Firmware to appropriate Annex
+  - Working DSL connection (SpeedportW504VTypeA, O² DSL):<code>
+/etc/init.d/dsl_control status	
+
+ATU-C Vendor ID:                          Broadcom 178.17
+ATU-C System Vendor ID:                   0F,00,4E,4F,4B,42,00,00
+Chipset:                                  Ifx-Danube
+Firmware Version:                         2.4.1.7.0.2
+API Version:                              3.24.4.4
+XTSE Capabilities:                        0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0
+Annex:                                    J
+Line Mode:                                G.992.5 (ADSL2+)
+Profile:                                  
+Line State:                               UP [0x801: showtime_tc_sync]
+Forward Error Correction Seconds (FECS):  Near: 0 / Far: 1
+Errored seconds (ES):                     Near: 0 / Far: 2
+Severely Errored Seconds (SES):           Near: 0 / Far: 0
+Loss of Signal Seconds (LOSS):            Near: 0 / Far: 0
+Unavailable Seconds (UAS):                Near: 60 / Far: 60
+Header Error Code Errors (HEC):           Near: 0 / Far: 81
+Non Pre-emtive CRC errors (CRC_P):        Near:  / Far: 
+Pre-emtive CRC errors (CRCP_P):           Near:  / Far: 
+Power Management Mode:                    L0 - Synchronized
+Latency [Interleave Delay]:               8.0 ms [Interleave]   7.50 ms [Interleave]
+Data Rate:                                Down: 19.926 Mb/s / Up: 1.901 Mb/s
+Line Attenuation (LATN):                  Down: 15.2 dB / Up: 24.2 dB
+Signal Attenuation (SATN):                Down: 13.8 dB / Up: 9.8 dB
+Noise Margin (SNR):                       Down: 6.1 dB / Up: 24.2 dB
+Aggregate Transmit Power (ACTATP):        Down: 18.2 dB / Up: 12.8 dB
+Max. Attainable Data Rate (ATTNDR):       Down: 19.956 Mb/s / Up: 1.901 Mb/s
+Line Uptime Seconds:                      418
+Line Uptime:                              6m 58s
+</code>
+  - Set specific ISP Configuration -> :!: VLAN for working WAN/Uplink

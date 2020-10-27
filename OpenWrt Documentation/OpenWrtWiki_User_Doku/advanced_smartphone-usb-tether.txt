@@ -1,0 +1,3 @@
+====== Smartphone USB tethering ======
+
+Merged into [[docs:guide-user:network:wan:smartphone.usb.tethering| this article]]

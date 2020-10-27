@@ -1,0 +1,51 @@
+====== SNMPD ======
+{{page>meta:infobox:construction&noheader&nofooter&noeditbtn}}
+
+There are two options. mini-snmpd or snmpd. 
+
+===== How to install snmpd =====
+
+opkg install snmpd
+
+Then Edit the /etc/config/snmpd file and finetune what you need.
+More advanced configurations might need to edit the /etc/init.d/snmpd script and make the snmpd program to load another custom config
+
+===== How to install mini-snmpd =====
+
+opkg install mini_snmpd
+
+**Note:** minisnmpd uses a 32 bit counter, which maxes out at 4294967295.  This means any traffic over that does not appear on the counter, making it appear that you no longer have traffic.  This is by design of minisnmpd.  See [[https://dev.openwrt.org/ticket/13597|Bug Report]] and minisnmpd [[http://freecode.com/projects/minisnmpd|project page]]
+
+===== Basic configuration for mini-snmpd =====
+
+Open /etc/config/mini_snmpd and update the entries in the brackets to something that makes sense for you:
+
+<code>
+config mini_snmpd
+        option enabled 1
+        option ipv6 0
+        option community <SNMP COMMUNITY>
+        option location '<WHERE YOUR OPENWRT IS :)>'
+        option contact '<YOUR CONTACT DETAILS>'
+        option disks '/tmp,/jffs,<ANY OTHER DISKS>'
+        option interfaces 'lo,br-lan,eth0.1,eth1' # Max 4
+</code>
+
+
+===== 64-bit counters issues =====
+
+| {{:meta:icons:tango:48px-outdated.svg.png?nolink}} | As of [[https://dev.openwrt.org/changeset/25486|r25486]] this patch is in the tree. |
+
+Take a look at the [[https://forum.openwrt.org/viewtopic.php?pid=127560#p127560|forum post]] ("64 bit counter support in SNMP (TL-WR1043ND)"). I.e. get the patch from [[https://dev.openwrt.org/ticket/8818|Ticket 8818]] ("Enable 64 bit counters in net-snmp"), build and reinstall the whole kernel/system (rebuild and opkg install the new snmp package didn't work).
+
+===== Usage with Cacti =====
+
+For some reason, Cacti doesn't like the system response that mini_snmpd gives (eg uptime, syslocation etc). In order to get your graphs correctly generated within Cacti, you need to change the way Cacti polls the OpenWRT system to see if it is up - on the device page within Cacti you should change the 'downed device detection' method to 'Ping' and the ping method to 'ICMP Ping'. This should then work :)
+
+===== Wireless signal and noise =====
+
+Here is a small patch for mini_snmpd to support monitoring wireless signal and noise with Cacti. Here is the [[http://nottheoilrig.com/openwrt/201212090/wireless.patch|patch for mini_snmpd]] and here is a patch to [[http://patchwork.openwrt.org/patch/3061/|add it to OpenWrt]]. Here is a blog post about [[http://jdbates.blogspot.com/2012/12/heres-patch-for-mini-snmp-daemon-to.html|how to configure Cacti]] to make graphs from signal and noise data.
+
+The OIDs in the patch are chosen to work with the kbridge.xml SNMP query this is distributed with Cacti.
+
+{{http://nottheoilrig.com/openwrt/201212090/index_files/graph_image_003.png|http://nottheoilrig.com/openwrt/201212090/}}

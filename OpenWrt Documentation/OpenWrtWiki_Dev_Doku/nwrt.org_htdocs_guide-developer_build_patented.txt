@@ -1,0 +1,7 @@
+====== BUILD_PATENTED ======
+
+''BUILD_PATENTED'', shown in menuconfig as ''Compile with support for patented functionality'' is disabled by default: [[https://github.com/openwrt/openwrt/commit/dc555d003c21679c8c94ac7f5c74cbd5cd089ae0]].  It may be required for some packages to run (see previous github link).
+
+To learn more about what packages would need ''BUILD_PATENTED'' run the following in the OpenWrt root directory:
+
+''git grep BUILD_PATENTED''

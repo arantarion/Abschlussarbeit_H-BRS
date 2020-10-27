@@ -1,0 +1,16 @@
+====== Mikrotik TFTP ======
+
+Recovery can be done via Mikrotik TFTP.
+
+  * -> [[docs:guide-user:installation:generic.flashing.tftp|Installing OpenWrt via TFTP]]
+  * -> [[toh:mikrotik:common|Common Procedures for Mikrotik RouterBoard Products]]
+
+===== Devices with this recovery method =====
+---- datatable ----
+cols       : Brand, Model, Versions, Supported Current Rel_releasecurrent, Recovery method(s)_method-recovery, Comment recovery, Device Page_page, Device Techdata_pageid
+dynfilters : 1
+filter     : Model!=@@Model@@
+filter     : recovery method(s)=Mikrotik TFTP
+sort       : Brand
+limit      : 25
+----

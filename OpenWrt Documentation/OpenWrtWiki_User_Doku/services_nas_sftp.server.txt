@@ -1,0 +1,18 @@
+====== SFTP server ======
+Some clients, e.g. GNOME Files or [[https://cyberduck.io|Cyberduck]] on the Mac, [[https://trac.cyberduck.io/ticket/4161|cannot connect]] to the SCP server provided by OpenWrt's standard ssh server, dropbear, unless an additional binary is installed in /usr/libexec/sftp-server - this can be done with:
+
+<code bash>
+opkg update
+opkg install openssh-sftp-server
+</code>
+
+Now you can use sftp clients such as GNOME Files or Cyberduck to connect to the OpenWrt system. Note that no additional startup scripts are required since all of that is handled by dropbear which is most likely already present on your system.
+
+===== Announce on the network =====
+If you would like to announce the service on the network using Bonjour/Zeroconf so that Cyberduck finds it, you you can install the announce package, starting from Chaos Calmer:
+
+<code bash>
+opkg install announce
+</code>
+  
+The announce service will notice that openssh-sftp-server is present and will announce the sftp service on the network.

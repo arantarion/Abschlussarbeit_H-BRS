@@ -1,0 +1,15 @@
+====== SD card ======
+
+Recovery can be done via SD card.
+
+See [[docs:guide-user:installation:installation_methods:sd_card|SD card]]
+
+===== Devices with this recovery method =====
+---- datatable ----
+cols       : Brand, Model, Versions, Supported Current Rel_releasecurrent, Recovery method(s)_method-recovery, Comment recovery, Device Page_page, Device Techdata_pageid
+dynfilters : 1
+filter     : Model!=@@Model@@
+filter     : recovery method(s)=SD card
+sort       : Brand
+limit      : 25
+----

@@ -1,0 +1,170 @@
+====== Build system – Setup Linux ======
+  - Install ''[[wp>Git (software)|git]]'', to conveniently download the source code, and your distro's default ''[[wp>GNU build system|build tools]]'' metapackage to do the cross-compilation process
+  - Some feeds might not available over git but only via ''[[wp>Apache Subversion|subversion]]'' (short: ''svn'') or ''[[wp>Mercurial|mercurial]]''. If you want to obtain their source-code, you need to install svn and mercurial as well
+  - Install other prerequisite packages, as indicated in the table and examples below
+  - Set (or unset) proper environment variables:
+    * ''SED'' [[https://dev.openwrt.org/ticket/10612|should not be set]], otherwise run ''unset SED'' before compiling
+    * ''GREP_OPTIONS'' should not have ''%%--initial-tab%%'' or other options affecting its output
+
+===== Prerequisites =====
+This table contains the package name for each build prerequisite in different GNU/Linux and Unix like distributions.
+  * Python on current Debian/Ubuntu distributions is Python 3 and Python 2 is required for the build system (May 2018). It typically may be installed as the ''python2.7-dev'' meta-package (or later version, if available).
+  * Bleeding edge distros like [[https://forum.openwrt.org/t/solved-build-from-master-on-archlinux-gives-error-for-freadahead-c/18693/6?u=brianbaligad|Archlinux may fail to build base-files]] if ''Cryptographically signed package lists'' in ''Global build settings'' is enabled.
+
+^ Prerequisite ^ Debian ^ SUSE ^ Red Hat ^ OS X (via MacPorts) ^ Fedora ^ Arch ^ Gentoo ^
+| asciidoc | asciidoc | asciidoc | asciidoc | asciidoc | asciidoc | asciidoc | app-text/asciidoc |
+| [[wp>Bash (Unix shell)|GNU Bash]] | bash |bash| bash | bash | bash| bash| app-shells/bash |
+| [[wp>GNU Binutils]] | binutils | binutils| binutils| binutils| binutils| binutils| sys-devel/binutils |
+| [[wp>bzip2]] | bzip2 | bzip2| bzip2| bzip2| bzip2| bzip2| app-arch/bzip2 |
+| [[wp>flex lexical analyser|flex]] | flex|flex| flex | flex| flex| flex| sys-devel/flex |
+| [[wp>Git (software)|git]] | git-core| git-core| git | git-core | git | git| dev-vcs/git |
+| [[wp>GNU C++ Compiler]] | %%g++%% | %%gcc-c++%% | %%gcc-c++%% | ? | %%gcc-c++%% | gcc | sys-devel/gcc |
+| [[wp>GNU C Compiler]] | gcc| gcc| gcc| ?| gcc| gcc| sys-devel/gcc |
+| GNU Time | ? | ? | ? | ? | ? | ? | sys-process/time |
+| getopt | util-linux | util-linux | util-linux | getopt| util-linux | util-linux | sys-apps/util-linux |
+| [[wp>GNU awk]] | gawk| gawk| gawk| gawk| gawk| gawk| sys-apps/gawk |
+| help2man | help2man | ? | ? | ? | ? | ? | ? |
+| intltool-update | intltool| intltool| intltool| intltool| intltool| intltool | dev-util/intltool |
+| libelf-dev | libelf-dev | ? | ? | ? | ? | ? | ? |
+| libz, libz-dev | zlib1g-dev | zlib-devel| zlib-devel| zlib| zlib-devel| zlib | sys-libs/zlib |
+| make | make | make| make | gmake| make| make | sys-devel/make |
+| [[wp>ncurses]] | libncurses5-dev| ncurses-devel| ncurses-devel| ncurses| ncurses-devel| ncurses | sys-libs/ncurses |
+| openssl/ssl.h | libssl-dev| libopenssl-devel| openssl-devel| openssl| openssl-devel| openssl | dev-libs/openssl |
+| patch| patch | patch | patch | patchutils| patch| patch | sys-devel/patch |
+| perl-ExtUtils-MakeMaker| perl-modules | perl-ExtUtils-MakeMaker| perl-ExtUtils-MakeMaker| p5-extutils-makemaker| perl-ExtUtils-MakeMaker| perl-extutils-makemaker | virtual/perl-ExtUtils-MakeMaker |
+| perl-Thread-Queue | ? | ? | ? | ? | perl-Thread-Queue | ? | ? |
+| python2-dev | python2-dev | python-devel| ?| python2| python-devel | python2 | dev-lang/python:2 |
+| unzip | unzip| unzip| unzip| unzip| unzip| unzip | app-arch/unzip |
+| [[wp>GNU Wget]] | wget | wget| wget| wget| wget| wget | net-misc/wget |
+| xgettext | gettext| gettext-tools| gettext | gettext| gettext| gettext | sys-devel/gettext |
+| xsltproc | xsltproc| libxslt-tools| ?| libxslt| libxslt| libxslt | dev-libs/libxslt |
+| zlib, zlib-static| zlib1g-dev| zlib-devel-static | zlib-devel | zlib-devel| zlib-devel,zlib-static | zlib | sys-libs/zlib (USE=static-libs)|
+
+===== Package prerequisites =====
+Unfortunately not all dependencies are checked by ''make config'', especially for packages.
+You may encounter compile errors because you need a specific library in your system, and the only way is to search the missing library from the compiler error log and see what package contains it in your own distro.
+
+The following table is a partial list of such dependencies:
+
+^ Package ^ Prerequisite ^ Debian (8) ^ SUSE ^ Red Hat ^ OS X ^ Fedora ^ Arch ^ Gentoo ^
+| boost | bjam / boost-jam | libboost1.55-dev | | | | boost-jam | boost | dev-util/boost-build |
+| intltool | [Perl] XML::Parser | libxml-parser-perl | | perl-XML-Parser | | perl-XML-Parser | intltool | dev-perl/XML-Parser |
+| libftdi | libusb-config | libusb-dev | | | | libusb-devel | libusb | dev-libs/libusb-compat |
+| lilo | as86,ld86 | bin86 | | | | dev86 | bin86 | sys-devel/bin86 |
+| lilo | bcc | bcc | | | | dev86 | [[https://aur.archlinux.org/packages/bcc/|aur/bcc]] | sys-devel/dev86 |
+| lilo | uudecode | sharutils | | | | sharutils | sharutils | app-arch/sharutils |
+| juajit | x86 %%g++%% libs on amd64 hosts| %%g++-multilib%% | | | | | | |
+| classpath| javac, gcj | openjdk-7-jdk | | | | java-1.7.0-openjdk-devel | jdk7-openjdk | dev-java/oracle-jdk-bin, sys-devel/gcc[gcj], and one (or both) of dev-java/icedtea-bin:7 and dev-java/icedtea:7 |
+| mac80211 | b43-fwcutter | | | | | b43-fwcutter | b43-fwcutter | net-wireless/b43-fwcutter |
+| jamvm | zip | | | | | zip | | app-arch/zip |
+
+===== Linux distributions =====
+Distribution-specific instructions.
+
+==== Alpine ====
+<code bash>
+apk add asciidoc bash bc binutils bzip2 cdrkit coreutils diffutils \
+findutils flex g++ gawk gcc gettext git grep intltool libxslt \
+linux-headers make ncurses-dev patch perl python2-dev python3-dev \
+rsync tar unzip util-linux wget zlib-dev
+</code>
+
+==== Arch ====
+<code bash>
+pacman -S --needed bash bc bin86 binutils bzip2 cdrkit core/which \
+diffutils fastjar findutils flex gawk gcc gettext git intltool \
+libusb libxslt make ncurses openssl patch perl-extutils-makemaker \
+pkgconf python3 rsync sharutils time unzip util-linux wget zlib
+</code>
+
+==== CentOS / Fedora ====
+<code bash>
+sudo dnf install bash-completion bzip2 gcc gcc-c++ git make ncurses-devel \
+patch perl-Data-Dumper perl-Thread-Queue python2 rsync tar unzip wget \
+diffutils which
+</code>
+
+==== Debian / Ubuntu ====
+<code bash>
+sudo apt-get update
+sudo apt-get install subversion g++ zlib1g-dev build-essential git \
+python python3 python3-distutils libncurses5-dev gawk gettext unzip \
+file libssl-dev wget libelf-dev ecj fastjar java-propose-classpath
+</code>
+
+==== Debian 7 ====
+<code bash>
+sudo apt-get install libncurses5-dev zlib1g-dev gawk
+</code>
+
+==== Debian 8 ====
+<code bash>
+sudo apt-get install build-essential libncurses5-dev gawk git \
+libssl-dev gettext unzip zlib1g-dev file python
+</code>
+
+==== Debian 9.4 ====
+<code bash>
+sudo apt install build-essential libncurses5-dev gawk git libssl-dev \
+gettext zlib1g-dev swig unzip time rsync python3 python3-setuptools
+</code>
+
+==== Gentoo ====
+<code bash>
+echo \
+app-arch/{bzip2,fastjar,sharutils,unzip,zip} sys-process/time \
+app-text/asciidoc dev-java/{icedtea:7,jikes,oracle-jdk-bin} \
+dev-libs/{libusb-compat,libxslt,openssl} dev-util/intltool \
+dev-vcs/{git,mercurial} net-misc/{rsync,wget} \
+net-wireless/b43-fwcutter sys-apps/{gawk,util-linux} \
+sys-devel/{bc,bin86,binutils,dev86,flex,gcc[gcj],gettext} \
+sys-libs/{ncurses,zlib} virtual/{cdrtools,perl-ExtUtils-MakeMaker} \
+x11-libs/gtk+:2 \
+| sed "s/\s/\n/g" \
+| sort \
+| sudo tee /etc/portage/sets/openwrt-prerequisites \
+&& sudo emerge -DuvNa "@openwrt-prerequisites"</code>
+
+==== Gentoo 17.1 ====
+<code bash>
+echo \
+app-arch/{bzip2,sharutils,unzip,zip} sys-process/time \
+app-text/asciidoc \
+dev-libs/{libusb-compat,libxslt,openssl} dev-util/intltool \
+dev-vcs/{git,mercurial} net-misc/{rsync,wget} \
+sys-apps/util-linux sys-devel/{bc,bin86,dev86} \
+sys-libs/{ncurses,zlib} virtual/perl-ExtUtils-MakeMaker \
+| sed "s/\s/\n/g" \
+| sort \
+| sudo tee /etc/portage/sets/openwrt-prerequisites \
+&& sudo emerge -DuvNa "@openwrt-prerequisites"
+</code>
+
+==== openSUSE 13.2 ====
+<code bash>
+sudo zypper install asciidoc bash bc binutils bzip2 fastjar flex git-core \
+gcc-c++ gcc util-linux gawk intltool zlib-devel mercurial make genisoimage \
+ncurses-devel libopenssl-devel patch perl-ExtUtils-MakeMaker python-devel \
+rsync sdcc unzip wget gettext-tools libxslt-tools zlib-devel
+</code>
+
+==== openSUSE 15 ====
+<code bash>
+sudo zypper install make patch gcc-c++ git ncurses-devel git-core python-devel
+</code>
+
+==== openSUSE 42.3 ====
+<code bash>
+sudo zypper install make patch gcc-c++ git ncurses-devel git-core
+</code>
+
+==== Ubuntu 18.04 ====
+<code bash>
+sudo apt-get install build-essential libncursesw5-dev python unzip
+</code>
+
+==== Ubuntu 18.04 LTS ====
+<code bash>
+sudo apt-get install subversion build-essential libncurses5-dev \
+zlib1g-dev gawk git ccache gettext libssl-dev xsltproc zip
+</code>

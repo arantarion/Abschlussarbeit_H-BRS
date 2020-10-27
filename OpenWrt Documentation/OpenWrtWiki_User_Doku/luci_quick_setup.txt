@@ -1,0 +1,35 @@
+====== Quick Setup ======
+This page is a combination of basics configurations for administrator, WAN, and Wifi.\\
+Many configurations are not possible with Quick Setup, they must be done with the usual LuCI interface, but this is normal, Quick Setup only covers simple needs.
+
+**Attention: **It is not available yet with LuCI interface.
+
+===== Administrator =====
+This part allows for changing the administrator password for accessing the device.
+
+{{media:administrator.png?400|}}
+
+===== WAN =====
+This part allows for changing the connection type of the internet. There are 3 types to choose: DHCP, Static address, and PPPoE.
+
+''DHCP:'' allows a device (in this case, your router) to obtain an IP address and associated information automatically.
+In this case, you don't need to give any other pieces of information.
+
+{{media:wan_dhcp.png?400|}}
+
+
+''Static address:'' an IP address specially reserved for your connection which does not change automatically.
+In this case, you should choose the version of the internet protocol(ipv4 or ipv6), and then complete associated information with the version you have chosen.
+
+{{media:wan_static.png?400|}}
+
+''PPPoE:'' the point-to-point protocol over Ethernet. This type of connection requires that you have a user name and password (given by your Internet service provider (ISP)) to access the Internet.
+
+{{media:wan_pppoe.png?400|}}
+
+===== Wifi =====
+This part allows for changing the ID and password of your wifi. You can also enable/disable this wifi by selecting/unselecting the checkbox "Enable". There are two wifis at the same time, one with a frequency of 2.4GHz, and another with 5GHz. They share the same password.
+
+The ID of the Wifi with 5GHz is showed below the password. When you modify the ID of your wifi with 2.4GHz, the ID of the wifi with 5GHz is modified automatically with a suffix "_2".
+
+{{media:wifi.png?400|}}

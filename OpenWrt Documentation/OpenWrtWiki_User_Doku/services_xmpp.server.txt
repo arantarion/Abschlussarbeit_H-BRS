@@ -1,0 +1,776 @@
+======Prosody XMPP Server (open messaging protocol)======
+
+**Prosody** writen in Lua 
+
+Hompage [[http://prosody.im/]]
+
+Documentation [[http://prosody.im/doc/configure]]
+
+Wiki from Arch Linux "ssl"  [[https://wiki.archlinux.org/index.php/Prosody]] 
+
+===== Install =====
+8 MiB Flash or more
+<code bash>
+opkg update
+opkg install prosody
+</code>
+4 MiB Flash
+<code bash>
+opkg update
+opkg --nodeps install luafilesystem libidn luaexpat libexpat lua liblua prosody
+</code>
+
+===== Show me it working ASAP =====
+Faster way is allowing auto-registration to @localhost.
+==== allow_registration ====
+<code bash>
+sed -i -e 's/\(allow_registration = \)false;/\1true;/' /etc/prosody/prosody.cfg.lua
+chmod +r /etc/prosody/prosody.cfg.lua
+chown -R prosody:prosody /etc/prosody/data
+/etc/init.d/prosody start
+</code>
+==== XMPP client ====
+Use a XMPP client to add an account to 192.168.1.1 server like:
+  *[[http://www.pidgin.im/download/|Pidgin]] for Windows, Linux & Mac OS X
+  *[[http://www.xabber.com/|Xabber]] for Android
+
+==== The right way? ====
+Batch add users with the same password:
+<code bash>
+for f in almursi jow maddes nilfred orca thelexi
+do prosodyctl register $f localhost 123
+done
+</code>
+
+==== Not so easy ====
+All users see all others registered users by default.
+<code bash>
+# A roster for everyone
+mkdir -p -m 775 /tmp/roster
+cd /tmp/roster
+# Make a list
+echo "acoul
+almursi
+glp
+hauke
+jow
+juhosg
+maddes
+nbd
+nilfred
+orca
+thelexi" > lista.txt
+for f in $(awk '{print $1}' lista.txt)
+# Register
+do prosodyctl register $f localhost 123
+# Add to group "Familiares" all others, but not self.
+sed -e "/$f/ d" lista.txt | awk 'BEGIN {print "return {\n\t[false] = {\n\t\t[\"version\"] = 5;\n\t};\n\t[\"pending\"] = {};"} {print "\t[\"" $1 "@localhost\"] = {\n\t\t[\"groups\"] = {\n\t\t\t[\"Familiares\"] = true;\n\t\t};\n\t\t[\"subscription\"] = \"both\";\n\t\t[\"name\"] = \"" toupper(substr($1, 1, 1)) substr($1, 2) "\";\n\t};"} END {print "}"}' > $f.dat
+done
+chmod 666 *.dat
+# Move to flash at once
+mkdir -p -m 775 /etc/prosody/data/localhost/roster
+chown prosody:prosody *.dat . /etc/prosody/data/localhost/roster
+mv *.dat /etc/prosody/data/localhost/roster/
+</code>
+The sausage do:
+  *Remove the self name from the list
+  *Print a head
+  *Print a paragraph to each other with
+    *name@localhost
+    *groups: Familiares
+    *Nickname with first letter capitalized
+  *Print a tail to a file
+===== Renew the SSL certificate =====
+Not required if SSL stuff was not installed, Ex.: 4 MiB installation.
+
+Same old key used for brevity, some RTFM required for completeness.
+<code bash>
+cd /tmp
+scp root@routerlogin.net:/etc/prosody/certs/localhost.[ck]e* .
+openssl req -new -x509 -days 365 -nodes -out "localhost.cert" -key "localhost.key"
+scp localhost.[ck]e* root@routerlogin.net:/etc/prosody/certs/
+</code>
+Will see to add -subj parameter for batch usage.
+
+This code is not intended to run in the router itself, some test still required.
+
+==== Create a new SSL certificate ====
+Where it says C=AR means your country 2 letters ISO. CN= has to match your domain name or prosody may ask yet another question.
+<code bash>
+# Self-signed SSL certificate creation (new key)
+cd /tmp
+openssl req -new -x509 -days 365 -nodes -out "example.no-ip.biz.crt" -keyout "example.no-ip.biz.key" -subj /C=AR/ST=YourState/L=YourCity/O=YourOrganization/OU=YourOrganizationUnit/CN=example.no-ip.biz/emailAddress=your@mail.address
+scp example.no-ip.biz.[ck][re][ty] root@192.168.1.1:/etc/prosody/certs/
+mkdir -p ~/build/files/ar71xx/etc/prosody/certs
+mv example.no-ip.biz.[ck][re][ty] ~/build/files/ar71xx/etc/prosody/certs
+</code>
+
+==== Renew a SSL certificate ====
+The next year you have to do this:
+<code bash>
+# Self-signed SSL certificate renew (same old key)
+cd ~/build/files/ar71xx/etc/prosody/certs
+openssl req -new -x509 -days 365 -nodes -out "example.no-ip.biz.crt" -key "example.no-ip.biz.key" -subj /C=AR/ST=YourState/L=YourCity/O=YourOrganization/OU=YourOrganizationUnit/CN=example.no-ip.biz/emailAddress=your@mail.address
+scp example.no-ip.biz.[ck][re][ty] root@192.168.1.1:/etc/prosody/certs/
+</code>
+That's because the key never expires, just the certificate expires. Prosody may ask anyway.
+
+==== Upload archived SSL certificate ====
+When upgrade the firmware, you may lost your certificate and clients (prosody) may ask for it. Better present the same unexpired certificate to avoid asking.
+<code bash>
+# Upload the same certificate already created before
+cd ~/build/files/ar71xx/etc/prosody/certs
+scp example.no-ip.biz.[ck][re][ty] root@192.168.1.1:/etc/prosody/certs/
+</code>
+
+===== Using your DDNS domain =====
+This example requires you to get a example.no-ip.biz domain and install luci-app-ddns. Then is exactly the same as @localhost:
+
+<code bash>
+# Allow registration?
+sed -i -e 's/\(allow_registration = \)false;/\1true;/' /etc/prosody/prosody.cfg.lua
+chmod +r /etc/prosody/prosody.cfg.lua
+# Start once to create the prosody:prosody account
+/etc/init.d/prosody start
+/etc/init.d/prosody stop
+chown -R prosody:prosody /etc/prosody/data
+sed -i -e 's/example.com/example.no-ip.biz/;/enabled = false/ d' /etc/prosody/prosody.cfg.lua
+# A roster for everyone
+mkdir -p -m 775 /tmp/roster
+cd /tmp/roster
+# Make a list
+echo "acoul
+almursi
+glp
+hauke
+jow
+juhosg
+maddes
+nbd
+nilfred
+orca
+thelexi" > lista.txt
+mkdir -p -m 775 /etc/prosody/data/example.no-ip.biz/roster
+chown -R prosody:prosody /etc/prosody/data
+for f in $(awk '{print $1}' lista.txt)
+do prosodyctl register $f example.no-ip.biz 123
+sed -e "/$f/ d" lista.txt | awk 'BEGIN {print "return {\n\t[false] = {\n\t\t[\"version\"] = 1;\n\t};\n\t[\"pending\"] = {};"} {print "\t[\"" $1 "@example.no-ip.biz\"] = {\n\t\t[\"groups\"] = {\n\t\t\t[\"Familiares\"] = true;\n\t\t};\n\t\t[\"subscription\"] = \"both\";\n\t\t[\"name\"] = \"" toupper(substr($1, 1, 1)) substr($1, 2) "\";\n\t};"} END {print "}"}' > $f.dat
+done
+chmod 666 *.dat
+chown prosody:prosody *.dat .
+mv *.dat /etc/prosody/data/example.no-ip.biz/roster/
+/etc/init.d/prosody start
+# All OK?
+cat /var/log/prosody/prosody.err
+cat /var/log/prosody/prosody.log
+</code>
+
+==== Set your router a DDNS name ====
+After reading how to setup [[docs:guide-user:services:ddns:client|DDNS client]], you should end with something like this working configuration:
+<code bash>
+uci batch <<'EOF'
+set ddns.myddns.domain=example.no-ip.biz
+set ddns.myddns.enabled=0
+set ddns.myddns.force_interval=22
+set ddns.myddns.ip_interface=pppoe-wan
+set ddns.myddns.ip_source=interface
+delete ddns.myddns.ip_url
+set ddns.myddns.password=password
+set ddns.myddns.service_name=no-ip.com
+set ddns.myddns.username=username
+commit ddns
+EOF
+</code>
+==== Set your router the same LAN name as WAN ====
+It would be wise if your router has the same name for LAN clients, so has to not go out and redirected back.
+<code bash>
+uci batch <<'EOF'
+add dhcp domain
+set dhcp.@domain[-1].ip=192.168.1.1
+set dhcp.@domain[-1].name=tplinklogin.net
+add dhcp domain
+set dhcp.@domain[-1].ip=192.168.1.1
+set dhcp.@domain[-1].name=routerlogin.net
+add dhcp domain
+set dhcp.@domain[-1].ip=192.168.1.1
+set dhcp.@domain[-1].name=example.no-ip.biz
+commit dhcp
+EOF
+</code>
+Now these commands have the same effect in your LAN:
+<code bash>
+ssh root@192.168.1.1
+ssh root@routerlogin.net
+ssh root@tplinklogin.net
+ssh root@example.no-ip.biz
+</code>
+Your router now has a name!
+==== Set your own domain name SRV records ====
+Very well! So, for your own domain name may need to setup SRV records if the xmpp server run in another subdomain like this:
+<code>
+_xmpp-client._tcp.example.com. 18000 IN SRV 0 5 5222 xmpp.example.com.
+_xmpp-server._tcp.example.com. 18000 IN SRV 0 5 5269 xmpp.example.com. 
+</code>
+Translated to uci will look like this:
+<code bash>
+uci batch <<'EOF'
+add dhcp srvhost
+set dhcp.@srvhost[-1].srv=_xmpp-client._tcp.example.com
+set dhcp.@srvhost[-1].target=xmpp.example.com
+set dhcp.@srvhost[-1].port=5222
+set dhcp.@srvhost[-1].class=0
+set dhcp.@srvhost[-1].weight=5
+add dhcp srvhost
+set dhcp.@srvhost[-1].srv=_xmpp-server._tcp.example.com
+set dhcp.@srvhost[-1].target=xmpp.example.com
+set dhcp.@srvhost[-1].port=5269
+set dhcp.@srvhost[-1].class=0
+set dhcp.@srvhost[-1].weight=5
+commit dhcp
+EOF
+</code>
+This DNS trick is for someone@xmpp.example.com looks like someone@example.com, but also for fancy names like this full picture:
+<code>
+# A record
+your-server.EXAMPLE.COM                     IN A            1.2.3.4        # this *must* be an A record and not a CNAME
+ 
+# CNAME records
+anon.EXAMPLE.COM                          IN CNAME        your-server.EXAMPLE.COM. # this is what the anonymous binding (non-logged in web users) will connect to
+topics.EXAMPLE.COM                        IN CNAME        your-server.EXAMPLE.COM. # to enable channels like food@topics.EXAMPLE.COM
+ 
+# SRV records
+_xmpp-client._tcp.EXAMPLE.COM.            IN SRV 5 0 5222 your-server.EXAMPLE.COM.
+_xmpp-server._tcp.EXAMPLE.COM.            IN SRV 5 0 5269 your-server.EXAMPLE.COM.
+_xmpp-server._tcp.anon.EXAMPLE.COM        IN SRV 5 0 5269 your-server.EXAMPLE.COM.
+_xmpp-server._tcp.topics.EXAMPLE.COM      IN SRV 5 0 5269 your-server.EXAMPLE.COM. 
+</code>
+
+===== Upgrade to prosody 0.8.2 =====
+Really? This step is not necessary, and requires rebuilding.
+
+Look for "how to build" first, if is your first time building this is definitely not for you.
+
+==== Patch your SVN ====
+This patch is against AA-rc1 r34185
+<code bash>
+cd ~/build/openwrt/attitude_adjustment/feeds/packages
+patch -p0 <<'EOF'
+</code>
+<code diff>
+Index: net/prosody/Makefile
+===================================================================
+--- net/prosody/Makefile	(revisión: 34185)
++++ net/prosody/Makefile	(copia de trabajo)
+@@ -1,5 +1,5 @@
+ #
+-# Copyright (C) 2009-2011 OpenWrt.org
++# Copyright (C) 2009-2012 OpenWrt.org
+ #
+ # This is free software, licensed under the GNU General Public License v2.
+ # See /LICENSE for more information.
+@@ -8,15 +8,17 @@
+ include $(TOPDIR)/rules.mk
+ 
+ PKG_NAME:=prosody
+-PKG_VERSION:=0.6.2
+-PKG_RELEASE:=2
++PKG_VERSION:=0.8.2
++PKG_RELEASE:=1
+ 
+ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+ PKG_SOURCE_URL:=http://prosody.im/downloads/source
+-PKG_MD5SUM:=5da59bc906419ad3b4faa21516a6ca18
++PKG_MD5SUM:=6e907bf0d0acf24f1011083020ba6ffb
+ 
+ PKG_INSTALL:=1
+ 
++PKG_BUILD_DEPENDS:=lua
++
+ include $(INCLUDE_DIR)/package.mk
+ 
+ define Package/prosody
+@@ -39,6 +41,7 @@
+ endef
+ 
+ TARGET_CFLAGS += $(FPIC)
++CMAKE_OPTIONS = -DLUAPATH=/usr/lib/lua
+ 
+ define Build/Configure
+ 	# this is *NOT* GNU autoconf stuff
+@@ -72,16 +75,20 @@
+ 	$(INSTALL_DIR) $(1)/usr/lib/prosody/core
+ 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/prosody/core/*.lua $(1)/usr/lib/prosody/core/
+ 	$(INSTALL_DIR) $(1)/usr/lib/prosody/fallbacks
+-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/prosody/fallbacks/*.lua $(1)/usr/lib/prosody/fallbacks/
++#	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/prosody/fallbacks/*.lua $(1)/usr/lib/prosody/fallbacks/
+ 	$(INSTALL_DIR) $(1)/usr/lib/prosody/modules
+ 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/prosody/modules/*.lua $(1)/usr/lib/prosody/modules/
+ 	$(INSTALL_DIR) $(1)/usr/lib/prosody/modules/muc
+ 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/prosody/modules/muc/*.lua $(1)/usr/lib/prosody/modules/muc/
++	$(INSTALL_DIR) $(1)/usr/lib/prosody/modules/adhoc
++	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/prosody/modules/adhoc/*.lua $(1)/usr/lib/prosody/modules/adhoc/
+ 	$(INSTALL_DIR) $(1)/usr/lib/prosody/net
+ 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/prosody/net/*.lua $(1)/usr/lib/prosody/net/
+ 	$(INSTALL_DIR) $(1)/usr/lib/prosody/util
+ 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/prosody/util/*.lua $(1)/usr/lib/prosody/util/
+ 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/prosody/util/*.so $(1)/usr/lib/prosody/util/
++	$(INSTALL_DIR) $(1)/usr/lib/prosody/util/sasl
++	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/prosody/util/sasl/*.lua $(1)/usr/lib/prosody/util/sasl/
+ endef
+ 
+ $(eval $(call BuildPackage,prosody))
+Index: net/prosody/patches/001-conf.patch
+===================================================================
+--- net/prosody/patches/001-conf.patch	(revisión: 34185)
++++ net/prosody/patches/001-conf.patch	(copia de trabajo)
+@@ -1,37 +1,40 @@
+ --- a/prosody.cfg.lua.dist
+ +++ b/prosody.cfg.lua.dist
+-@@ -47,7 +47,7 @@ modules_enabled = {
+- 		"register"; -- Allow users to register on this server using a client and change passwords
+- 	
++@@ -59,7 +59,7 @@ modules_enabled = {
++ 		--"admin_telnet"; -- Opens telnet console interface on localhost port 5582
++ 
+  	-- Other specific functionality
+ -		--"posix"; -- POSIX functionality, sends server to background, enables syslog, etc.
+ +		"posix"; -- POSIX functionality, sends server to background, enables syslog, etc.
+- 		--"console"; -- Opens admin telnet interface on localhost port 5582
+  		--"bosh"; -- Enable BOSH clients, aka "Jabber over HTTP"
+  		--"httpserver"; -- Serve static files from a directory over HTTP
+-@@ -65,6 +65,9 @@ modules_disabled = {
+- -- Disable account creation by default, for security
++ 		--"groups"; -- Shared roster support
++@@ -83,6 +83,9 @@ modules_disabled = {
+  -- For more information see http://prosody.im/doc/creating_accounts
+  allow_registration = false;
+-+
++ 
+ +-- File to write pid in
+ +pidfile = "/var/run/prosody/prosody.pid";
+- 	
+++	
+  -- These are the SSL/TLS-related settings. If you don't want
+  -- to use SSL/TLS, you may comment or remove this
+-@@ -73,6 +76,15 @@ ssl = {
+- 	certificate = "certs/localhost.cert";
+- }
+- 
+-+-- Errors to syslog
+-+-- All to /var/log/prosody/
+-+log = {
+-+	{ levels = { "error" }; to = "syslog";  };
++ ssl = {
++@@ -123,10 +126,16 @@
++ -- Logging configuration
++ -- For advanced logging see http://prosody.im/doc/logging
++ log = {
++-	info = "prosody.log"; -- Change 'info' to 'debug' for verbose logging
++-	error = "prosody.err";
+++	-- info = "prosody.log"; -- Change 'info' to 'debug' for verbose logging
+++	-- error = "prosody.err";
++ 	-- "*syslog"; -- Uncomment this for logging to syslog
+++	-- Requires mod_posix to be loaded
++ 	-- "*console"; -- Log to the console, useful for debugging with daemonize=false
+++	{ levels = { "error" }; to = "syslog";  }; -- Errors to syslog
+++	-- All to /var/log/prosody/
+ +	{ levels = { "error" }; to = "file"; filename = "/var/log/prosody/prosody.err";  };
+ +	-- Change "info" to "debug" for more verbose logging
+ +	{ levels = { min = "info" }; to = "file"; filename = "/var/log/prosody/prosody.log";  };
+-+}
+-+
++ }
++ 
+  ----------- Virtual hosts -----------
+- -- You need to add a VirtualHost entry for each domain you wish Prosody to serve.
+- -- Settings under each VirtualHost entry apply *only* to that host.
+Index: lang/luaexpat/Makefile
+===================================================================
+--- lang/luaexpat/Makefile	(revisión: 34185)
++++ lang/luaexpat/Makefile	(copia de trabajo)
+@@ -8,12 +8,12 @@
+ include $(TOPDIR)/rules.mk
+ 
+ PKG_NAME:=luaexpat
+-PKG_VERSION:=1.1
+-PKG_RELEASE:=2
++PKG_VERSION:=1.2.0
++PKG_RELEASE:=1
+ 
+ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+-PKG_SOURCE_URL:=http://luaforge.net/frs/download.php/2469
+-PKG_MD5SUM:=6ecb895ccf5cff1e7f2facd438b1f8d0
++PKG_SOURCE_URL:=http://matthewwild.co.uk/projects/luaexpat
++PKG_MD5SUM:=03efe50c7f30a34580701e6527d7bfee
+ 
+ include $(INCLUDE_DIR)/package.mk
+ 
+@@ -47,7 +47,7 @@
+ 
+ define Package/luaexpat/install
+ 	$(INSTALL_DIR) $(1)/usr/lib/lua
+-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/src/lxp.so.1.1.0 $(1)/usr/lib/lua/lxp.so
++	$(INSTALL_DATA) $(PKG_BUILD_DIR)/src/lxp.so.1.2.0 $(1)/usr/lib/lua/lxp.so
+ 	$(INSTALL_DIR) $(1)/usr/lib/lua/lxp
+ 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/src/lxp/lom.lua $(1)/usr/lib/lua/lxp
+ endef
+</code>
+<code bash>
+EOF
+</code>
+
+==== Add a file ====
+One more file goes to feeds/packages/net/prosody/patches/002-makefile.patch:
+<code diff>
+--- a/configure
++++ b/configure
+@@ -11,16 +11,13 @@
+ LUA_INCDIR="/usr/include"
+ LUA_LIBDIR="/usr/lib"
+ IDN_LIB=idn
+-ICU_FLAGS="-licui18n -licudata -licuuc"
+ OPENSSL_LIB=crypto
+ CC=gcc
+-CXX=g++
+ LD=gcc
+ 
+ CFLAGS="-fPIC -Wall"
+-LDFLAGS="-shared"
+-
+-IDN_LIBRARY=idn
++LFLAGS="-shared"
++
+ # Help
+ 
+ show_help() {
+@@ -29,7 +26,7 @@
+ 
+ --help                      This help.
+ --ostype=OS                 Use one of the OS presets.
+-                            May be one of: debian, macosx, linux, freebsd
++                            May be one of: debian, macosx
+ --prefix=DIR                Prefix where Prosody should be installed.
+                             Default is $PREFIX
+ --sysconfdir=DIR            Location where the config file should be installed.
+@@ -46,15 +43,12 @@
+                             Default is \$LUA_DIR/lib
+ --with-idn=LIB              The name of the IDN library to link with.
+                             Default is $IDN_LIB
+---idn-library=(idn|icu)		 Select library to use for IDNA functionality.
+-									 idn: use GNU libidn (default)
+-									 icu: use ICU from IBM
+ --with-ssl=LIB              The name of the SSL to link with.
+                             Default is $OPENSSL_LIB
+ --cflags=FLAGS              Flags to pass to the compiler
+                             Default is $CFLAGS
+---ldflags=FLAGS             Flags to pass to the linker
+-                            Default is $LDFLAGS
++--lflags=FLAGS              Flags to pass to the linker
++                            Default is $LFLAGS
+ --c-compiler=CC             The C compiler to use when building modules.
+                             Default is $CC
+ --linker=CC                 The linker to use when building modules.
+@@ -67,7 +61,7 @@
+ 
+ while [ "$1" ]
+ do
+-   value="`echo $1 | sed 's/[^=]*=\(.*\)/\1/'`"
++   value="`echo $1 | sed 's/.*=\(.*\)/\1/'`"
+    if echo "$value" | grep -q "~"
+    then
+       echo
+@@ -91,88 +85,72 @@
+    --ostype=*)
+       OSTYPE="$value"
+       OSTYPE_SET=yes
+-      if [ "$OSTYPE" = "debian" ]
+-      then LUA_SUFFIX="5.1";
++      ;;
++   --datadir=*)
++   	DATADIR="$value"
++   	DATADIR_SET=yes
++      ;;
++   --require-config)
++      REQUIRE_CONFIG=yes
++      ;;
++   --lua-suffix=*)
++      LUA_SUFFIX="$value"
++      LUA_SUFFIX_SET=yes
++      ;;
++   --with-lua=*)
++      LUA_DIR="$value"
++      LUA_DIR_SET=yes
++      ;;
++   --with-lua-include=*)
++      LUA_INCDIR="$value"
++      LUA_INCDIR_SET=yes
++      ;;
++   --with-lua-lib=*)
++      LUA_LIBDIR="$value" LUA_LIBDIR_SET=yes
++      ;;      
++   --with-idn=*)
++      IDN_LIB="$value"
++      ;;      
++   --with-ssl=*)
++      OPENSSL_LIB="$value"
++      ;;      
++   --cflags=*)
++      CFLAGS="$value"
++      ;;      
++   --lflags=*)
++      LFLAGS="$value"
++      ;;      
++   --c-compiler=*)
++      CC="$value"
++      ;;      
++   --linker=*)
++      LD="$value"
++      ;;      
++   *)
++      echo "Error: Unknown flag: $1"
++      exit 1
++      ;;
++   esac
++   shift
++done
++
++if [ "$OSTYPE_SET" = "yes" ]
++then
++	if [ "$OSTYPE" = "debian" ]
++	then LUA_SUFFIX="5.1";
+ 	LUA_SUFFIX_SET=yes
+ 	LUA_INCDIR=/usr/include/lua5.1;
+ 	LUA_INCDIR_SET=yes
+ 	fi
+ 	if [ "$OSTYPE" = "macosx" ]
+ 	then LUA_INCDIR=/usr/local/include;
+-	LUA_INCDIR_SET=yes
++	LUA_INCDIR_SET=yes	
+ 	LUA_LIBDIR=/usr/local/lib
+ 	LUA_LIBDIR_SET=yes
+-	LDFLAGS="-bundle -undefined dynamic_lookup"
+-	fi
+-        if [ "$OSTYPE" = "linux" ]
+-        then LUA_INCDIR=/usr/local/include;
+-        LUA_INCDIR_SET=yes
+-        LUA_LIBDIR=/usr/local/lib
+-        LUA_LIBDIR_SET=yes
+-        CFLAGS="-Wall -fPIC"
+-        LDFLAGS="-shared"
+-        fi
+-        if [ "$OSTYPE" = "freebsd" ]
+-        then LUA_INCDIR="/usr/local/include/lua51"
+-        LUA_INCDIR_SET=yes
+-        CFLAGS="-Wall -fPIC -I/usr/local/include"
+-        LDFLAGS="-I/usr/local/include -L/usr/local/lib -shared"
+-        LUA_SUFFIX="-5.1"
+-        LUA_SUFFIX_SET=yes
+-        LUA_DIR=/usr/local
+-        LUA_DIR_SET=yes
+-        fi
+-      ;;
+-   --datadir=*)
+-   	DATADIR="$value"
+-   	DATADIR_SET=yes
+-      ;;
+-   --require-config)
+-      REQUIRE_CONFIG=yes
+-      ;;
+-   --lua-suffix=*)
+-      LUA_SUFFIX="$value"
+-      LUA_SUFFIX_SET=yes
+-      ;;
+-   --with-lua=*)
+-      LUA_DIR="$value"
+-      LUA_DIR_SET=yes
+-      ;;
+-   --with-lua-include=*)
+-      LUA_INCDIR="$value"
+-      LUA_INCDIR_SET=yes
+-      ;;
+-   --with-lua-lib=*)
+-      LUA_LIBDIR="$value" LUA_LIBDIR_SET=yes
+-      ;;
+-   --with-idn=*)
+-      IDN_LIB="$value"
+-      ;;
+-	--idn-library=*)
+-		IDN_LIBRARY="$value"
+-		;;
+-   --with-ssl=*)
+-      OPENSSL_LIB="$value"
+-      ;;
+-   --cflags=*)
+-      CFLAGS="$value"
+-      ;;
+-   --ldflags=*)
+-      LDFLAGS="$value"
+-      ;;
+-   --c-compiler=*)
+-      CC="$value"
+-      ;;
+-   --linker=*)
+-      LD="$value"
+-      ;;
+-   *)
+-      echo "Error: Unknown flag: $1"
+-      exit 1
+-      ;;
+-   esac
+-   shift
+-done
++	CFLAGS="-Wall"
++	LFLAGS="-bundle -undefined dynamic_lookup"
++	fi	
++fi
+ 
+ if [ "$PREFIX_SET" = "yes" -a ! "$SYSCONFDIR_SET" = "yes" ]
+ then
+@@ -269,16 +247,6 @@
+    LUA_BINDIR="$LUA_DIR/bin"
+ fi
+ 
+-if [ "$IDN_LIBRARY" = "icu" ]
+-then
+-	IDNA_LIBS="$ICU_FLAGS"
+-	CFLAGS="$CFLAGS -DUSE_STRINGPREP_ICU"
+-fi
+-if [ "$IDN_LIBRARY" = "idn" ] 
+-then
+-	IDNA_LIBS="-l$IDN_LIB"
+-fi
+-
+ echo -n "Checking Lua includes... "
+ lua_h="$LUA_INCDIR/lua.h"
+ if [ -e "$lua_h" ]
+@@ -329,12 +297,10 @@
+ LUA_BINDIR=$LUA_BINDIR
+ REQUIRE_CONFIG=$REQUIRE_CONFIG
+ IDN_LIB=$IDN_LIB
+-IDNA_LIBS=$IDNA_LIBS
+ OPENSSL_LIB=$OPENSSL_LIB
+ CFLAGS=$CFLAGS
+-LDFLAGS=$LDFLAGS
++LFLAGS=$LFLAGS
+ CC=$CC
+-CXX=$CXX
+ LD=$LD
+ 
+ EOF
+--- a/util-src/Makefile
++++ b/util-src/Makefile
+@@ -7,32 +7,45 @@
+ IDN_LIB?=idn
+ OPENSSL_LIB?=crypto
+ CC?=gcc
+-CXX?=g++
+ LD?=gcc
+ 
+-.SUFFIXES: .c .o .so
+-
+-encodings.so: encodings.o
+-	MACOSX_DEPLOYMENT_TARGET="10.3"; export MACOSX_DEPLOYMENT_TARGET;
+-	$(CC) -o $@ $< $(LDFLAGS) $(IDNA_LIBS)
+-
+-hashes.so: hashes.o
+-	MACOSX_DEPLOYMENT_TARGET="10.3"; export MACOSX_DEPLOYMENT_TARGET;
+-	$(CC) -o $@ $< $(LDFLAGS) -l$(OPENSSL_LIB)
+-
+-.c.o:
+-	$(CC) $(CFLAGS) -I$(LUA_INCDIR) -c -o $@ $<
+-
+-.o.so:
+-	MACOSX_DEPLOYMENT_TARGET="10.3"; export MACOSX_DEPLOYMENT_TARGET;
+-	$(LD) -o $@ $< $(LDFLAGS)
+ 
+ all: encodings.so hashes.so pposix.so signal.so
+ 
+ install: encodings.so hashes.so pposix.so signal.so
+ 	install *.so ../util/
++	
+ 
+ clean:
+ 	rm -f *.o
+ 	rm -f *.so
+ 	rm -f ../util/*.so
++
++encodings.o: encodings.c
++	$(CC) $(CFLAGS) -I$(LUA_INCDIR) -c -o encodings.o encodings.c
++encodings.so: encodings.o
++	MACOSX_DEPLOYMENT_TARGET="10.3"; export MACOSX_DEPLOYMENT_TARGET;
++	$(LD) $(LFLAGS) -o encodings.so encodings.o -L$(LUA_LIBDIR) -llua$(LUA_SUFFIX) -lidn
++	
++
++hashes.o: hashes.c
++	$(CC) $(CFLAGS) -I$(LUA_INCDIR) -c -o hashes.o hashes.c
++hashes.so: hashes.o
++	MACOSX_DEPLOYMENT_TARGET="10.3";
++	export MACOSX_DEPLOYMENT_TARGET;
++	$(LD) $(LFLAGS) -o hashes.so hashes.o -L$(LUA_LIBDIR) -llua$(LUA_SUFFIX) -lcrypto
++
++pposix.o: pposix.c
++	$(CC) $(CFLAGS) -I$(LUA_INCDIR) -c -o pposix.o pposix.c
++pposix.so: pposix.o
++	MACOSX_DEPLOYMENT_TARGET="10.3";
++	export MACOSX_DEPLOYMENT_TARGET;
++	$(LD) $(LFLAGS) -o pposix.so pposix.o -L$(LUA_LIBDIR) -llua$(LUA_SUFFIX)
++	
++signal.o: signal.c
++	$(CC) $(CFLAGS) -I$(LUA_INCDIR) -c -o signal.o signal.c
++signal.so: signal.o
++	MACOSX_DEPLOYMENT_TARGET="10.3";
++	export MACOSX_DEPLOYMENT_TARGET;
++	$(LD) $(LFLAGS) -o signal.so signal.o -L$(LUA_LIBDIR) -llua$(LUA_SUFFIX)
++	
+--- a/net/dns.lua
++++ b/net/dns.lua
+@@ -223,7 +223,7 @@
+ 
+ 
+ function dns.random(...)    -- - - - - - - - - - - - - - - - - - -  dns.random
+-	math.randomseed(math.floor(10000*socket.gettime()));
++	math.randomseed(math.floor(10000*socket.gettime()) % 0x80000000);
+ 	dns.random = math.random;
+ 	return dns.random(...);
+ end
+</code>
+
+==== Build ====
+Ready, now compile as usual, example:
+<code bash>
+cd ~/build/openwrt/attitude_adjustment
+echo "CONFIG_TARGET_ar71xx=y
+# CONFIG_TARGET_ar71xx_generic_Default is not set
+CONFIG_TARGET_ar71xx_generic_TLWR842=y
+CONFIG_PACKAGE_block-mount=y
+CONFIG_PACKAGE_luci=y
+CONFIG_PACKAGE_luci-app-qos=y
+CONFIG_PACKAGE_kmod-fs-ext4=y
+CONFIG_PACKAGE_kmod-ledtrig-heartbeat=y
+CONFIG_PACKAGE_kmod-input-gpio-keys-polled=y
+CONFIG_PACKAGE_kmod-usb-storage=y
+CONFIG_ATH_USER_REGD=y
+CONFIG_PACKAGE_prosody=m" > .config
+make defconfig
+time make -j8 world
+</code>
+
+==== Download preparation ====
+The required packages should be copied to a downloadable location, in this case ~/Descargas/OpenWrt/ar71xx/r$r is good for me.
+<code bash>
+r=34185
+cp ~/build/openwrt/attitude_adjustment/bin/ar71xx/packages/prosody_0.8.2-1_ar71xx.ipk ~/Descargas/OpenWrt/ar71xx/r$r/prosody_0.8.2-1_ar71xx.ipk
+cp ~/build/openwrt/attitude_adjustment/bin/ar71xx/packages/luaexpat_1.2.0-1_ar71xx.ipk ~/Descargas/OpenWrt/ar71xx/r$r/luaexpat_1.2.0-1_ar71xx.ipk
+</code>
+
+==== Install ====
+<code bash>
+ssh root@192.168.1.1
+/etc/init.d/prosody stop
+opkg remove prosody luaexpat
+cd /tmp
+rm prosody_0.8.2-1_ar71xx.ipk luaexpat_1.2.0-1_ar71xx.ipk
+r=34185
+wget http://192.168.1.110/openwrt/ar71xx/r$r/prosody_0.8.2-1_ar71xx.ipk http://192.168.1.110/openwrt/ar71xx/r$r/luaexpat_1.2.0-1_ar71xx.ipk
+opkg install luaexpat_1.2.0-1_ar71xx.ipk prosody_0.8.2-1_ar71xx.ipk
+</code>

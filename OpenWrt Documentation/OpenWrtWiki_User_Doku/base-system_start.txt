@@ -1,0 +1,3 @@
+====== Base system ======
+
+{{pagequery>@:docs:guide-user:base-system *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

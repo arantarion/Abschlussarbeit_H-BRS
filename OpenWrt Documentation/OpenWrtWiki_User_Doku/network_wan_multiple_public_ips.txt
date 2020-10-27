@@ -1,0 +1,48 @@
+====== Using multiple public IPs on wan interface ======
+
+===== Use case =====
+Some users get from their ISP more than one routable public IP address.\\ 
+In this case you need to assign these IPs to new wan interfaces and then add a DNAT and SNAT rule in firewall.\\ 
+In our example we assume that our ISP assigned us 100.64.0.0/29 (or 255.255.255.248) with gateway 100.64.0.1
+wan interface already has the first available IP, 100.64.0.2, so we'll add .3, till .6 and they will be assigned to internal hosts on IPs 192.168.1.x
+
+===== Configuration examples =====
+Add a new wan interface in ''/etc/config/network'':
+
+<code bash>
+config interface 'wan_3'
+        option proto 'static'
+        option ifname 'eth1'
+        option ipaddr '100.64.0.3'
+        option netmask '255.255.255.248'
+        option gateway '100.64.0.1'
+</code>
+
+Add DNAT (for incoming) and SNAT (for outgoing) connections in ''/etc/config/firewall'':
+
+<code bash>
+config redirect
+        option name 'dnat3'
+        option src 'wan'
+        option src_dip '100.64.0.3'
+        option dest 'lan'
+        option dest_ip '192.168.1.3'
+        option proto 'all'
+        option target 'DNAT'
+
+config redirect
+        option name 'snat3'
+        option src 'lan'
+        option src_ip '192.168.1.3'
+        option src_dip '100.64.0.3'
+        option dest 'wan'
+        option proto 'all'
+        option target 'SNAT'
+</code>
+
+Restart network and firewall services.
+
+<code bash>
+service network restart
+service firewall restart
+</code>

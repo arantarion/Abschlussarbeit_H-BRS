@@ -1,0 +1,70 @@
+====== Using the SDK ======
+The [[wp>Software_development_kit|SDK]] is a pre-compiled [[wp>Toolchain|toolchain]] designed to [[wp>Cross_compile|cross compile]] packages for a specific target without compiling the whole system from scratch.
+
+Tasks you can do with the SDK:
+  * Compile custom software for a specific release while ensuring binary and feature compatibility
+  * Compile newer versions of certain packages for a specific release
+  * Recompile existing packages with custom patches or different features
+
+
+=== Prerequisites ===
+
+The SDK has the same prerequisites as the buildroot system, so please see [[docs:guide-developer:build-system:install-buildsystem|Build system – Installation]] page to install the needed software to build the packages on the SDK.
+
+Note: On some hosts it is needed to install the **ccache** package
+
+:!: Do everything as normal user, don't use root user or sudo!\\ 
+:!: Do not build in a directory that has spaces in its full path\\ 
+===== Obtain the SDK =====
+You can either download a precompiled SDK, or compile it yourself from sources. Compilation from source is done by simply enabling the menuconfig option ''Build the OpenWrt SDK'' (CONFIG_SDK).
+The precompiled SDK is found in the same download folder where you find the firmware images for your device.
+
+==== Downloads ====
+  * [[https://downloads.openwrt.org/snapshots/targets/| development snapshot SDK]] ->  [[docs:platforms:start|Platforms]] -> Supplementary Files -> openwrt-sdk-<Platform>_gcc-<version>_musl.Linux-x86_64.tar.xz
+  * [[https://downloads.openwrt.org/releases/19.07.4/targets/| 19.07.4]] -> [[docs:platforms:start|Platforms]] -> Supplementary Files -> openwrt-sdk-<Platform>_gcc-<version>_musl.Linux-x86_64.tar.xz
+  * [[https://downloads.openwrt.org/releases/18.06.8/targets/| 18.06.8]] -> [[docs:platforms:start|Platforms]] -> Supplementary Files -> openwrt-sdk-<Platform>_gcc-<version>_musl.Linux-x86_64.tar.xz
+  * [[https://downloads.openwrt.org/releases/17.01.7/targets/| LEDE 17.01.7]] -> [[docs:platforms:start|Platforms]] -> Supplementary Files -> lede-sdk-17.01.7-<Platform>_gcc-<version>_musl-<version>.Linux-x86_64.tar.xz
+
+
+==== Package Feeds ====
+After decompressing the SDK archive, optionally edit the ''feeds.conf.default'' file to add your package feeds.  By default, this will contain the feeds used when the SDK was built. You can add your own feeds, local or remote, just like using the buildroot.  If you are simply rebuilding extra packages, you don't need to do this at all.
+
+==== Load package lists ====
+
+  * Use ''./scripts/feeds update -a'' command to obtain and update package definitions.
+
+  * After the definitions have been updated, ''./scripts/feeds install <packagename>'' to prepare the package and its dependencies.
+
+''./scripts/feeds install -a'' Will make all packages available, again, just like in the buildroot.
+
+===== Usage =====
+
+==== Select Packages ====
+
+Open a terminal in the SDK's folder and then open the SDK's menu by writing ''make menuconfig''  The SDK menuconfig system is the same as the buildroot.  Instructions are at the top, and help is available via the ''?'' key.
+
+You //probably// want to disable some default settings, which build every available package.  
+Enter ''Global Build Settings'' and in the submenu, deselect/exclude the following options:
+  * ''Select all target specific packages by default''
+  * ''Select all kernel module packages by default''
+  * ''Select all userspace packages by default''
+
+Still in the menu, find the package you want to build and select it by pressing "m", this will also select all the dependencies, and you will see that they are all tagged with "<M>" in the menu. You can select multiple packages too.
+
+Save the configuration and exit the menu. 
+
+==== Compile Packages ====
+After the Makefile is in place, the usual buildroot commands apply:
+
+  * ''make package///example///download'' - download the soures of //example//
+  * ''make package///example///prepare'' - extract the sources, apply patches and download if necessary
+  * ''make package///example///compile'' - compile //example//, prepare and download if necessary
+  * ''make package///example///clean'' - clean the sourcecode
+  * ''make package/index'' - build a repository index to make the output directory usable as local //opkg// source
+
+Or just ''make'' to build everything selected.  (You can compile faster by writing ''make -j5'' or similar as appopriate for your build host)
+
+After the compilation is finished, the generated .ipk files are placed in the bin/packages and bin/targets directories inside the directory you extracted the SDK into.
+
+===== Troubleshooting =====
+:!: Some SDK versions have bugs....

@@ -1,0 +1,101 @@
+====== LEDE源代码 ======
+
+LEDE项目发端于r49258版本的OpenWrt，其源代码被保存在一个包含了所有由OpenWrt项目产生的分支和版本的Git树中。在导入源代码时，树被归一化，并对提交者名称和邮件地址进行了一些小调整。
+
+所有仓库可以通过以下方式在线浏览：
+
+  - [[https://git.lede-project.org/|Gitweb]] - LEDE项目主仓库
+  - [[https://github.com/lede-project|Github]] - 一个持续更新的Gitweb镜像
+
+
+===== LEDE源代码仓库 =====
+
+任何在openwrt.git这个主仓库中产生的//LEDE//进化都可以通过HTTP和HTTPS方式访问: 
+<code>
+git clone https://git.openwrt.org/openwrt/openwrt.git
+</code>
+
+您还可以使用以下命令，找到源代码仓库在Github上的一个镜像：
+<code>
+git clone https://github.com/openwrt/openwrt.git
+</code>
+
+==== 源代码主体结构 ====
+
+在项目Git中，您可以看见以下文件夹：
+
+  * **/config** : 菜单设置配置文件
+  * **/include** : 文件生成配置文件
+  * **/package** : 用于文件生成和菜单配置的软件包
+  * **/scripts** : 构建期间用到的各类脚本文件
+  * **/target** : 构建imagebuilder,内核,sdk和工具链所需的生成文件和配置
+  * **/toolchain** : 构建工具链所需的生成文件和配置
+  * **/tools** : 在构建过程中使用的各种工具
+
+===== 版本发布 =====
+
+版本生成已经大大自动化，该过程的其余部分随着第一个//LEDE//版本的发布也实现自动化。我们将引进一个同内核维护文件类似的格式化测试文件，社区成员可以将自己列为对象/配置文件/设备的测试者。一旦版本发布，测试人员应该就会收到一封告知将要测试的镜像文件需求的电子邮件。这取决于测试镜像是否包含在二进制版本中。
+
+发布基本原则:
+  - 一年至少一次
+  - 包含至少一个维护更新
+  - 能为已发布版本的CVE/critical等提供至少一年的漏洞修复
+  - 只包含可维护的对象
+  - 只包含已在设备上测试的对象
+  - 万事俱备
+
+您可以查阅TODO页获取更多信息。
+
+===== 状态树 =====
+
+您可以使用以下命令在 git.lede-project.org  上创建您的状态树：(不适用于普通用户)
+
+<code>
+ssh <git@git.lede-project.org> "create lede/yournick/staging" 
+ssh <git@git.lede-project.org> "desc lede/yournick/staging Staging tree of Your Name"
+</code>
+
+您可以使用以下命令让您的状态树在 https://git.lede-project.org 上可见:
+
+<code>
+ssh <git@git.lede-project.org> "perms lede/yournick/staging + READERS gitweb"
+</code>
+
+您可以使用以下命令让您的状态树让任何人可读:
+
+<code>
+ssh <git@git.lede-project.org> "perms lede/yournick/staging + READERS @all "
+</code>
+
+==== 内核更新 ====
+
+在内核发布2天内就使用最新内核的做法不仅是浪费时间，也是不切实际的。原因如下：
+
+  - 内核版本的多样化
+  - 维护者不断升级而不是提升稳定性的压力
+  - 投入巨大的精力在版本间的3到4次更新上
+  - 打包kmod-*的巨大工作量
+  - 升级的内核可能未充分测试
+
+当然，这并不是为陈旧不堪的内核辩解，权衡之计就是使用不会导致不必要的工作量和稳定性问题的社区版本。
+
+虽然理论上最多可同时存在三个版本内核，但保留两个显然比三个更好。
+
+简而言之：尝鲜诚可贵，稳定价更高。尝鲜固然重要，但不能以牺牲稳定性为代价。
+
+===== 添加一个新设备 =====
+
+您可以查阅了解如何 **[[docs:guide-developer:adding_new_device|添加一个新设备]]** 
+===== OpenWrt源代码 =====
+
+我们以版本号[[https://git.lede-project.org/?p=openwrt/source.git;a=commit;h=ee53a240ac902dc83209008a2671e7fdcf55957a|r49258]]保留了原始的OpenWrt源代码，以便为历史爱好者提供参考。
+
+原始的OpenWrt源代码被拆分为不同的Git资源库，映射到了不同的SVN目录并使用恰当的标签对分支进行区分。
+
+<code>
+git clone https://git.lede-project.org/openwrt/source.git 
+git clone https://git.lede-project.org/openwrt/packages.git 
+git clone https://git.lede-project.org/openwrt/feeds.git 
+git clone https://git.lede-project.org/openwrt/docs.git
+</code>
+

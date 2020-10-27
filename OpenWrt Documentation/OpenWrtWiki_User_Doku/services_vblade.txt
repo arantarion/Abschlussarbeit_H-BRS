@@ -1,0 +1,27 @@
+====== AOE (aka (s)ATA over Ethernet) with vblade ======
+The vblade target allows other computers on your network to mount your attached drives over the AOE ([[wp>ATA over Ethernet]]) protocol. 
+
+
+===== Example =====
+
+<code bash>
+config 'vblade'
+	option 'shelf'	'1'
+	option 'slot'	'1'
+	option 'netif'	'eth0'
+	option 'device' '/dev/sda'
+
+config 'vblade'
+	option 'shelf'	'1'
+	option 'slot'	'2'
+	option 'netif'	'eth0'
+	option 'device' '/dev/sdb
+</code>
+
+<sortable>
+^ Name ^ Type ^ Required ^ Default ^ Option ^ Description ^
+| ''shelf'' | integer | Yes |  |         | shelf number  |
+| ''solt'' | integer | Yes |  |    | slot number |
+| ''netif'' | string | no? |  |  | interface on which to allow initiators |
+| ''device'' | string | Yes |  |  | Block device to export              |
+</sortable>

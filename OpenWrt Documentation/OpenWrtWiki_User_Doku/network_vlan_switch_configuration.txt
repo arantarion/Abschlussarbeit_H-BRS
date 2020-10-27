@@ -1,0 +1,167 @@
+====== VLAN ======
+VLAN是**V**irtual **L**ocal **A**rea **N**etwork（即：虚拟局域网）首个字母的缩写，它是物理网络交换设备在OSI第2层(即：数据链路层)上的虚拟隔断。
+
+它是一种无需配置完整的子网和路由却能隔离即便使用了同一个物理网络客户端的方法，工作原理是在网络流量中添加一个标签（VLAN ID）并使用这个标签来决定流量路径进而将客户端分隔在不同VLAN中。要使用VLAN，您需要至少2个支持VLAN功能的设备（任何路由都需要至少2端），通常为高级路由器、任何运行OpenWrt的设备、任何自响应的PC，或者单板电脑。(Windows，MacOS，Linux和BSDs均支持VLAN)
+
+OpenWrt支持 [[https://en.wikipedia.org/wiki/IEEE_802.1Q|IEEE 802.1Q]] 和 [[https://en.wikipedia.org/wiki/IEEE_802.1ad|IEEE 802.1ad]] VLAN标准。
+
+许多多端口嵌入式设备都包含支持VLAN的交换机（比如：所有带WAN口的路由器都包含支持VLAN的交换机），单端口设备和每个端口都有以太网控制器的设备（例如PC开发板或一般大多数PC硬件）则由操作系统驱动程序管理VLAN。
+
+A VLAN-capable switch is an integrated version of an independent device called "managed switch". It is connected to an internal "ethernet" interface of your device, and it is more or less independent from the main CPU.
+It can place ports under the same VLAN (and they will communicate with each other) by just setting the right VLAN ID(s) on the ports (with the right configuration, below), and this will work irrespective of the fact that the network communication reaches or not the router CPU itself (do note that to configure the router itself you still need at least one VLAN to reach the CPU).
+
+A device where there is software VLAN support is just a device with many different ethernet controllers, so if you want to place 2 interfaces in the same VLAN, AND you want these two interfaces to also route traffic to-from each other (to act as if they were a VLAN-capable switch as the one I talked about above), you need to bridge them too (i.e. both must be in the same Interface, be it **lan**, **wan** or whatever).
+
+如有疑问，您可以在OpenWrt论坛讨论本指南：
+https://forum.openwrt.org/t/vlan-assigning
+
+===== 通过多数OpenWrt路由器默认方案来解释VLAN =====
+许多现成路由器中一个常见默认VLAN配置是LAN<->WAN隔离，此类设备上的OpenWrt默认配置通常会反映出厂配置：仅有一个网络接口（eth0），因此启用不同的VLAN将支持VLAN的5口交换机虚拟隔离出LAN和WAN网络。
+|  VLAN ID  |  <WRAP>传入:\\ 硬件交换机\\ ↑↓\\ eth0 驱动</WRAP>  |  <WRAP>传出:\\ 硬件交换机\\ ↑↓\\ 物理端口</WRAP>  |||||
+| |  CPU (eth0)  |  LAN 1  |  LAN 2  |  LAN 3  |  LAN4  |  WAN  |
+| 1 |  已标记  |  未标记  |  未标记  |  未标记  |  未标记  |  禁用  |
+| 2 |  已标记  |  禁用  |  禁用  |  禁用  |  禁用  |  未标记  |
+示例中，LAN口的VLAN ID是1，而WAN的VLAN ID则是2.
+注意：“传入”和“传出”及类似术语是指到达交换机物理端口（或内部CPU端口）的网络流量，而不是指已经进入交换机的流量。
+  * **已标记** 的CPU (eth0)意味着被本例中的1，2两个VLAN ID使用作为“已标记数据”发送到CPU。请记住：您只能将“已标记”数据发送到已配置能正确处理VLAN的设备。
+  * **未标记** 意味着交换机上这的这些接口仅接受不带任何VLAN ID的传入流量（比如正常的以太网流量），交换机将丢弃这些接口传出流量的VLAN ID。每个端口仅能在一个VLAN ID下标识为“未标记”。
+  * **禁用** 意味着，在此VLAN ID下该端口将不允许流量“传入”和“传出”。
+路由器CPU通过上方配置的标签信息就知道数据是否来自VLAN1(LAN)或VLAN2(WAN)并进行相应地处理。使用默认配置时，CPU只接收和生成“已标记”的数据（因为没有其他方式告诉CPU这是什么那又是什么）。CPU作为单端口设备使用驱动级VLAN管理。
+
+请注意，本例中的WAN和LAN的VLAN ID如何没有共用任何外部端口。对于任何跨越WAN和LAN边界的数据，它都必须通过eth0上的CPU（路由器和防火墙将在此处过滤数据）。如上所述，没有什么能够阻止VLAN完全绕开CPU。
+
+===== 如何确认设备是否集成支持VLAN的硬件交换机？ =====
+要了解OpenWrt设备端口是包括几个独立的网络接口还是仅有1个指向交换机的网络接口：
+  * 您可以查阅路由器对应的OpenWrt tech页面。
+  * 您可以在SSH登陆设备后运行命令''ls -l /sys/class/net''来确认。
+
+<WRAP info>
+已嵌入交换机的较新设备(比如Netgear R7800)使用DSA交换机驱动，该驱动程序为交换机的每个端口创建一个独特的网络接口，就好像它们根本未使用交换机一样。
+
+大多数OpenWrt支持的设备都可以使用DSA交换机驱动，但因交换机配置的巨大变动及容易导致设备上的自定义项目失效而未完成移植。
+</WRAP>
+
+例如：下面的ALIX.2D13拥有3**真正的**网络端口：eth0，eth1和eth2。 每一个都指向了一个单独的不具有交换机的物理网络插孔。如要使用VLAN，您就需要基于VLAN配置使用操作系统软件：
+<code>
+# ls -l /sys/class/net
+...
+lrwxrwxrwx    1 root     root             0 Jul 25 14:10 eth0 -> ../../devices/pci0000:00/0000:00:09.0/net/eth0
+lrwxrwxrwx    1 root     root             0 Jul 25 14:10 eth1 -> ../../devices/pci0000:00/0000:00:0a.0/net/eth1
+lrwxrwxrwx    1 root     root             0 Jul 25 14:10 eth2 -> ../../devices/pci0000:00/0000:00:0b.0/net/eth2
+</code>
+
+例如：下面的TP-Link TL-WDR3600仅有1个**真正的**网络端口：eth0。它的5个物理网络插孔属于一个支持VLAN的交换机，在此示例中，该交换机划为由交换机硬件管理eth0.1和eth0.2两个VLAN：
+<code>
+# ls -l /sys/class/net
+...
+lrwxrwxrwx    1 root     root             0 Jan  1  1970 eth0 -> ../../devices/platform/ag71xx.0/net/eth0
+lrwxrwxrwx    1 root     root             0 Jul 21 22:13 eth0.1 -> ../../devices/virtual/net/eth0.1
+lrwxrwxrwx    1 root     root             0 Jul 21 22:13 eth0.2 -> ../../devices/virtual/net/eth0.2
+</code>
+
+===== Assigning VLAN IDs on VLAN-enabled switch hardware =====
+The ''switch'' section of ''/etc/config/network'' is responsible for partitioning the embedded switch into several //VLANs// which appear as independent interfaces in the system although they share the same hardware.
+
+This section might not be present on some platforms (depends on specific hardware support). Also, some switches only support 4-bit VLANs.
+
+以下是一个典型配置的示例：
+<code bash>
+config 'switch' 'eth0'
+        option 'reset' '1'
+        option 'enable_vlan' '1'
+
+config 'switch_vlan' 'eth0_1'
+        option 'device' 'eth0'
+        option 'vlan' '1'
+        option 'ports' '0 1 3t 5t'
+
+config 'switch_vlan' 'eth0_2'
+        option 'device' 'eth0'
+        option 'vlan' '2'
+        option 'ports' '2 4t 5t'
+
+config 'switch_vlan' 'eth0_3'
+        option 'device' 'eth0'
+        option 'vlan' '3'
+        option 'ports' '3t 4t'
+
+config 'switch_port'
+        option 'device' 'eth0'
+        option 'port' '3'
+        option 'pvid' '3'
+</code>
+
+Common properties are defined within the ''switch'' section; vlan specific properties are located in additional ''switch_vlan'' sections linked to the ''switch'' section through the ''device'' option; pvid specific properties are found in ''switch_port'' sections linked to the ''switch'' section through the ''device'' option.
+
+Ports can be //tagged// or //untagged//:
+  * The //tagged// port (''t'' is appended to the port number) is the one that forces usage of VLAN tags, i.e. when the packet is outgoing, the VLAN ID tag with ''vlan'' value is added to the packet, and when the packet is incoming, the VLAN ID tag has to be present and match the configured ''vlan'' value(s).
+  * The //untagged// port is removing the VLAN ID tag when leaving the port -- this is used for communication with ordinary devices that does not have any clue about VLANs. When the untagged packet arrives to the port, the default port VLAN ID (called ''pvid'') is assigned to the packet automatically. The ''pvid'' value can be selected by the ''switch_port'' section.
+
+The CPU port (number ''5'' in our example) may be configured as tagged or untagged, it may even be omitted in the port configuration. The CPU port works like any other ordinary port and can be configured to be tagged or untagged -- when the switch routes packet to the CPU port, it appears on the corresponding switch interface (with VLAN ID tag number appended to the interface name in case of a tagged port) as incoming packet to allow software routing (to WiFi for example).
+
+In our example, untagged packet coming to port 0 would be marked as VLAN ID 1 first, then sent to port 1 (untagged, VLAN ID tag removed), port 3 (tagged) and the CPU port (tagged), so the packet appears on ''eth0.1'' interface. Another packet arriving to port 2 tagged with VLAN ID 2 would be sent to port 4 (tagged) and the CPU port (tagged), the packet appears on ''eth0.2'' interface. Each tagged switch CPU port has a corresponding interface, in our example you see ''eth0.1'' and ''eth0.2'' in the system (as well as ''eth0''). When the packet is sent by the software to the tagged CPU port, it has the corresponding VLAN ID assigned automatically. So when the software sends packet to ''eth0.2'', is is marked with VLAN ID 2 tag automatically first, and then sent to port 2 (untagged, VLAN ID tag removed) and port 4 (tagged).
+
+:!: An untagged port can have only 1 VLAN ID :!:
+
+===== 创建驱动级VLAN =====
+一个驱动级VLAN可以通过在''interface''部分''ifname''项中的interface name添加点''.''和相应的VLAN ID来创建，如在''eth1''上添加VLAN ID为2的VLAN''eth1.2''。
+
+当任何内部软件路由决定发送数据包到软件的VLAN时，它会离开相应接口（如示例中的''eth1''）,其中存在VLAN标识的则被打上与接口相对应的VLAN ID（如如示例''eth1.2''中的2）。
+
+如果带有VLAN ID的传入数据包到达具有软件VLAN的接口（传入数据包到''eth1''），如VLAN ID存在于配置中，则它将出现在相应软件VLAN接口上（例如VLAN ID为2的数据包将到达''eth1.2''），否则将被丢弃。未标记的数据包将分发到非VLAN接口。
+
+当您将非VLAN接口和VLAN接口桥接在一起时，系统会在非VLAN发送数据包到VLAN接口时添加VLAN ID，并在VLAN接口发送数据包到非VLAN时自动丢弃VLAN ID 。
+
+驱动级VLAN接口也可以手动进行配置。如果不是，它们由OpenWrt中用于进行网络配置的守护进程netifd动态创建。手动定义VLAN支持更多选项，支持以下选项：
+
+^ 名称 ^ 类型 ^ 必选 ^ 默认值 ^ 描述 ^
+| ''type'' | VLAN类型 | 否 | 802.1q | VLAN类型，可选8021q或8021ad |
+| ''name'' | 名称 | 是 | //(无)// | 设备名称，如eth0.5或vlan5 |
+| ''ifname'' | 上级接口 | 是 | //(无)// | 父/基级接口名称，如eth0 |
+| ''vid'' | VLAN Id | 是 | //(无)// | VLAN Id |
+| ''macaddr'' | MAC | 否 | //(无)// | 新接口MAC地址 |
+
+现在，让我们以TP-Link室外无线适配器CPE210为例，虽然它和其他室外设备一样只有一个网络接口控制器(NIC), 但却可以轻松扩展以支持多个虚拟网络接口控制器。
+
+以下示例中，eth0通过详尽的手工被划分为VLAN ID为106的204的2个VLAN接口：
+
+<code bash>
+config device
+	option type '8021q'
+	option ifname 'eth0'
+	option vid '106'
+	option name 'vlan1'
+
+config device
+	option type '8021q'
+	option ifname 'eth0'
+	option vid '204'
+	option name 'vlan2'
+
+config interface 'lan'
+	option type 'bridge'
+	option ifname 'vlan1'
+	option proto 'static'
+	option ipaddr '192.168.1.1'
+	option netmask '255.255.255.0'
+
+config interface 'wan'
+	option ifname 'vlan2'
+	option proto 'dhcp'
+</code>
+
+下面是使用隐式表示法的等效配置：
+请注意，''device''部分丢失了，而且VLAN ID和父级接口则从''ifname''选项由.分隔而来。
+
+<code bash>
+config interface 'lan'
+	option type 'bridge'
+	option ifname 'eth0.106'
+	option proto 'static'
+	option ipaddr '192.168.1.1'
+	option netmask '255.255.255.0'
+
+config interface 'wan'
+	option ifname 'eth0.204'
+	option proto 'dhcp'
+</code>

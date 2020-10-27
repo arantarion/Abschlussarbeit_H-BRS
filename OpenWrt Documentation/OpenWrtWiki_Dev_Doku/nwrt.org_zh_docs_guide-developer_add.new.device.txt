@@ -1,0 +1,221 @@
+FIXME **This page is not fully translated, yet. Please help completing the translation.**\\ //(remove this paragraph once the translation is finished)//
+
+====== 添加一个新的设备支持 ======
+
+本文假定你的设备是基于OpenWrt已经支持的平台的。若需要增加新平台（platform）的支持，参考->[[docs:guide-developer:add.new.platform]]
+
+===== 常用流程 =====
+
+  - 列出设备上芯片的详细列表，并找到有关支持的信息。主要关注设备上的处理器，闪存，以太网和无线等硬件。一些有用的技巧可以在[[docs:guide-developer:hw.hacking.first.steps]]上进行查询。
+  - 确保您具有一个可用的串口控制台（serial console）并且可以通过他访问设备的bootloader引导程序。
+  - 准备好固件，然后进行安装，观察固件安装后引导日志中出现的问题和错误。
+  - 验证Flash的分区，和LED及按钮的功能。
+
+===== GPIOs =====
+
+大多数路由设备使用 [[docs:techref:hardware:port.gpio|GPIOs]] 去控制led或者作为按钮。所有的路由设备没有一个通用的GPIO编号，因此OpenWrt针对每个设备必须使用特定的GPIO功能的映射。这意味着我们需要为每个受支持设备上的每个可控LED和按钮找出他们所使用的GPIO端口。
+
+==== GPIO LEDs ====
+
+如果设备的LED使用GPIO端口控制，那么GPIO方向将被设置为''out''，而且我们必须知道这些GPIO的极性:
+
+  * 如果LED对应的GPIO的值为1时LED亮起，那么GPIO的极性被设置为高电平有效，及active high
+  * 但是如果LED对应的GPIO的值为0时LED亮起，那么GPIO的极性被设置为低电平有效，及active low
+
+单个的GPIO测试我们可以通过以下途径：
+<code bash>
+cd /sys/class/gpio
+GPIO=3
+echo $GPIO > export
+echo "out" > gpio$GPIO/direction
+echo 0 > gpio$GPIO/value
+sleep 1s
+echo 1 > gpio$GPIO/value
+sleep 1s
+echo $GPIO > unexport
+</code>
+
+当然每个GPIO端口都应该被测试（从0开始），而不仅仅是上述例子中的GPIO 3。
+
+因此，基本上，您需要创建一个表，如下所示：
+
+^ Color ^ Name ^ GPIO ^ Polarity ^
+| Green | Power | 0 | Active high |
+| Blue | WLAN | 7 | Active high |
+| Blue | USB | 12 | Active low |
+
+为了加快所有GPIO的测试速度，可以使用以下bash脚本。请注意，您必须记录和关注每个LED状态和控制台输出。 如果USB LED点亮并且最后一个控制台消息为[GPIO12]尝试值为0，则表示USB LED使用GPIO 12且为低电平有效。
+<code bash>
+#!/bin/sh
+GPIOCHIP=0
+BASE=$(cat /sys/class/gpio/gpiochip${GPIOCHIP}/base)
+NGPIO=$(cat /sys/class/gpio/gpiochip${GPIOCHIP}/ngpio)
+max=$(($BASE+$NGPIO))
+gpio=$BASE
+while [ $gpio -lt $max ] ; do
+	echo $gpio > /sys/class/gpio/export
+	[ -d /sys/class/gpio/gpio${gpio} ] && {
+		echo out > /sys/class/gpio/gpio$gpio/direction
+
+		echo "[GPIO$gpio] Trying value 0"
+		echo 0 > /sys/class/gpio/gpio$gpio/value
+		sleep 3s
+
+		echo "[GPIO$gpio] Trying value 1"
+		echo 1 > /sys/class/gpio/gpio$gpio/value
+		sleep 3s
+
+		echo $gpio > /sys/class/gpio/unexport
+	}
+	gpio=$((gpio+1))
+done
+</code>
+
+==== GPIO 按钮 ====
+
+如果使用GPIO控制的按钮，则在按下按钮期间会更改值。因此，找出哪个GPIO连接到某个硬件按钮的最佳方法是：
+  - 记录所有GPIO的值
+  - 按下按钮并保持按下状态
+  - 再次记录所有GPIO的值
+  - 找出哪个GPIO改变了它的值
+
+对于GPIO值的查看，可以使用以下脚本：
+
+<code bash>
+#!/bin/sh
+GPIOCHIP=0
+BASE=$(cat /sys/class/gpio/gpiochip${GPIOCHIP}/base)
+NGPIO=$(cat /sys/class/gpio/gpiochip${GPIOCHIP}/ngpio)
+max=$(($BASE+$NGPIO))
+gpio=$BASE
+while [ $gpio -lt $max ] ; do
+	echo $gpio > /sys/class/gpio/export
+	[ -d /sys/class/gpio/gpio${gpio} ] && {
+		echo in > /sys/class/gpio/gpio${gpio}/direction
+		echo "[GPIO${gpio}] value $(cat /sys/class/gpio/gpio${gpio}/value)"
+		echo ${gpio} > /sys/class/gpio/unexport
+	}
+	gpio=$((gpio+1))
+done
+</code>
+
+如果在按下按钮时GPIO值从1变为0，则它​​为低电平有效。否则，它为高电平有效。
+
+例子如下:
+
+^ Name ^ GPIO ^ Polarity ^
+| WPS | 4 | Active low |
+| Reset | 6 | Active low |
+
+==== KSEG1ADDR()和访问NOR flash ====
+为了获得板卡的MAC地址，EEPROM和其他校准数据，您可能需要从内核中的flash中读取数据。 对于许多使用NOR flash的Atheros芯片，可使用KSEG1ADDR（）宏完成，该宏将flash的硬件地址转换为执行初始化功能的进程上下文的虚拟地址。 
+
+如果您正在查看用于初始化与自己相似的电路板的代码，并且看到以下信息：KSEG1ADDR（0x1fff0000），最初的数字似乎是不可思议的，但是如果您了解两件事，这是合乎逻辑的。 首先，使用NOR flash的Atheros SoC将其连接到物理地址0x1f000000（无法保证将flash连接到板上的位置，但这是一个常见的位置）。 您不能依赖引导加载程序中提供的地址，您可能会看到0xbf000000，但这也可能是虚拟地址。 如果您的电路板导线flash到这些存储位置，则显然可以使用KSEG1ADDR（0x1f000000 + OFFSET_FROM_BEGIN）访问flash，但是如果您必须访问flash末尾知道的数据，则可以使用技巧使您的代码与多种大小的flash兼容。
+
+不管是4MB，8MB还是16MB，flash通常都会映射到完整的16MB地址空间，因此在这种情况下，KSEG1ADDR（0x20000000-OFFSET_FROM_END）将用于访问您知道与地址末尾有一定距离的flash内容。 当您在具有4MB或8MBflash的设备上看到KSEG1ADDR（0x1fff0000）时，可以猜测是使用此技巧引用了位于flash末尾下方64k（存储Atheros无线电测试数据）的flash。
+===== 添加新的设备举例 =====
+
+==== Brcm63xx 平台====
+如果您具有[[docs:techref:hardware:soc:soc.broadcom.bcm63xx|bcm63xx]] 特定设备的OEM源代码，则在以后添加OpenWrt支持时可能会有些用处：
+  * 查看你的board id在''shared/opensource/boardparms/boardparms.c''目录。
+  * 调整''imagetag.c''以创建其他标签(有关布局，详情请参考GPL tar中的 ''shared/opensource/inlude/bcm963xx/bcmTag.h'')。
+  * 最后，使用“ 12345678”（ascii字符串，而不是十六进制）对整个图像进行异或运算。
+(详细查看 [[https://forum.openwrt.org/viewtopic.php?pid=123105#p123105]])
+
+要在[[docs:techref:hardware:soc:soc.broadcom.bcm63xx|bcm63xx]]设备上创建OpenWrt固件，可以执行以下步骤：
+
+  - 获取[[docs:guide-developer:build-system:start|源代码]]，并使用make menuconfig作为最后一步，按照编译过程进行操作。
+  - 在**menuconfig**期间，选择正确的目标系统。
+  - 接下来，使用所有板卡参数为所选平台生成board_bcm963xx.c文件，执行以下命令：\\ <code bash>make kernel_menuconfig</code>
+  - 将board-id添加到./target/linux/brcm63xx/image/Makefile。\\ **举例**\\ <code bash># Davolink DV2020	
+	$(call Image/Build/CFE,$(1),DV2020,6348)</code>
+  - 将带有参数的board-id添加到./build_dir/linux-brcm63xx/linux-2.6.37.4/arch/mips/bcm63xx/boards/board_bcm963xx.c\\ **举例**\\ <code bash>static struct board_info __initdata board_DV2020 = {
+        .name                           = "DV2020",
+        .expected_cpu_id                = 0x6348,
+
+        .has_uart0                      = 1,
+        .has_pci                        = 1,
+        .has_ohci0                      = 1,
+
+        .has_enet0                      = 1,
+        .has_enet1                      = 1,
+        .enet0 = {
+                .has_phy                = 1,
+                .use_internal_phy       = 1,
+        },	
+        .enet1 = {	
+                .force_speed_100        = 1,	
+                .force_duplex_full      = 1,	
+        },	
+};
+
+static const struct board_info __initdat
+:
+:
+:
+	&board_DV2020,
+</code>
+  - 根据make步骤中的过程完成[[docs:guide-developer:build-system:start|编译指令]]。
+
+==== Ramips 平台 ====
+
+只要添加对具有现有芯片组的ramips板的支持，这就非常简单。您需要创建一个新的电路板（board）定义，该定义将为您的设备生成一个镜像文件并运行特定于设备的代码。然后编写各种特定于主板的技巧来初始化设备并设置正确的默认配置。
+
+您的设备主板信息将按以下顺序传递：
+<code bash>
+ (Image Generator puts it in the kernel command line)
+（镜像将关于设备主板信息推送到内核命令行）
+          ↓
+ (Kernel command line is executed with BOARD=MY_BOARD)
+（内核命令行通过BOARD=MY_BOARD执行）
+          ↓
+ (Kernel code for ramips finds your board and loads machine-specific code)
+（针对ramips架构的内核代码找到你的板级信息导入到机器的特殊代码里）
+          ↓
+ (/lib/ramips.sh:ramips_board_name() reads the board name from /proc/cpuinfo)
+（/lib/ramips.sh脚本的ramips_borad_name()函数读取板子的名称从根文件系统的/proc/cpuinfo
+          ↓
+ (Several userspace scripts use ramips_board_name() for board-specific setup)
+（用户空间的脚本通过ramips_borad_name()函数来完成板子的特殊设置）
+</code>
+
+
+
+至少，您需要进行以下更改以进行基本构建，所有这些都在target/linux/ramips/目录下：
+  * 添加新的设备的镜像文件在''image/Makefile''目录下
+  * 创建一个新的设备文件在''arch/mips/ralink/$CHIP/mach-myboard.c''目录下，用来完成以下设备注册:
+    * GPIO pins for LEDs and buttons
+    * Port layout for the device (vlan configuration)
+    * Flash memory configuration
+    * Wifi
+    * USB
+    * Watchdog timer
+    * And anything else specific to your board
+  * 涉及到下面的文件改动''arch/mips/ralink/$CHIP/{Kconfig,Makefile}''
+  * 新的设备名在下面的文件改动 ''files/arch/mips/include/asm/mach-ralink/machine.h''
+  * 给您的主板添加''base-files/lib/ramips.sh''用户空间脚本去读取板子的名称。
+
+然后，您将需要根据主板的功能来修改其中一些文件：
+  * ''base-files/etc/diag.sh''设置一个LED，OpenWRT在启动时应闪烁
+  * ''base-files/lib/upgrade/platform.sh''允许sysupgrade在您的主板上工作
+  * ''base-files/etc/uci-defaults/network''配置默认的网络接口设置，尤其是MAC地址
+  * ''base-files/etc/uci-defaults/leds''如果您有可配置的LED，这些LED应该默认为某种行为，例如WLAN活动LED
+  * ''base-files/etc/hotplug.d/firmware/10-rt2x00-eeprom''提取无线模块的固件映像
+  * ''base-files/lib/preinit/06_set_iface_mac''设置任何其他接口的MAC地址
+
+已经合并（commits）的设备文件举例:
+  * [[https://dev.openwrt.org/changeset/30645|Skyline SL-R7205 (rt305x)]]
+  * [[https://dev.openwrt.org/changeset/29617|Belkin F5D8235-4 v1 (rt288x)]]
+  * [[https://dev.openwrt.org/changeset/46918|Planex DB-WRT01 (MT7620A)]]
+===== 提示=====
+添加新板后，您可能应该先清理""tmp""文件夹。
+<code bash> 
+cd trunk
+rm -rf tmp
+make menuconfig 
+</code>
+
+如果您已添加设备配置文件，但未在“make menuconfig”中显示，请尝试touch主目标makefile
+<code bash>
+touch target/linux/*/Makefile
+</code>

@@ -1,0 +1,198 @@
+====== Cron 和 crontab ======
+[[wp>Cron]] allows to run jobs (programs, scripts) at specified times.
+
+**中文翻译**：[[wp>Cron]] 软件允许你指定时间来运行你的任务（程序，或者脚本）。
+
+OpenWrt comes with a cron system by default, provided by busybox.
+
+**中文翻译**：OpenWrt默认使用busybox工具箱软件自带的cron系统功能。
+===== Adding and editing cron jobs =====
+===== 添加和编辑cron定时任务 =====
+You can edit the current config with:
+
+**中文翻译**：你可以使用如下命令来配置cron定时任务：
+
+<code bash> 
+crontab -e 
+</code>
+
+This will open ''/etc/crontabs/root'' file in ''vi'' editor.
+See [[docs:guide-user:base-system:user.beginner.cli|editing guide]] for details.
+
+**中文翻译**：这个命令会自动调用“vi”文本编辑器，来打开“/etc/crontabs/root”文件（译者注：因为OpenWrt默认的登录用户名是root，某个用户的定时任务配置文件，就放在以它的用户名命名的文件）。
+
+:!: There should be a end-of-line character on the last line of the crontab file.
+If in doubt, just leave an empty line at the end.
+
+**中文翻译**：:!:这个定时任务配置文件需要的最后一行需要一个行尾符号，如果你不清楚什么是行尾符号，就保证配置文件始终有一个空白行就好了。
+
+To see the current crontab:
+
+**中文翻译**：以下命令用来列举出当前所有已经配置的定时任务。
+
+<code bash>
+crontab -l
+</code>
+
+===== Task specification =====
+===== 设定定时任务 =====
+Each line is a separate task written in the specification:
+
+**中文翻译**：每一个任务的配置占一行，格式如下：
+
+<code>
+* * * * * command to execute
+- - - - -
+| | | | |
+| | | | ----- Day of week (0 - 6) (Sunday =0)
+| | | ------- Month (1 - 12)
+| | --------- Day (1 - 31)
+| ----------- Hour (0 - 23)
+------------- Minute (0 - 59)
+</code>
+
+**中文翻译**：
+
+<code>
+* * * * * 需要执行的命令
+- - - - -
+| | | | |
+| | | | ----- 一星期中的第几天 (0 - 6) (其中0表示星期日)
+| | | ------- 月份 (1 - 12)
+| | --------- 一个月中的第几天 (1 - 31)
+| ----------- 一天中的第几小时 (0 - 23)
+------------- 一小时中的第几分钟 (0 - 59)
+</code>
+
+Examples of time specification:
+
+**中文翻译**：以下是指定时间的示例：
+ 
+^  分钟\\ 0-59  ^  小时\\ 0-23  ^  月中的第几天\\ 1-31  ^  月份\\ 1-12  ^  星期中的第几天\\ 0-6 ^ 执行效果 ^
+|   */5   |    *   |      *    |   *    |   *   | 每5分钟执行一次 |
+|   12    |   */3  |      *    |   *    |   *   | 每过3个小时后的第12分钟执行一次 |
+|   57    |   11   |     15    | 1,6,12 |   *   | 在1、6、12月中的15豪，当天的11点57分各执行一次 |
+|   25    |    6   |      *    |    *   |  1-5  | 工作日期间（周1到周5），每天早上6点25分执行一次 |
+|   0     |    0   |  4,12,26  |    *   |   *   | 每月的第4、12、26日，晚上12点执行一次 |
+|  5,10   |  9,14  |    10     |    *   |  0,4  | 每周日、周四的早上9:05, 早上9:10, 下午2:05 以及下午2:10各执行一次|
+
+:!: 0 (zero) is treated as Sunday.
+If you set the day of the week to 7, busybox will go bonkers and run your command every day.
+
+**中文翻译**：:!: 再次提醒0就是星期天。
+如果你将要设置的星期几，设置为7（也就是说超出0-6的范围），busybox就立即秀逗了，它会每天都执行这个定时任务。
+
+See also:
+
+**中文翻译**：其他参考如下：
+
+  * [[man>crontab(1)]], [[man>crontab(5)]]
+  * [[https://busybox.net/downloads/BusyBox.html#crontab|BusyBox crontab]]
+  * [[http://adminschoice.com/crontab-quick-reference|Crontab – Quick Reference]]
+
+===== Logging =====
+===== 日志 =====
+You can read log messages with:
+
+**中文翻译**：你可以用下面的命令来读取cron软件执行的记录：
+
+<code bash>
+logread -e cron
+</code>
+
+Not all messages are logged, to increase logging change ''cronloglevel'' property in [[docs:guide-user:base-system:system_configuration|/etc/config/system]]
+
+**中文翻译**：不是所有信息都会被记录到日志里的，要修改记录的信息等级，可以用“cronloglevel”属性，参见[[docs:guide-user:base-system:system_configuration|/etc/config/system]]文档。
+===== Extras =====
+===== 其他 =====
+==== Periodic reboot ====
+==== 定期重启 ====
+A simple solution for some hard-to-solve problems (memory leak, performance degradation, ...) is to reboot the router periodically, for instance every night.
+
+**中文翻译**：用来对付一些系统运行时出现的难题（比如内存泄露、性能下降、......）的法宝就是每晚定期重启。
+
+However, this is not as simple as it seems, because the router usually does not have a real-time clock.
+This could lead to a never-ending loop of reboots.
+
+**中文翻译**：即便是这样重启，也不是那么简单就能做到的，因为这样的路由器通常没有实时时钟。弄不好就成为下面这个怪圈：
+
+In the boot process the clock is initially set by ''sysfixtime'' to the most recent timestamp of any file found in /etc.
+The most recent file is possibly a status file or config file, modified maybe 30 seconds before the reboot initiated by cron.
+So, in the boot process the clock gets set backwards a few seconds to that file's timestamp.
+Then cron starts and notices a few seconds later that the required boot moment has again arrived and reboots again...
+(At the end of the boot process ntpd starts, and it may also take a while before ntpd gets and sets the correct time, so cron may start the reboot in between.)
+
+**中文翻译**：在启动的时候，当前系统的时间使用“sysfixtime”程序来设置；设定依据是在/etc目录下，使用最近被修改的文件的时间。
+它可能是一个状态文件，或者配置文件，可能在cron定时任务需要重启系统前30秒刚做了修改。
+所以，如果在重启系统的时候，将系统时间设置为这个文件的修改时间的前若干秒钟的话，
+当cron软件开始计时的时候，马上又会发现cron设置的重启时间又要到了，接着又开始重启了……（译者注：这里说的是如果简单的设置这个时间，就有可能出现反复重启的怪圈）
+（另外可能的情况是：因为启动流程的最后ntpd的时间服务启动了，这个软件得需要一阵子才能获取并且设置正确的时间，所以这段时间内，cron定时重启任务又被触发重启了。）
+
+One solution for cron is to use a delay and touch a file in ''/etc'' before reboot.
+
+**中文翻译**：一种解决cron定时重启任务的怪圈的办法是在重启前，推迟一会儿重启，同时主动用touch命令去修改/etc下的任意文件。
+
+<code bash>
+# Reboot at 4:30am every day
+# Note: To avoid infinite reboot loop, wait 70 seconds
+# and touch a file in /etc so clock will be set
+# properly to 4:31 on reboot before cron starts.
+30 4 * * * sleep 70 && touch /etc/banner && reboot
+</code>
+
+**中文翻译**：举例crontab的配置如下：
+<code bash>
+# 每天上午4:30执行重启
+# 注意: 为了防止循环重启的怪圈，需要推迟70秒钟执行重启
+# 在/etc目录下touch修改一个文件的时间属性，并且设置
+# 为上午4:31然后再执行cron的重启任务.
+30 4 * * * sleep 70 && touch /etc/banner && reboot
+</code>
+
+:!: On many platforms ''shutdown'' does not work; it will just halt the CPU but it won't power off the device.
+There is usually no programmable circuitry to actually power off the unit.
+''reboot'' does work, in case you should want to reboot the router periodically.
+
+**中文翻译**：:!: 在一些平台上“shutdown”命令是没有的；它仅仅是停止CPU的运行，而不会重启设备。
+这通常是因为这样的设备没有去执行断电的电路。
+
+However, a more flexible approach is to use use the [[packages:pkgdata:watchcat|watchcat]] package.
+
+**中文翻译**：即便这样，也还是可以使用一种更为灵活的方法，通过使用[[packages:pkgdata:watchcat|watchcat]]软件包来使用 。
+安装命令如下：
+
+<code bash>
+opkg update
+opkg install watchcat
+</code>
+
+==== Alarm clock ====
+==== 闹钟功能 ====
+If you have [[wp>Daylight saving time]] you could write yourself a nice alarm clock ;-)
+When DST starts in central Europe, clocks advance from 02:00 CET to 03:00 CEST on last Sunday in March.
+Six day before that, you could make your WOL wake you 10 minutes earlier.
+Later won't work, you'll be late ;-)
+When DST ends in central Europe, clocks retreat from 03:00 CEST to 02:00 CET on last Sunday in October.
+
+**中文翻译**：如果你所在的地区使用“夏令时”[[wp>Daylight saving time]]，你可以自己动手写一个合适的闹钟程序；）
+假设你在欧洲中部使用“夏令时”，那么时钟在每年3月份，就要提前从中欧时间的2点，变成了3点的中欧夏令时时间。
+在此之前的6天，你可以把自己的网络唤醒闹钟每天提前10分钟。
+如果没生效的话，估计你上班就要迟到了；）
+
+<code bash>
+#min hour day month dayofweek command
+59 05 * * 1 /usr/bin/wol -h 192.168.1.255 xx:xx:xx:xx:xx:xx # Mo
+#crontab must (as fstab) end with the last line as space or a comment
+</code>
+
+**中文翻译**：
+
+<code bash>
+#分 时 日 月 星 执行命令
+59 05 * * 1 /usr/bin/wol -h 192.168.1.255 xx:xx:xx:xx:xx:xx # Mo
+#crontab配置文件必须包含一行空白（跟/etc/fstab配置文件一样，该文件用于开机挂在分区）
+</code>
+
+
+==== 翻译信息 ====
+LongGenxing 20191103 第一次翻译

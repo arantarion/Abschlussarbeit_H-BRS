@@ -1,0 +1,108 @@
+====== OpenVPN client using LuCI ======
+===== Introduction =====
+  * This guide describes how install and operate the [[wp>OpenVPN|OpenVPN]] client using LuCI web interface.
+  * You can use it to connect to your own OpenVPN server or a commercial OpenVPN provider.
+  * Follow [[docs:guide-user:services:vpn:openvpn:server|OpenVPN basic]] for server setup and [[docs:guide-user:services:vpn:openvpn:extras|OpenVPN extras]] for additional tuning.
+  * The performance of different SoCs can be found here [[docs:guide-user:services:vpn:openvpn:performance|OpenVPN performance]].
+
+===== Goals =====
+{{section>docs:guide-user:services:vpn:wireguard:server#goals&noheader&nofooter&noeditbutton}}
+
+===== Instructions =====
+==== 1. Install needed packages ====
+Install [[packages:pkgdata:openvpn-openssl]] and [[packages:pkgdata:luci-app-openvpn]] to be able to manage OpenVPN using web interface.
+
+A new page in the LuCI web interface should appear.
+
+Navigate to **LuCI -> VPN -> OpenVPN** to open the OpenVPN config managment page.
+
+{{docs:guide-user:services:vpn:openvpn:openwrt_openvpn_client_1_.png?direct&600|}}
+
+==== 2.a Write the configuration manually to create a config file ====
+Create a new config with the **Template-based configuration** line by choosing the template, writing a name and clicking **Add** button to create it.
+
+Then it will appear in the table and you can edit this configuration file by clicking on **Edit** button to open the edit page for this configuration.
+
+{{docs:guide-user:services:vpn:openvpn:openwrt_openvpn_client_2_create_openvpn_config.png?direct&400|}}
+
+==== 2.b Upload a OpenVPN config file ====
+<WRAP center round important 80%>
+This is available from OpenWrt 19.07 onwards.
+</WRAP>
+
+All self-respecting commercial OpenVPN providers will offer self-sufficient OpenVPN config files you can load in your consumer router or network appliance to connect to their service.
+
+You can use them in OpenWrt too.
+
+Use the **OVPN configuration file upload** to give a name and upload one of such config files.
+
+It will appear in the table of available OpenVPN configurations.
+
+If your provider requires you to write your username and a password, click on the Edit button, and in the edit page, write your username and password in the second text box, as shown in this example
+
+{{docs:guide-user:services:vpn:openvpn:openwrt_openvpn_client_2_upload_openvpn_config_add_user_pass.png?direct&400|}}
+
+Now edit the line beginning **auth-user-pass** in the first text box to included the full path to the username/password .auth file.
+The full path is visible just above the second text box.
+For above example:
+<code>auth-user-pass /etc/openvpn/NLMiramUDP443E3.auth</code>
+
+==== 3. Start and enable the client ====
+Start the client by pressing on the **Start** button in the table of available configurations.
+OpenVPN startup and shutdown are slow, it can take up to 10 seconds to complete.
+
+If you want this VPN client connection to be started on boot and always active, click in the **Enable** checkbox of its line in the table.
+
+**Note:** If clicking on **Start** button in the table does not start the VPN instance.
+Tick the **Enable** checkbox, and press **Save & Apply** button to start the VPN instance
+
+==== 4. Firewall ====
+At this point the VPN is set up and the router can use it, but devices in the LAN of your router won't be able to access the internet anymore.
+
+We need to set the VPN network interface as public by assigning VPN interface to WAN zone.
+
+=== 4.1-a With Openwrt up to 18.06 and 19.07 ===
+  - Click on **Network** in the top bar and then on **Interfaces** to open the interfaces configuration page.
+  - Click on button **Add new Interface...**
+  - Fill the form with the following values: **name** = ''tun0'', **Protocole** = ''Unmanaged'', **Interface** = ''tun0''. Then click on **Create Interface**.
+  - Edit the interface.
+  - In panel **General Settings**: unselect the checkbox **Bring up on boot**.
+  - In panel **Firewall Settings**: **Assign firewall-zone** to ''wan''.
+  - Click on **Save and Apply** the new configuration.
+  - Reboot the router.
+
+=== 4.1-b With Openwrt 19.07 (alternative to the above step 4.1) ===
+Click on **Network** in the top bar and then on **Firewall** to open the firewall configuration page.
+
+Click on the **Edit** button of the **wan** (red) zone in the **Zones** list at the bottom of the page.
+
+Click on the **Advanced Settings** tab and select the **tunX** interface (**tun0** in the screenshot, which is the most likely if you have a single OpenVPN client/server running)
+
+{{docs:guide-user:services:vpn:openvpn:openwrt_openvpn_client_4_firewall.png?direct&400|}}
+
+You can see the interface name if you click on **Status** on the top bar and then click on **System Log**.
+
+A few lines from the system log where you can see the interface name of the OpenVPN client started with the configuration file **NLMiramUDP443E3**
+
+   Fri Aug 30 11:28:32 2019 daemon.notice openvpn(NLMiramUDP443E3)[7993]: TUN/TAP device tun0 opened
+   Fri Aug 30 11:28:32 2019 daemon.notice openvpn(NLMiramUDP443E3)[7993]: TUN/TAP TX queue length set to 100
+   Fri Aug 30 11:28:32 2019 daemon.notice openvpn(NLMiramUDP443E3)[7993]: /sbin/ifconfig tun0 10.24.74.134 netmask 255.255.255.0 mtu 1500 broadcast 10.24.74.255
+
+==== 5. Test that all is working ====
+{{section>docs:guide-user:services:vpn:wireguard:server#testing&noheader&nofooter&noeditbutton}}
+
+===== Troubleshooting =====
+If you discover DNS is not working, use LuCI and navigate to **Network -> Interfaces -> LAN**, disable peer DNS and specify your preferred DNS servers in the **Use Custom DNS** field, e.g. ''8.8.8.8'' and ''8.8.4.4'' for Google DNS.
+
+Open a ssh remote terminal connection to the router.
+{{section>docs:guide-user:services:vpn:openvpn:server#troubleshooting&noheader&nofooter&noeditbutton}}
+
+===== Alternative guide for OpenVPN client using LuCI =====
+The link below is to a tutorial which was written for the BT Home Hub 5A and Windows Users in mind, but is sufficiently generic to apply to most other OpenWrt routers with a working internet connection.
+It has been tested with Asus RT-AC57u, Linksys EA6350v3, TPlink Archer C50 v4, Western Digital MyNet N750 etc.
+
+The original v1.1 guide supports LEDE 17 and OpenWrt 18.
+The later v1.2 guide is for OpenWrt 19.07 using its new ovpn file upload function.
+Includes information on DNS resolver, Kill switch, and popular VPN providers.
+
+<color #ed1c24>**If you are having difficulties getting openvpn client to work using the instructions contained on this wiki page, please download and study the tutorial PDF from the Dropbox folder found in the [[https://openwrt.ebilan.co.uk/viewtopic.php?f=7&t=279|ebilan forum]].**</color>

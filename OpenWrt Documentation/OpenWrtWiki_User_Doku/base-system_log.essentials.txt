@@ -1,0 +1,161 @@
+====== Runtime Logging in OpenWrt ======
+The openwrt system logging facility is an important debugging/monitoring capability.
+This document describes common support for the LEDE 17 implementations.
+It appears there have been some changes in (recently) released Openwrt 18 branch. 
+
+===== Introduction =====
+The standard logging facility is implemented using ''logd'', the ubox log daemon.
+This is implemented as an in-core ring buffer with fixed sized records. 
+The ring-buffer records can be read using ''logread'' on the router, streamed to a file or sent to a remote system through a TCP/UDP socket.
+
+<code bash>
+# List syslog
+logread
+
+# Write a message to syslog
+logger -t TAG MESSAGE
+
+# List syslog filtered by tag
+logread -e TAG
+</code>
+
+===== Messages format =====
+The message format differs based on the destination (local logread, local file, remote socket).
+Roughly it can be viewed as:
+ 
+<code>
+<time stamp> <router name> <subsystem name/pid> <log_prefix>: <message body>
+</code>
+
+The logging message facility and priority are roughly equivalent to syslog implementations (see linux ''/usr/include/sys/syslog.h'').
+The local 'logread' executable puts the facility.priority after the time stamp.
+Logging to a remote socket puts a numeric value before the time stamp.
+
+For some common OpenWrt messages see [[docs:guide-user:perf_and_log:log.messages]].
+FIXME - the log.messages reference is way out of date but a useful placeholder.
+
+===== logd =====
+''logd'' is configured in ''/etc/config/system''. After changing the file, run 
+
+<code>
+/etc/init.d/log restart
+/etc/init.d/system restart
+</code>
+
+to read in the new configuration and restart the service.
+
+There are three basic destinations for log messages: the RAM ring-buffer (the default), a local persistent file, a remote destination listening for messages on a TCP or UDP port.
+
+The full set of ''log_*'' options for ''/etc/config/system'' are defined in 
+[[docs:guide-user:base-system:system_configuration|System Configuration]]
+
+==== logread ====
+This is the default interface and the simplest.
+It is a local executable that will read the ring-buffer records and display them chronologically.
+
+==== Local File Logging ====
+In order to log to a local file on the router, one needs to set the following options:
+
+<code bash>
+config system 
+...
+   option log_file '/var/log/mylog'
+   option log_remote '0'
+</code>
+
+==== Network Logging ====
+In order to log remotely one needs to set the following options in ''/etc/config/system''
+
+<code bash>
+config system
+...
+   option log_ip <destination IP>
+   option log_port <destination port>
+   option log_proto <tcp or udp>
+</code>
+
+For the destination port, if you'll be manually reading the logs on the remote system as an unprivileged user (such as via the netcat command given below), then specify a high port (e.g. 5555). If you're sending to a syslog server, use whatever port the syslog server is listening on (typically 514).
+
+Additionally, the firewall3 default is to ACCEPT all LAN traffic. If the router blocks LAN-side access, add the following firewall3 rule to ''/etc/config/firewall'' to ACCEPT tcp/udp traffic from the router to the LAN-side.
+
+<code bash>
+config rule
+      option target 'ACCEPT'
+      option dest 'lan'
+      option proto 'tcp udp'
+      option dest_port '5555'
+      option name 'ACCEPT-LOG-DEVICE-LAN'
+</code>
+
+and then reload the rules using ''/etc/init.d/firewall restart''.
+
+For the LAN-side station/client, there are a large number of mechanisms to listen for log messages.
+One of the simplest is ncat:
+
+<code bash>
+# TCP
+ncat -4 -l 5555
+
+# UDP
+ncat -u -4 -l 5555
+</code>
+
+Log messages are in [[https://sematext.com/blog/what-is-syslog-daemons-message-formats-and-protocols/|traditional syslog format (RFC 3164 / 5424)]], beginning with a priority number in angle brackets (e.g., <30>) and lacking a terminating newline.
+The above netcat method will therefore yield somewhat messy output.
+A cleaner solution is to send messages to a remote machine's syslog daemon, in which case they will appear in the remote system's logs.
+See [[https://www.rsyslog.com/receiving-messages-from-a-remote-system/|Receiving Messages from a Remote System]] for server configuration instructions for rsyslog.
+
+The advantage to using TCP is reliability - it logs every event.
+The disadvantage is it can cause some performance degradation on the router if the logging level is high.
+There is a section on iptable event logging which can cause a noticable latency in traffic throughput using TCP socket logging.
+
+====== Test Runtime Logging Support =====
+If you want to test the logging out, just run a command like 
+
+''logger testLog "Blah1"''
+
+and it should be written to the configured destination.
+If an event is not logged, check:
+
+ * ''/sbin/logd'' is running; it should have an argument of ''-S <log_size>'' indicating the size of the ring-buffer,  
+ * ''logd'' is configured correctly in ''/etc/config/system'',
+ * restart it using ''/etc/init.d/log restart'' and check for warnings/errors
+
+===== Alternative implementations =====
+See **rsyslog** - to e.g. rout all or specific logs to a (central) rsyslog receiver
+
+<code bash>
+opkg install rsyslog
+</code>
+
+With the config file: /etc/rsyslog.conf
+
+<code>
+*.info;mail.none;authpriv.none;cron.none;kern.none  /var/log/messages
+..
+kern.*					  @192.168.1.119:514
+</code>
+
+===== rsyslog and Logz.io =====
+You can support logging direct to a cloud ELK provider like Logz.io by adding a few lines to your rsyslog.conf :
+
+replace "codecodecode" with your unique Logz.io identifier, it's 32 characters.
+And will appear in help manuals when you're logged in, reference the guide here : [[https://app.logz.io/#/dashboard/data-sources/rsyslog]]
+
+<code>
+$template logzFormatFileTagName,"[codecodecodecode] <%pri%>%protocol-version% %timestamp:::date-rfc3339% %HOSTNAME% %app-name% %procid% %msgid% [type=TYPE] %msg%\n"
+*.* @@listener.logz.io:5000;logzFormatFileTagName
+</code>
+
+Confirm you have the right config with :
+
+<code bash>
+rsyslogd -N1
+</code>
+
+===== Archive =====
+The logging mechanism discussed here uses ''logd''. There are other packages that 
+provide the same functionality. 
+
+See ''syslog-ng'' ([[docs:guide-user/perf_and_log/log.syslog-ng3]]).
+FIXME - the ''syslog-ng'' page appears very out-of-date.

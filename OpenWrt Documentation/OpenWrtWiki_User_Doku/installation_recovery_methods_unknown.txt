@@ -1,0 +1,25 @@
+====== unknown ======
+
+The recovery method is unknown. No description of the recovery  method in the git commit, OpenWrt forum or devicepage.
+
+If you know how to recover from a failed installation on one of these devices, please update the //Device Techdata// accordingly.
+
+**Check the following pages for generic recovery instructions:**
+
+  * -> [[docs:guide-user:troubleshooting:vendor_specific_rescue|Rescue from failed firmware upgrade]]
+  * -> [[docs:guide-user:troubleshooting:failsafe_and_factory_reset|Failsafe Mode, Factory Reset, and Recovery Mode]]
+  * -> [[docs:guide-user:troubleshooting:generic.debrick|OpenWrt Debricking Guide]]
+  * -> [[docs:techref:bootloader|The Bootloader]]
+  * -> [[docs:techref:hardware:port.serial|Serial Console]]
+  * -> [[docs:techref:hardware:port.serial.cables|Serial Cables]]
+
+
+===== Devices with unknown recovery method =====
+---- datatable ----
+cols       : Brand, Model, Versions, Supported Current Rel_releasecurrent, Bootloader, Recovery method(s)_method-recoverys, Comment recovery, Device Page_page, Device Techdata_pageid
+dynfilters : 1
+filter     : Model!=@@Model@@
+filter     : recovery method(s)=unknown
+sort       : Brand
+limit      : 25
+----

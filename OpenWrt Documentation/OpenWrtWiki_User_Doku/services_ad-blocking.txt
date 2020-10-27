@@ -1,0 +1,32 @@
+====== Ad blocking ======
+Ad blocking can be done in several ways:
+
+  * Packages [[packages:pkgdata:adblock|adblock]] + [[packages:pkgdata:luci-app-adblock|luci-app-adblock]]. The latest adblock online documentation can be found here: [[https://github.com/openwrt/packages/blob/master/net/adblock/files/README.md|README]]
+  * Packages [[packages:pkgdata:simple-adblock|simple-adblock]] + [[packages:pkgdata:luci-app-simple-adblock|luci-app-simple-adblock]]. The latest Simple Adblock online documentation can be found here: [[https://github.com/openwrt/packages/blob/master/net/simple-adblock/files/README.md|README]]
+  * Package [[packages:pkgdata:banhostlist|banhostlist]] (has not been updated since 2015)
+  * [[https://forum.openwrt.org/t/howto-running-adguard-home-on-openwrt/51678?u=tmomas|Running Adguard Home on OpenWrt]]
+
+[[https://forum.openwrt.org/t/adblock-vs-simple-adblock/5236/6|This forum post]] (from 2017) gives a short comparison between Adblock and Simple Adblock. Summarized, it says that Adblock is more powerful and might receive additional features in the future while Simple Adblock aims to be easier to use and more performant.
+
+Instructions for Adblock quick setup via terminal.
+Most steps can also be done using the GUI with LuCI.
+The package ''libustream-mbedtls'' is required by ''uclient-fetch'' to download blocklists over HTTPS unless you specify another download manager, e.g. ''curl''.
+
+<code bash>
+# Install packages
+opkg update
+opkg install adblock libustream-mbedtls
+
+# Provide web interface
+opkg install luci-app-adblock
+
+# Enable Adblock
+uci set adblock.global.adb_enabled="1"
+
+# Backup the blocklists
+uci set adblock.global.adb_backupdir="/etc/adblock"
+
+# Save and apply
+uci commit adblock
+/etc/init.d/adblock restart
+</code>

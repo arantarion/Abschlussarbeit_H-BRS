@@ -1,0 +1,67 @@
+====== OpenConnect client ======
+The OpenConnect VPN client can connect to servers running either ocserv, Cisco AnyConnect, or Juniper Pulse Connect Secure.
+There are various [[https://en.wikipedia.org/wiki/OpenConnect#Platforms|openconnect clients]], including in GNOME NetworkManager, [[https://github.com/nmav/openconnect-gui/releases|Windows]], and [[https://play.google.com/store/apps/details?id=app.openconnect|Android]].
+
+===== Installation =====
+Install the packages: [[packages:pkgdata:openconnect]] + [[packages:pkgdata:luci-proto-openconnect]]
+
+===== Configuration =====
+An instance of the OpenConnect client is configured and started through the UCI system by declaring a network interface of ''proto openconnect''.
+The resulting interface will be named vpn-name where 'name' is the name specified.
+In this document it is assumed to be ''ocvpn'', thus the full name is ''vpn-ocvpn''.
+
+The interface configuration accepts the following options (in addition to those applicable to every proto such as ''disable'' and ''zone'').
+Most of these options are passed directly to the OpenConnect executive, so see [[man>openconnect]] for details.
+
+^ Option ^ OpenConnect CLI option ^ Description ^
+| ''server'' | (always required) | The server's FQDN or IP |
+| ''port'' | (part of server) | Server port number. Default is 443 |
+| ''juniper'' | ''-''''-juniper'' | Connect to a Juniper server. DEPRECATED, 8.0 uses ''--protocol=nc'' instead. |
+| ''serverhash'' | ''-''''-servercert=; -''''-nosystemtrust'' | Force trust of server's certificate based only on hash matching |
+| ''authgroup'' | ''-''''-authgroup='' | Group membership to request from the server |
+| ''username'' | ''-''''-user='' | Login username for user/pass authentication |
+| ''password'' | (passed via stdin) | Password for user/pass authentication |
+| ''password2'' | (passed via stdin) | Second password for 2 factor |
+| ''token_mode'' | ''-''''-token-mode='' | ''rsa'', ''totp'' or ''hotp'' to internally compute a two-factor token as passwd2 |
+| ''token_secret'' | ''-''''-token-secret='' | Crypto secret required by token_mode |
+| ''token_script'' | ''-''''-token-script='' | Local shell script that will dynamically produce passwd2 |
+| ''os'' | ''-''''-os='' | Operating system to report to the server. Default is ''Linux'' |
+| ''interface'' | N/A | Outgoing local interface (used to create a netifd host dependency) |
+| ''csd_wrapper'' | ''-''''-csd-wrapper='' | Run this instead of any binary or script that the server pushes us to run |
+
+===== Certificates =====
+PKI authentication is integral to OpenConnect.
+Certificates must be installed to the filesystem at ''/etc/openconnect''.
+This can be done by scp, or by pasting the certificate base64 text into luci-app-openconnect.
+Certificate files must be in the Base64/.pem format and named exactly as shown below.
+Change 'ocvpn' to your interface name if necessary.
+| ''/etc/openconnect/ca-vpn-ocvpn.pem'' | ''-''''-cafile='' | CA certificate used to verify the server's certificate. |
+| ''/etc/openconnect/user-cert-vpn-ocvpn.pem'' | ''-c'' | Client certificate, signed by a CA that the server knows. |
+| ''/etc/openconnect/user-key-vpn-ocvpn.pem'' | ''-''''-sslkey'' | Private key of the client certificate, Must not be encrypted. |
+
+===== Operation =====
+Upon a successful authentication and connection, the vpn-ocvpn interface will be created and brought up, and assigned an IP address by the server.
+The firewall and routing should be configured for this interface like any other VPN, for example:
+
+<code bash>
+# /etc/config/firewall
+
+config zone
+	option name	vpn
+	list network	'ocvpn'
+	option input	REJECT
+	option output	ACCEPT
+	option forward	REJECT
+	option masq	1
+	option mtu_fix	1
+
+config forwarding
+	option src	lan
+	option dest	vpn
+</code>
+
+If the interface does not come up, examine the system log file for error messages.
+Although OpenConnect is started with command line options, it is not possible to fully bring up an OpenConnect client interface manually from the command line (''vpnc'' will fail with "must be used on an active interface").
+Manually running OpenConnect through the authentication stages is useful to diagnose authentication problems though.
+UCI will retry a connection constantly at 5 second intervals, which if unsuccessful could lead to being blacklisted by the server.
+Thus it would be advisable to disable the configuration in ''/etc/config/network'' while troubleshooting.

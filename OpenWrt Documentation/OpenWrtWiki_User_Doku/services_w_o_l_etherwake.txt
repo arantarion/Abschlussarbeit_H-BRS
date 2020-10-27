@@ -1,0 +1,72 @@
+====== Etherwake configuration ======
+The configuration file ''/etc/config/etherwake'' is provided by the //etherwake// package and defines hosts to wake when starting the ''/etc/init.d/etherwake'' init script. An alternative opkg-package is: ''[[docs:guide-user:services:w_o_l:wol]]''.
+
+Please see ''[[docs:guide-user:base-system:notuci.config#etccrontabsroot|/etc/crontabs/root]]'' to configure ''crond''.
+
+===== Web interface =====
+Web interface for ''etherwake'', install via
+<code>
+opkg install luci-app-wol
+</code>
+
+===== Sections =====
+There are two sections ''setup'' and ''target'' defined for the configuration.
+Multiple //wake on lan targets// may exist in the file.
+
+==== Setup ====
+<code>
+config 'etherwake' 'setup'
+	option 'pathes' '/usr/bin/etherwake /usr/bin/ether-wake'
+	option 'sudo' 'off'
+	option 'interface' ''
+	option 'broadcast' 'off'
+</code>
+
+Below is a listing of the parameters defined for this section.
+
+^ Name ^ Type ^ Required ^ Default ^ Description ^
+| ''pathes''    | path       | ??? | //(none)// | path to etherwake binary (typo is normal) |
+| ''sudo''      | boolean    | no  | ''off''    | Etherwake usually requires sudo  |
+| ''interface'' | string     | yes | //(none)// | On which interface to send the WOL packages |
+| ''broadcast'' | boolean    | no  | ''off''    | ???  |
+
+==== Target ====
+<code>
+config 'target'
+	option 'name' 'example' 	 # name for the target
+	option 'mac' '11:22:33:44:55:66' # mac address to wake up 	
+	option 'password' 'AABBCCDDEEFF' # password in hex without any delimiters
+	option 'wakeonboot' 'off'	 # wake up on system start, defaults to off
+</code>
+
+Below is a listing of the parameters defined for this section.
+
+^ Name ^ Type ^ Required ^ Default ^ Description ^
+| ''name''       | string      | no  | //(none)// | name of the target |
+| ''mac''        | MAC address | yes | //(none)// | Specifies the MAC address of the host to wake |
+| ''password''   | string      | no  | //(none)// | Send given //SecureON// password when waking the host |
+| ''wakeonboot'' | boolean     | no  | ''off''    | Don't send WOL packet when booting OpenWrt  |
+
+===== Example =====
+<code>
+config 'etherwake' 'setup'
+	option 'pathes' '/usr/bin/etherwake'
+	option 'sudo' 'on'
+	option 'interface' 'eth0.2'
+	option 'broadcast' 'on'
+
+config 'target'
+	option 'name' 'popeye'
+	option 'mac' '00:22:33:44:55:66'
+	option 'password' 'AABBCCDDEEFF'   # password in hex without any delimiters
+	option 'wakeonboot' 'off'
+</code>
+
+===== Wake target =====
+<code bash>
+# Syntax
+/etc/init.d/etherwake start <target>
+
+# Wake up "popeye"
+/etc/init.d/etherwake start popeye
+</code>

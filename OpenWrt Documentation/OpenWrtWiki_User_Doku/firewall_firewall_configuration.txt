@@ -1,0 +1,418 @@
+====== Firewall configuration /etc/config/firewall ======
+OpenWrt's firewall management application [[docs:guide-user:firewall:overview|fw3]] has three provisioning mechanisms
+
+Configuration files:
+  * ''/etc/firewall.user''
+  * ''/etc/config/firewall''
+
+Most of the information in this wiki will focus on the configuration files and content.
+The LuCI and UCI interfaces are user abstractions, ultimately modifying the configuration files.
+
+===== Management =====
+  * **The main firewall config file is ''/etc/config/firewall'', and this is edited to modify the firewall settings**
+    * :!: //Create a backup of the firewall config __prior__ to making changes//
+      * Should changes cause a loss-of-connectivity to the router, you will need to access it in [[docs:guide-user:troubleshooting:failsafe_and_factory_reset#failsafe_mode|Failsafe Mode]] to restore the backup
+    * Once the settings are changed, //and __after__ double checking changes//, reload the firewall via ''/etc/init.d/firewall reload''
+      * This is a simple shell script calling ''fw3 reload'', and will print diagnostics to the console as it parses the new firewall configuration.  //Check for errors!//
+  * **Any line using ''#'' in the first character is not parsed**
+    * Comments are utilized to describe, explain, or quickly comment out, a section
+  * **The UCI firewall configuration in ''/etc/config/firewall'' covers a reasonable subset of [[docs:guide-user:firewall:netfilter_iptables:netfilter_openwrt|NetFilter]] rules, but not all of them**  
+    * To provide more functionality, an ''[[firewall_configuration#includes|include]]'' section was added to the UCI firewall config that loads a file containing native iptables directives 
+      * //This is processed as a shell script, allowing any shell command to be added to it, but the focus is working with the netfilter subsystem by adding iptables commands//
+        * See [[docs:guide-user:firewall:fw3_configurations:fw3_config_examples|fw3 Configuration Examples]] for usage
+  * **Whenever possible, use the fw3 firewall UCI config**
+    * There are some scenarios where ''[[http://www.netfilter.org|iptables]]'' commands are required
+      * See [[docs:guide-user:firewall:netfilter_iptables:netfilter_openwrt|Netfilter in OpenWrt]] for more information
+
+==== Web interface ====
+[[docs:guide-user:luci:start|LuCI]] is a good mechanism to view and modify the firewall configuration.
+  * It is located under **Network -> Firewall** and maps closely to the configuration file sections.
+  * It takes a little longer to modify the firewall configuration, but has a higher level of organization than the config files.
+
+Make changes and reload using the ''Save & Apply'' button.
+  * :!: LuCI will remove all comment [''#''] lines from ''/etc/config/firewall''!
+
+==== Command-line interface ====
+[[docs:guide-user:base-system:uci|UCI]] is a low-level abstraction to the configuration files and can be accessed remotely through [[docs:guide-quick-start:sshadministration|SSH]].
+
+<code bash>
+uci add firewall rule
+uci set firewall.@rule[-1].name='Reject VPN to LAN traffic'
+uci set firewall.@rule[-1].src='vpn'
+uci set firewall.@rule[-1].dest='lan'
+uci set firewall.@rule[-1].proto='all'
+uci set firewall.@rule[-1].target='REJECT'
+uci commit firewall
+service firewall restart
+</code>
+
+These would be presumed to be the final rules //(each ''proto'' creates a rule)// in the //VPN// -> //LAN// forward chain, as all packets from VPN will be rejected.
+
+Show firewall configuration:
+
+<code bash>
+# uci show firewall
+firewall.@rule[20]=rule
+firewall.@rule[20].name='Reject VPN to LAN traffic'
+firewall.@rule[20].src='vpn'
+firewall.@rule[20].dest='lan'
+firewall.@rule[20].proto='all'
+firewall.@rule[20].target='REJECT'
+...
+</code>
+
+[[docs:guide-user:base-system:uci|UCI]] is useful to view the firewall configuration, but not to do any meaningful modifications for the following reasons:
+  * Essential prior knowledge of where a firewall rule needs to go into the rule array in order to make it work (similar to ''iptables -I'')
+  * ''uci'' does not recognize content within the ''/etc/firewall.user'' script.
+  * ''uci commit'' is necessary to save the changes, but still needs ''/etc/init.d/firewall reload'' to reload new tables.
+
+===== Config sections =====
+Below is an overview of the section types that may be defined in the firewall configuration.
+  * A minimal firewall configuration for a router usually consists of one //defaults// section, at least two //zones// (''lan'' and ''wan''), and one //forwarding// to allow traffic from ''lan'' to ''wan''.
+      * //The forwarding section is not strictly required when there are no more than two zones, as the rule can then be set as the 'global default' for that zone.//
+
+==== Defaults ====
+The ''defaults'' section declares global firewall settings which do not belong to specific zones: <code bash>
+config defaults
+	option	input			'ACCEPT'
+	option	output			'ACCEPT'
+	option	forward			'REJECT'
+	option	custom_chains		'1'
+	option	drop_invalid		'1'
+	option	syn_flood		'1'
+	option	synflood_burst		'50'
+	option	synflood_protect	'1'
+	option	tcp_ecn			'1'
+	option	tcp_syncookies		'1'
+	option	tcp_window_scaling	'1'
+</code>
+
+=== Options ===
+^ Name ^ Type ^ Required ^ Default ^ Description ^
+| ''input'' | string | no | ''REJECT'' | Set policy for the ''INPUT'' chain of the ''filter'' table. |
+| ''forward'' | string | no | ''REJECT'' | Set policy for the ''FORWARD'' chain of the ''filter'' table. |
+| ''output'' | string | no | ''REJECT'' | Set policy for the ''OUTPUT'' chain of the ''filter'' table. |
+| ''drop_invalid'' | boolean | no | ''0'' | Drop invalid packets (e.g. not matching any active connection). |
+| ''syn_flood'' | boolean | no | ''0'' | Enable [[wp>SYN flood]] protection (obsoleted by ''synflood_protect'' setting). |
+| ''synflood_protect'' | boolean | no | ''0'' | Enable [[wp>SYN flood]] protection. |
+| ''synflood_rate'' | string | no | ''25'' | Set rate limit (packets/second) for SYN packets above which the traffic is considered a flood. |
+| ''synflood_burst'' | string | no | ''50'' | Set burst limit for SYN packets above which the traffic is considered a flood if it exceeds the allowed rate. |
+| ''tcp_syncookies'' | boolean | no | ''1'' | Enable the use of [[wp>SYN cookies]]. |
+| ''tcp_ecn'' | boolean | no | ''0'' | Enable/Disable [[wp>Explicit_Congestion_Notification|Explicit Congestion Notification]]. Implemented upstream in Linux Kernel. See [[https://github.com/torvalds/linux/blob/54dee406374ce8adb352c48e175176247cb8db7c/Documentation/networking/ip-sysctl.txt|ip-sysctl.txt]]. |
+| ''tcp_window_scaling'' | boolean | no | ''1'' | Enable TCP window scaling. |
+| ''accept_redirects'' | boolean | no | ''0'' | Accepts redirects. Implemented upstream in Linux Kernel. See [[https://github.com/torvalds/linux/blob/54dee406374ce8adb352c48e175176247cb8db7c/Documentation/networking/ip-sysctl.txt|ip-sysctl.txt]]. |
+| ''accept_source_route'' | boolean | no | ''0'' | Implemented upstream in Linux Kernel. See [[https://github.com/torvalds/linux/blob/54dee406374ce8adb352c48e175176247cb8db7c/Documentation/networking/ip-sysctl.txt|ip-sysctl.txt]].  |
+| ''custom_chains'' | boolean | no | ''1'' | Enable generation of custom rule chain hooks for user generated rules.  User rules would be typically stored in firewall.user but some packages e.g. BCP38 also make use of these hooks. |
+| ''disable_ipv6'' | boolean | no | ''0'' | Disable IPv6 firewall rules. |
+| ''flow_offloading'' | boolean | no | ''0'' | Enable software flow offloading for connections. (decrease cpu load / increase routing throughput) |
+| ''flow_offloading_hw'' | boolean | no | ''0'' | Enable hardware flow offloading for connections. (depends on flow_offloading and hw capability) |
+| ''tcp_reject_code'' | reject_code | no | ''0'' | Defined in [[https://lxr.openwrt.org/source/firewall3/options.h#L92|firewall3/options.h]]. Seems to determine method of packet rejection; ([[wp>TCP_reset_attack|tcp reset, or drop]], vs [[wp>Internet_Control_Message_Protocol#Destination_unreachable|ICMP Destination Unreachable, or closed]]) |
+| ''any_reject_code'' | reject_code | no | ''1'' | Defined in [[https://lxr.openwrt.org/source/firewall3/options.h#L92|firewall3/options.h]]. Seems to determine method of packet rejection; ([[wp>TCP_reset_attack|tcp reset, or drop]], vs [[wp>Internet_Control_Message_Protocol#Destination_unreachable|ICMP Destination Unreachable, or closed]])|
+| ''auto_helper'' | bool | no | ''1'' | Enable Conntrack helpers |
+
+==== Includes ====
+It is possible to include custom firewall scripts by specifying one or more ''include'' sections in the firewall configuration:
+
+<code bash>
+config include
+	option	path		'/etc/firewall.user'
+</code>
+
+  * The ''/etc/firewall.user'' script is empty by default.
+
+=== Options ===
+^ Name ^ Type ^ Required ^ Default ^ Description ^
+| ''enabled'' | boolean | no | ''1'' | Allows to disable the corresponding include without having to delete the section |
+| ''type'' | string | no | ''script'' | Specifies the type of the include, can be ''script'' for traditional shell script includes or ''restore'' for plain files in //iptables-restore// format |
+| ''path'' | file name | yes | ''/etc/firewall.user'' | Specifies a shell script to execute on boot or firewall restarts |
+| ''family'' | string | no | ''any'' | Specifies the address family (''ipv4'', ''ipv6'' or ''any'') for which the include is called |
+| ''reload'' | boolean | no | ''0'' | Specifies whether the include should be called on reload - this is only needed if the include injects rules into internal chains |
+
+Includes of type ''script'' may contain arbitrary commands, for example advanced iptables rules or tc commands required for traffic shaping.
+  * :!: Since custom iptables rules are meant to be more specific than the generic ones, you must make sure to use ''-I'' //(insert)//, instead of ''-A'' //(append)//, so that the rules appear **before** the default rules.
+  * :!: If the rule exists in iptables, it will not be re-added. A standard iptables ''-I'' or ''-A'' will add a duplicate rule.
+
+=== Example ===
+Here is an example of ''/etc/firewall.user'' script that allows to CloudFlare.com to access HTTP 80 and HTTPS 443 ports.
+Use if your uhttpd is hidden behind CF proxy.
+
+<code bash>
+# Replace the ips-v4 with v6 if needed
+for ip in `wget -qO- http://www.cloudflare.com/ips-v4`; do
+  iptables -I INPUT -p tcp -m multiport --dports http,https -s $ip -j ACCEPT
+done
+</code>
+
+**NOTE:** The example uses HTTP to get the list of IPs.
+Using HTTP makes us vulnerable to MITM attacks.
+To use the more secure HTTPS and avoid MITM risks, we need to install ''ca-certs''.
+
+==== Redirects ====
+Port forwardings (DNAT) are defined by ''redirect'' sections.
+//Port Redirects are also commonly known as "port forwarding" or "virtual servers".//
+  * All //incoming// traffic on the specified //source zone// which matches the given rules will be directed to the specified internal host.
+  * Port ranges are specified as ''start:stop'', for instance ''6666:6670'' //(similar to the iptables syntax)//.
+
+=== Destination NAT ===
+<code bash>
+config redirect
+	option	name		'DNAT WAN to LAN for SSH'
+	option	src		'wan'
+	option	src_dport	'19900'
+	option	dest		'lan'
+	option	dest_ip		'192.168.1.1'
+	option	dest_port	'22'
+	option	proto		'tcp'
+	option	target		'DNAT'
+</code>
+
+:!: If a src_dport is not included in the config section, packets matching the other config options, //on any port//, will be forwarded to the destination port specified in that config section.
+This could pose a security risk to the application running on the destination port the config section opens.
+One way to test for this issue, is to use // [[https://www.grc.com/default.htm|Gibson Research Corporation's]] // ShieldsUP! service, and probe the desired ports on your router.
+The response could be //open//, //closed//, or //stealth// (drop).
+In cases of open or closed ports, packets are reaching a destination host, and are sending ack/reply packets back.
+Whereas stealthed ports drop packets; from the perspective of the probing system (Gibson Research), that system cannot definitively know if those packets may, or may not be reaching the destination host.
+
+=== Source NAT ===
+Masquerade is the most common form of SNAT, changing the source of traffic to WAN to the router's public IP.
+SNAT can also be done manually:
+
+<code bash>
+config redirect
+	option	name		'SNAT DMZ 192.168.1.250 to WAN 1.2.3.4 for ICMP'
+	option	src		'dmz'
+	option	src_ip		'192.168.1.250'
+	option	src_dip		'1.2.3.4'
+	option	dest		'wan'
+	option	proto		'icmp'
+	option	target		'SNAT'
+</code>
+
+=== Options ===
+^ Name ^ Type ^ Required ^ Default ^ Description ^
+| ''name'' | string | no | //string// | Name of redirect|
+| ''src'' | zone name | yes for ''DNAT'' target | //(none)// | Specifies the traffic //source zone//. Must refer to one of the defined //zone names//. For typical port forwards this usually is ''wan''. |
+| ''src_ip'' | ip address | no | //(none)// | Match incoming traffic from the specified //source ip address//. |
+| ''src_dip'' | ip address | yes for ''SNAT'' target | //(none)// | For //DNAT//, match incoming traffic directed at the given //destination ip address//. For //SNAT// rewrite the //source address// to the given address. |
+| ''src_mac'' | mac address | no | //(none)// | Match incoming traffic from the specified //mac address//. |
+| ''src_port'' | port or range | no | //(none)// | Match incoming traffic originating from the given //source port or port range// on the client host. |
+| ''src_dport'' | port or range | no | //(none)// | For //DNAT//, match incoming traffic directed at the given //destination port or port range// on this host. For //SNAT// rewrite the //source ports// to the given value. |
+| ''proto'' | protocol name or number | no | //tcp udp// | Match incoming traffic using the given //protocol//. Can be one (or several when using list syntax) of ''tcp'', ''udp'', ''udplite'', ''icmp'', ''esp'', ''ah'', ''sctp'', or ''all'' or it can be a numeric value, representing one of these protocols or a different one. A protocol name from ''/etc/protocols'' is also allowed. The number ''0'' is equivalent to ''all''. |
+| ''dest'' | zone name | yes for ''SNAT'' target | //(none)// | Specifies the traffic //destination zone//. Must refer to one of the defined //zone names//. For ''DNAT'' target on Attitude Adjustment, NAT reflection works only if this is equal to ''lan''. |
+| ''dest_ip'' | ip address | no | //(none)// | For //DNAT//, redirect matches incoming traffic to the specified internal host. For //SNAT//, it matches traffic directed at the given address. For //DNAT//, if the ''dest_ip'' is not specified, the rule is translated in a iptables/REDIRECT rule, otherwise it is a iptables/DNAT rule. |
+| ''dest_port'' | port or range | no | //(none)// | For //DNAT//, redirect matched incoming traffic to the given port on the internal host. For //SNAT//, match traffic directed at the given ports. Only a single port or range can be specified, not disparate ports as with Rules (below). |
+| ''ipset'' | string | no | //(none)// | If specified, match traffic against the given //[[#ip.sets|ipset]]//. The match can be inverted by prefixing the value with an exclamation mark. |
+| ''mark'' | string | no | //(none)// | If specified, match traffic against the given firewall mark, e.g. ''0xFF'' to match mark 255 or ''0x0/0x1'' to match any even mark value. The match can be inverted by prefixing the value with an exclamation mark, e.g. ''!0x10'' to match all but mark #16. |
+| ''start_date'' | date (''yyyy-mm-dd'') | no | //(always)// | If specifed, only match traffic after the given date (inclusive). |
+| ''stop_date'' | date (''yyyy-mm-dd'') | no | //(always)// | If specified, only match traffic before the given date (inclusive). |
+| ''start_time'' | time (''hh:mm:ss'') | no | //(always)// | If specified, only match traffic after the given time of day (inclusive). |
+| ''stop_time'' | time (''hh:mm:ss'') | no | //(always)// | If specified, only match traffic before the given time of day (inclusive). |
+| ''weekdays'' | list of weekdays | no | //(always)// | If specified, only match traffic during the given week days, e.g. ''sun mon thu fri'' to only match on Sundays, Mondays, Thursdays and Fridays. The list can be inverted by prefixing it with an exclamation mark, e.g. ''! sat sun'' to always match but on Saturdays and sundays. |
+| ''monthdays'' | list of dates | no | //(always)// | If specified, only match traffic during the given days of the month, e.g. ''2 5 30'' to only match on every 2nd, 5th and 30rd day of the month. The list can be inverted by prefixing it with an exclamation mark, e.g. ''! 31'' to always match but on the 31st of the month. |
+| ''utc_time'' | boolean | no | ''0'' | Treat all given time values as UTC time instead of local time. |
+| ''target'' | string | no | ''DNAT'' | NAT target (''DNAT'' or ''SNAT'') to use when generating the rule. |
+| ''family'' | string | no | ''any'' | Protocol family (''ipv4'', ''ipv6'' or ''any'') to generate iptables rules for. |
+| ''reflection'' | boolean | no | ''1'' | Activate NAT reflection for this redirect - applicable to ''DNAT'' targets. |
+| ''reflection_src'' | string | no | ''internal'' | The source address to use for NAT-reflected packets if ''reflection'' is ''1''. This can be ''internal'' or ''external'', specifying which interface’s address to use. Applicable to ''DNAT'' targets. |
+| ''limit'' | string | no | //(none)// | Maximum average matching rate; specified as a number, with an optional ''/second'', ''/minute'', ''/hour'' or ''/day'' suffix. Examples: ''3/second'', ''3/sec'' or ''3/s''. |
+| ''limit_burst'' | integer | no | ''5'' | Maximum initial number of packets to match, allowing a short-term average above ''limit''. |
+| ''enabled'' | string | no | ''1'' or ''yes'' | Enable the redirect rule or not. |
+| ''helper'' | cthelper | no | FIXME | FIXME |
+
+See also: [[https://git.openwrt.org/?p=project/firewall3.git;a=blob;f=snats.c;hb=HEAD#l22]]
+
+==== Zones ====
+A ''zone'' section groups one or more //interfaces// and serves as a //source// or //destination// for //forwardings//, //rules// and //redirects//.
+
+<code bash>
+config zone
+	option	name		'wan'
+	option	network		'wan wan6'
+	option	input		'REJECT'
+	option	output		'ACCEPT'
+	option	forward		'REJECT'
+	option	masq		'1'
+	option	mtu_fix		'1'
+</code>
+
+  * **MASQUERADE** (NAT) of outgoing traffic (WAN) is controlled on a per-zone basis on the //outgoing// interface.\\ \\
+  * **INPUT** rules for a zone describe what happens to traffic trying to reach the router itself through an interface in that zone.
+  * **OUTPUT** rules for a zone describe what happens to traffic originating from the router itself going through an interface in that zone.
+  * **FORWARD** rules for a zone describe what happens to traffic passing between different interfaces belonging in the same zone.
+
+=== Options ===
+^ Name ^ Type ^ Required ^ Default ^ Description ^
+| ''name'' | zone name | yes | //(none)// | Unique zone name. 11 characters is the maximum working firewall zone name length. |
+| ''network'' | list | no | //(none)// | List of //[[docs:guide-user:base-system:basic-networking#interfaces|interfaces]]// attached to this zone. If omitted and neither extra* options, subnets nor devices are given, the value of ''name'' is used by default. Alias interfaces defined in the network config cannot be used as valid 'standalone' networks. Use [[docs:guide-user:base-system:basic#appending_or_deleting_values_on_a_list_option| list syntax]] . | 
+| ''masq'' | boolean | no | ''0'' | Specifies whether //outgoing// zone traffic should be masqueraded. This is typically enabled on the //wan// zone. |
+| ''masq_src'' | list of subnets | no | ''0.0.0.0/0'' | Limit masquerading to the given source subnets. Negation is possible by prefixing the subnet with ''!''; multiple subnets are allowed. |
+| ''masq_dest'' | list of subnets | no | ''0.0.0.0/0'' | Limit masquerading to the given destination subnets. Negation is possible by prefixing the subnet with ''!''; multiple subnets are allowed. |
+| ''masq_allow_invalid'' | boolean | no | ''0'' | Do not add ''DROP INVALID'' rules, if masquerading is used. The ''DROP'' rules are supposed to prevent NAT leakage (see [[https://git.lede-project.org/?p=project/firewall3.git;a=commit;h=e751cde8954a09ea32f67a8bf7974b4dc1395f2e|commit in firewall3]]). |
+| ''mtu_fix'' | boolean | no | ''0'' | Enable MSS clamping for //outgoing// zone traffic. |
+| ''input'' | string | no | ''DROP'' | Default policy (''ACCEPT'', ''REJECT'', ''DROP'') for //incoming// zone traffic. |
+| ''forward'' | string | no | ''DROP'' | Default policy (''ACCEPT'', ''REJECT'', ''DROP'') for //forwarded// zone traffic. |
+| ''output'' | string | no | ''DROP'' | Default policy (''ACCEPT'', ''REJECT'', ''DROP'') for //outgoing// zone traffic. |
+| ''family'' | string | no | ''any'' | The protocol family (''ipv4'', ''ipv6'' or ''any'') these iptables rules are for. |
+| ''log'' | int | no | ''0'' | Bit field to enable logging in the filter and/or mangle tables, bit 0 = filter, bit 1 = mangle. (Since r6397-7cc9914aae)|
+| ''log_limit'' | string | no | ''10/minute'' | Limits the amount of log messages per interval. |
+| ''device'' | list | no | //(none)// | List of raw network device names attached to this zone, e.g. ''ppp+'' to match any PPP interface.  |
+| ''subnet'' | list | no | //(none)// | List of IP subnets attached to this zone.  |
+| ''extra'' | string | no | //(none)// | Extra arguments passed directly to iptables. Note that these options are passed to both source and destination classification rules, therefor direction-specific options like ''%%--dport%%'' should not be used here - in this case the ''extra_src'' and ''extra_dest'' options should be used instead.  |
+| ''extra_src'' | string | no | //Value of ''extra''// | Extra arguments passed directly to iptables for source classification rules.  |
+| ''extra_dest'' | string | no | //Value of ''extra''// | Extra arguments passed directly to iptables for destination classification rules.  |
+| ''custom_chains'' | bool | no | ''1'' | Enable generation of custom rule chain hooks for user generated rules. Has no effect if disabled (0) in the ''defaults'' section (see above). |
+| ''enabled'' | bool | no | yes | if set to ''0'', zone is disabled |
+| ''auto_helper'' | bool | no | ''1'' for non-masq zone | Add CT helpers for zone |
+| ''helper'' | cthelper | no | //(none)// | List of helpers to add to zone |
+
+==== Forwardings ====
+The ''forwarding'' sections control the traffic flow between //zones//, and may enable [[wp>Path_MTU_discovery#Problems_with_PMTUD|MSS clamping]] for specific directions.
+
+<code bash>
+config forwarding
+	option	src		'lan'
+	option	dest		'wan'
+</code>
+
+  * Only one direction is covered by a ''forwarding'' rule. To allow bidirectional traffic flows between two //zones//, two //forwardings// are required, with ''src'' and ''dest'' reversed in each. 
+
+=== Options ===
+^ Name ^ Type ^ Required ^ Default ^ Description ^
+| ''name'' | forward name | no | //(none)// | Unique forwarding name. |
+| ''src'' | zone name | yes | //(none)// | Specifies the traffic //source zone//. Must refer to one of the defined //zone names//. For typical port forwards this usually is 'wan'. |
+| ''dest'' | zone name | yes | //(none)// | Specifies the traffic //destination zone//. Must refer to one of the defined //zone names// |
+| <del>''mtu_fix''</del> | <del>boolean</del> | <del>no</del> | <del>''0''</del> | <del>Enable MSS clamping for traffic flowing from the //source zone// to the //destination zone//</del> (Deprecated and moved to ''zone'' sections in 8.09.2+) |
+| ''family'' | string | no | ''any'' | Protocol family (''ipv4'', ''ipv6'' or ''any'') to generate iptables rules for. |
+| ''enabled'' | bool | no | yes | if set to ''0'', forward is disabled |
+
+:!: The //iptables// rules generated for this section rely on the //state match// which needs connection tracking to work.
+  * At least one of the ''src'' or ''dest'' zones needs to have //connection tracking// enabled through the ''masq'' option.
+
+==== Rules ====
+The ''rule'' section is used to define basic accept, drop, or reject rules to allow or restrict access to specific ports or hosts.
+
+<code bash>
+config rule
+	option	name		'Reject LAN to WAN for custom IP'
+	option	src		'lan'
+	option	src_ip		'192.168.1.2'
+	option	src_mac		'00:11:22:33:44:55'
+	option	src_port	'80'
+	option	dest		'wan'
+	option	dest_ip		'194.25.2.129'
+	option	dest_port	'120'
+	option	proto		'tcp'
+	option	target		'REJECT'
+</code>
+
+  * In [[docs:guide-user:firewall:fw3_configurations:start|fw3]], the ''src'' and ''dest'' are tied to the target:
+    * If ''src'' and ''dest'' are given, the rule matches //forwarded// traffic
+    * If only ''src'' is given, the rule matches //incoming// traffic
+    * If only ''dest'' is given, the rule matches //outgoing// traffic
+    * If neither ''src'' nor ''dest'' are given, the rule defaults to an //outgoing// traffic rule\\ \\
+  * Port ranges are specified as ''start:stop'', for instance ''6666:6670'' //(similar to the iptables syntax)//.
+
+=== Options ===
+^ Name ^ Type ^ Required ^ Default ^ Description ^
+| ''name'' | string | no | //(none)// | Name of rule |
+| ''src'' | zone name | yes (:!: optional since Firewall v2, version 58 and above) | //(none)// | Specifies the traffic //source zone//. Must refer to one of the defined //zone names//. |
+| ''src_ip'' | ip address | no | //(none)// | Match incoming traffic from the specified //source ip address// |
+| ''src_mac'' | mac address | no | //(none)// | Match incoming traffic from the specified //mac address// |
+| ''src_port'' | port or range | no | //(none)// | Match incoming traffic from the specified //source port// or //port range//, if relevant ''proto'' is specified. Multiple ports can be specified like '80 443 465' [[https://forum.openwrt.org/viewtopic.php?pid=287271|1]]. |
+| ''proto'' | protocol name or number | no | ''tcp udp'' | Match incoming traffic using the given //protocol//. Can be one (or several when using list syntax) of ''tcp'', ''udp'', ''udplite'', ''icmp'', ''esp'', ''ah'', ''sctp'', or ''all'' or it can be a numeric value, representing one of these protocols or a different one. A protocol name from ''/etc/protocols'' is also allowed. The number ''0'' is equivalent to ''all''. |
+| ''icmp_type'' | list of type names or numbers | no | any | For //protocol// ''icmp'' select specific icmp types to match. Values can be either exact icmp type numbers or type names (see below). |
+| ''dest'' | zone name | no | //(none)// | Specifies the traffic //destination zone//. Must refer to one of the defined //zone names//, or * for any zone. If specified, the rule applies to //forwarded// traffic; otherwise, it is treated as //input// rule. |
+| ''dest_ip'' | ip address | no | //(none)// | Match incoming traffic directed to the specified //destination ip address//. With no dest zone, this is treated as an input rule! |
+| ''dest_port'' | port or range | no | //(none)// | Match incoming traffic directed at the given //destination port or port range//, if relevant ''proto'' is specified. Multiple ports can be specified like '80 443 465' [[https://forum.openwrt.org/viewtopic.php?pid=287271|1]]. |
+| ''ipset'' | string | no | //(none)// | If specified, match traffic against the given //[[#ip.sets|ipset]]//. The match can be inverted by prefixing the value with an exclamation mark. You can specify the direction as 'setname src' or 'setname dest'. The default if neither src nor dest are added is to assume src |
+| ''mark'' | mark/mask | no | //(none)// | If specified, match traffic against the given firewall mark, e.g. ''0xFF'' to match mark 255 or ''0x0/0x1'' to match any even mark value. The match can be inverted by prefixing the value with an exclamation mark, e.g. ''!0x10'' to match all but mark #16. |
+| ''start_date'' | date (''yyyy-mm-dd'') | no | //(always)// | If specifed, only match traffic after the given date (inclusive). |
+| ''stop_date'' | date (''yyyy-mm-dd'') | no | //(always)// | If specified, only match traffic before the given date (inclusive). |
+| ''start_time'' | time (''hh:mm:ss'') | no | //(always)// | If specified, only match traffic after the given time of day (inclusive). |
+| ''stop_time'' | time (''hh:mm:ss'') | no | //(always)// | If specified, only match traffic before the given time of day (inclusive). |
+| ''weekdays'' | list of weekdays | no | //(always)// | If specified, only match traffic during the given week days, e.g. ''sun mon thu fri'' to only match on sundays, mondays, thursdays and Fridays. The list can be inverted by prefixing it with an exclamation mark, e.g. ''! sat sun'' to always match but on Saturdays and sundays. |
+| ''monthdays'' | list of dates | no | //(always)// | If specified, only match traffic during the given days of the month, e.g. ''2 5 30'' to only match on every 2nd, 5th and 30rd day of the month. The list can be inverted by prefixing it with an exclamation mark, e.g. ''! 31'' to always match but on the 31st of the month. |
+| ''utc_time'' | boolean | no | ''0'' | Treat all given time values as UTC time instead of local time. |
+| ''target'' | string | yes | ''DROP'' | Firewall action (''ACCEPT'', ''REJECT'', ''DROP'', ''MARK'', ''NOTRACK'') for matched traffic |
+| ''set_mark'' | mark/mask | yes for target ''MARK'' | //(none)// | Zeroes out the bits given by mask and ORs value into the packet mark. If mask is omitted, 0xFFFFFFFF is assumed |
+| ''set_xmark'' | ::: | ::: | ::: | Zeroes out the bits given by mask and XORs value into the packet mark. If mask is omitted, 0xFFFFFFFF is assumed |
+| ''family'' | string | no | ''any'' | Protocol family (''ipv4'', ''ipv6'' or ''any'') to generate iptables rules for. |
+| ''limit'' | string | no | //(none)// | Maximum average matching rate; specified as a number, with an optional ''/second'', ''/minute'', ''/hour'' or ''/day'' suffix. Examples: ''3/minute'', ''3/min'' or ''3/m''. |
+| ''limit_burst'' | integer | no | ''5'' | Maximum initial number of packets to match, allowing a short-term average above ''limit'' |
+| ''extra'' | string | no | //(none)// | Extra arguments to pass to iptables. Useful mainly to specify additional match options, such as ''%%-m policy --dir in%%'' for IPsec. |
+| ''enabled'' | boolean | no | yes | Enable or disable rule. |
+| ''device'' | string | no | FIXME | FIXME |
+| ''direction'' | direction | no | FIXME | FIXME //direction_out// |
+| ''set_helper'' | cthelper | no | FIXME | FIXME |
+| ''helper'' | cthelper | no | FIXME | FIXME |
+
+=== ICMP Name Types ===
+| ''address-mask-reply'' | ''host-redirect'' | ''pong'' | ''time-exceeded'' |
+| ''address-mask-request'' | ''host-unknown'' | ''port-unreachable'' | ''timestamp-reply'' |
+| ''any'' | ''host-unreachable'' | ''precedence-cutoff'' | ''timestamp-request'' |
+| ''communication-prohibited'' | ''ip-header-bad'' | ''protocol-unreachable'' | ''TOS-host-redirect'' |
+| ''destination-unreachable'' | ''network-prohibited'' | ''redirect'' | ''TOS-host-unreachable'' |
+| ''echo-reply'' | ''network-redirect'' | ''required-option-missing'' | ''TOS-network-redirect'' |
+| ''echo-request'' | ''network-unknown'' | ''router-advertisement'' | ''TOS-network-unreachable'' |
+| ''fragmentation-needed'' | ''network-unreachable'' | ''router-solicitation'' | ''ttl-exceeded'' |
+| ''host-precedence-violation'' | ''parameter-problem'' | ''source-quench'' | ''ttl-zero-during-reassembly'' |
+| ''host-prohibited'' | ''ping'' | ''source-route-failed'' | ''ttl-zero-during-transit'' |
+
+===== Routing =====
+==== IP sets ====
+fw3 supports referencing or creating [[http://ipset.netfilter.org/|ipsets]] to simplify matching of large address or port lists without the need for creating one rule per item to match.
+  * :!: This needs the ''kmod-ipt-ipset'' kernel module installed.
+
+=== Options ===
+^ Name ^ Type ^ Required ^ Default ^ Description ^
+| ''enabled'' | boolean | no | ''1'' | Allows to disable the declaration of the ipset without the need to delete the section. |
+| ''external'' | string | no | //(none)// | If the ''external'' option is set to a name, the firewall will simply reference an already existing ipset pointed to by the name. If the ''external'' option is unset, the firewall will create the ipset on start and destroy it on stop. | 
+| ''name'' | string | yes if ''external'' is unset \\ no if ''external'' is set | //(none)// if ''external'' is unset \\ value of ''external'' if ''external'' is set | Specifies the firewall internal name of the ipset which is used to reference the set in rules or redirects. |
+| ''family'' | string | no | ''ipv4'' | Protocol family (''ipv4'' or ''ipv6'') to create ipset for. Only applicable to storage types ''hash'' and ''list'', the ''bitmap'' type implies ''ipv4''. |
+| ''storage'' | string | no | //varies// | Specifies the storage method (''bitmap'', ''hash'' or ''list'') used by the ipset, the default varies depending on the used datatypes (see ''match'' option below). In most cases the storage method can be automatically inferred from the datatype combination but in some cases multiple choices are possible (e.g. ''bitmap:ip'' vs. ''hash:ip''). |
+| ''match'' | list of direction/type tuples | yes | //(none)// | Specifies the matched data types (''ip'', ''port'', ''mac'', ''net'' or ''set'') and their direction (''src'' or ''dest''). The direction is joined with the datatype by an underscore to form a tuple, e.g. ''src_port'' to match source ports or ''dest_net'' to match destination CIDR ranges. When using ipsets matching on multiple elements, e.g. ''hash:ip,port'', specify the packet fields to match on in quotes or comma-separated (i.e. "match dest_ip dest_port").|
+| ''iprange'' | IP range | yes for storage type ''bitmap'' with datatype ''ip'' | //(none)// | Specifies the IP range to cover, see [[http://ipset.netfilter.org/ipset.man.html|ipset(8)]]. Only applicable to the ''hash'' storage type. |
+| ''portrange'' | Port range | yes for storage type ''bitmap'' with datatype ''port'' | //(none)// | Specifies the port range to cover, see [[http://ipset.netfilter.org/ipset.man.html|ipset(8)]]. Only applicable to the ''hash'' storage type. |
+| ''netmask'' | integer | no | ''32'' | If specified, network addresses will be stored in the set instead of IP host addresses. Value must be between ''1'' and ''32'', see [[http://ipset.netfilter.org/ipset.man.html|ipset(8)]]. Only applicable to the ''bitmap'' storage type with match ''ip'' or the ''hash'' storage type with match ''ip''. |
+| ''maxelem'' | integer | no | ''65536'' | Limits the number of items that can be added to the set, only applicable to the ''hash'' and ''list'' storage types. |
+| ''hashsize'' | integer | no | ''1024'' | Specifies the initial hash size of the set, only applicable to the ''hash'' storage type. |
+| ''timeout'' | integer | no | ''0'' | Specifies the default timeout for entries added to the set. A value of ''0'' means no timeout. |
+| ''entry'' | setentry | no | FIXME | FIXME |
+| ''loadfile'' | string | no | FIXME | FIXME |
+
+=== Storage / Match Options ===
+The order of datatype matches is significant
+^ Family ^ Storage ^ Match ^ Notes ^
+| ''ipv4'' | ''bitmap'' | ''ip'' | Requires ''iprange'' option |
+| ''ipv4'' | ''bitmap'' | ''ip mac'' | Requires ''iprange'' option |
+| ''ipv4'' | ''bitmap'' | ''port'' | Requires ''portrange'' option |
+| //any// | ''hash'' | ''ip'' | - |
+| //any// | ''hash'' | ''net'' | - |
+| //any// | ''hash'' | ''ip port'' | - |
+| //any// | ''hash'' | ''net port'' | - |
+| //any// | ''hash'' | ''ip port ip'' | - |
+| //any// | ''hash'' | ''ip port net'' | - |
+| - | ''list'' | ''set'' | Meta type to create a set-of-sets |
+
+==== IPv6 ====
+As described above, the option ''family'' is used for distinguishing between IPv4, IPv6 and both protocols.
+However the family is inferred automatically if IPv6 addresses are used:
+
+<code bash>
+config rule
+	option	src		'wan'
+	option	src_ip		'fdca:f00:ba3::/64'
+	option	target		'ACCEPT'
+</code>
+
+Similar, such a rule is detected as IPv4 only:
+
+<code bash>
+config rule
+	option	src		'wan'
+	option	dest_ip		'88.77.66.55'
+	option	target		'REJECT'
+</code>
+
+  * Rules without IP addresses are automatically added to iptables and ip6tables, //unless overridden by the family option//.
+  * Redirect rules (port forwards) are always IPv4 (for now) since there is [[https://bugs.openwrt.org/index.php?do=details&task_id=500|no IPv6 DNAT support]] (yet).

@@ -1,0 +1,19 @@
+====== VPN server and client ======
+This article provides instructions on overcoming routing issues when running VPN server and client on the router at the same time.
+
+===== VPN server =====
+The VPN server running on your router can provide a secure connection to your home network while you're away.
+If you need to access the router itself or any of your home network devices from afar, the VPN server is a great solution.
+
+===== VPN client =====
+You may want to run a VPN client on your router to encrypt your connection to the internet and prevent your ISP from snooping on your traffic and DNS requests (which in some countries is now legal for ISPs to monetize) as well as meddling with DNS requests or HTTP traffic.
+In order to use a VPN client on your router, you would need to obtain credentials to a corresponding VPN server.
+Your connection to the VPN server is encrypted, preventing your ISP from snooping/meddling on your traffic.
+A wide variety of commercial VPN providers exist.
+Once you install/run a VPN client on your router, it's best to route all your traffic via a VPN tunnel.
+
+===== VPN server and client =====
+If you use the VPN client on your router which sends all traffic by default over VPN tunnel, you might have a problem setting up the VPN server on the same router (because the VPN server will receive the traffic on WAN gateway, but will send it out via VPN tunnel which your remote device wouldn't expect).
+To overcome this issue, you can install [[https://github.com/stangri/openwrt_packages/blob/master/vpn-policy-routing/files/README.md#how-to-install|VPN Policy Routing]].
+Then enable the service and configure the policies according to your [[https://github.com/stangri/openwrt_packages/blob/master/vpn-policy-routing/files/README.md#local-openvpn-server--openvpn-client-scenario-1|use case scenario]].
+Note that [[https://forum.openwrt.org/t/vpn-pbr-config-for-wireguard-client-and-server/72279/9?u=vgaetera|some cases]] may require you to disable VPN gateway redirection and create a policy to route LAN client traffic to the VPN.

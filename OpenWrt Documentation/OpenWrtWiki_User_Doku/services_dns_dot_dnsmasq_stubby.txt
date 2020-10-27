@@ -1,0 +1,102 @@
+====== DNS over TLS with Dnsmasq and Stubby ======
+{{section>meta:infobox:howto_links#cli_skills&noheader&nofooter&noeditbutton}}
+
+===== Introduction =====
+  * This how-to describes the method for setting up [[wp>DNS_over_TLS|DNS over TLS]] on OpenWrt.
+  * It relies on [[docs:guide-user:base-system:dhcp.dnsmasq|Dnsmasq]] and [[docs:guide-user:services:dns:stubby|Stubby]] for resource efficiency and performance.
+  * Follow [[docs:guide-user:firewall:fw3_configurations:intercept_dns|DNS hijacking]] to intercept DNS traffic or use [[docs:guide-user:services:vpn:start|VPN]] to protect all traffic.
+
+===== Goals =====
+{{section>docs:guide-user:services:dns:dnscrypt_dnsmasq_dnscrypt-proxy#goals&noheader&nofooter&noeditbutton}}
+
+===== Instructions =====
+Install the packages and configure DNS encryption.
+
+<code bash>
+# Install packages
+opkg update
+opkg install dnsmasq stubby
+
+# Enable DNS encryption
+uci -q delete dhcp.@dnsmasq[0].server
+uci get stubby.global.listen_address \
+| sed -e "s/\s/\n/g;s/@/#/g" \
+| while read -r STUBBY_SERV
+do uci add_list dhcp.@dnsmasq[0].server="${STUBBY_SERV}"
+done
+
+# Enforce DNS encryption for LAN clients
+uci set dhcp.@dnsmasq[0].noresolv="1"
+uci commit dhcp
+/etc/init.d/dnsmasq restart
+</code>
+
+LAN clients should use Dnsmasq as a primary resolver.
+Dnsmasq forwards DNS queries to Stubby which encrypts DNS traffic.
+
+===== Testing =====
+{{section>docs:guide-user:services:dns:dnscrypt_dnsmasq_dnscrypt-proxy#testing&noheader&nofooter&noeditbutton}}
+
+===== Troubleshooting =====
+Collect and analyze the following information.
+
+<code bash>
+# Restart services
+/etc/init.d/log restart; /etc/init.d/dnsmasq restart; /etc/init.d/stubby restart
+
+# Log and status
+logread -e dnsmasq; netstat -l -n -p | grep -e dnsmasq
+logread -e stubby; netstat -l -n -p | grep -e stubby
+
+# Runtime configuration
+pgrep -f -a dnsmasq; pgrep -f -a stubby
+
+# Persistent configuration
+uci show dhcp; uci show stubby
+</code>
+
+===== Extras =====
+==== Web interface ====
+If you want to manage the settings using web interface.
+
+Navigate to **[[http://openwrt.lan/|LuCI]] -> Network -> DHCP and DNS** to configure Dnsmasq.
+
+==== DoT provider ====
+Stubby is configured with Cloudflare DNS by default.
+You can change it to Google DNS or any other [[wp>Public_recursive_name_server|DoT provider]].
+Make sure the provider supports DNSSEC validation if required.
+Specify several servers to improve fault tolerance.
+
+<code bash>
+# Configure DoT provider
+while uci -q delete stubby.@resolver[0]; do :; done
+uci set stubby.dns6a="resolver"
+uci set stubby.dns6a.address="2001:4860:4860::8888"
+uci set stubby.dns6a.tls_auth_name="dns.google"
+uci set stubby.dns6b="resolver"
+uci set stubby.dns6b.address="2001:4860:4860::8844"
+uci set stubby.dns6b.tls_auth_name="dns.google"
+uci set stubby.dnsa="resolver"
+uci set stubby.dnsa.address="8.8.8.8"
+uci set stubby.dnsa.tls_auth_name="dns.google"
+uci set stubby.dnsb="resolver"
+uci set stubby.dnsb.address="8.8.4.4"
+uci set stubby.dnsb.tls_auth_name="dns.google"
+uci commit stubby
+/etc/init.d/stubby restart
+</code>
+
+==== DNSSEC validation ====
+Enforce [[wp>Domain_Name_System_Security_Extensions|DNSSEC]] validation if your DNS provider does not support it, or you want to perform the validation yourself.
+Beware of performance issues.
+
+<code bash>
+# Enforce DNSSEC validation
+uci set dhcp.@dnsmasq[0].proxydnssec="1"
+uci commit dhcp
+/etc/init.d/dnsmasq restart
+uci set stubby.global.appdata_dir="/tmp/stubby"
+uci set stubby.global.dnssec_return_status="1"
+uci commit stubby
+/etc/init.d/stubby restart
+</code>

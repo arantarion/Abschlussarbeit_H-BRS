@@ -1,0 +1,5 @@
+====== fw3 Configurations ======
+This section contains information on how to use the [[docs:guide-user:firewall:overview|fw3 application]] and
+some functional configurations building blocks.
+
+{{pagequery>@:docs:guide-user:firewall:fw3_configurations *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

@@ -1,0 +1,50 @@
+====== WiFiDog captive portal ======
+Please read [[wp>WiFiDog Captive Portal]] for a definition of WiFiDog. It is FOSS software used to create wireless hot-spots. It is a next-generation alternative to [[http://nocat.net/|NoCat]]. For more information look at the [[http://dev.wifidog.org/wiki/FAQ | wifidog FAQ]]. [[wp>Captive portal]].
+
+  * [[http://dev.wifidog.org/]]
+  * [[http://www.authpuppy.org/]]
+
+===== Preparation =====
+==== Prerequisites ====
+==== Required Packages ====
+  * iptables-mod-extra 
+  * iptables-mod-ipopt
+  * kmod-ipt-nat
+  * iptables-mod-nat-extra
+  * libpthread
+
+===== Installation =====
+[[docs:guide-user:additional-software:opkg]]
+<code bash>
+opkg update
+opkg install wifidog
+vi /etc/wifidog.conf
+/etc/init.d/wifidog enable
+/etc/init.d/wifidog start
+netstat -a
+</code>
+
+You can also run wifidog in foreground/debug mode:
+
+<code bash>
+wifidog -f -d 7
+  -f means to run in foreground (do not become a background daemon)
+  -d 7 increases debug output level to the maximum
+</code>
+
+===== Configuration =====
+
+===== Start on boot =====
+To enable/disable start on boot:\\
+''/etc/init.d/wifidog enable''  this simply creates a symlink: ''/etc/rc.d/S?0??? -> /etc/init.d/???''\\
+''/etc/init.d/wifidog disable'' this removes the symlink again\\
+
+===== Administration =====
+Follow instructions on [[http://dev.wifidog.org/wiki/doc/install/auth-server]]
+
+===== Troubleshooting =====
+
+
+===== Notes =====
+  * The Project Homepage: [[http://dev.wifidog.org/]]
+  * [[https://forum.openwrt.org/viewtopic.php?id=24926|How to offer 2 hotspots with WiFiDog with Kernel 2.4]]

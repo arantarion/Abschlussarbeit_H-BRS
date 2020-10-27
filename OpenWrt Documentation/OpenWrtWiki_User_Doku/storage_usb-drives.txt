@@ -1,0 +1,126 @@
+====== 使用存储设备 ======
+
+(本文译自英文版)
+
+许多受支持的设备都提供接口来连接存储设备，大多数是 USB 或者 Sata.
+
+本文将讲述如何配置你的设备以存储或分享的用途来使用这些存储设备。如果你是想扩展固件的存储空间（来安装更多的软件包），请阅读这篇文章 [[docs:guide-user:additional-software:extroot_configuration|Extroot configuration]].
+
+要配置外接磁盘空间，请跟着下面的步骤来做：
+  - 验证存储驱动
+  - 确认操作系统可以识别磁盘及其分区
+  - 在 USB 磁盘上创建一个分区
+  - 为分区创建文件系统
+  - 自动挂载分区
+  - 在硬盘闲置时，避免空转
+
+===== 安装和验证 USB 驱动 =====
+
+这一步将确保需要的 USB 存储驱动被正确的安装。
+
+  - 从刷新可用软件包列表开始<code>opkg update</code>
+  - 典型的 LEDE 包已经安装了核心的 USB 设备驱动（如果你的设备有 USB 接口的话），但是可能没有安装 USB 存储设备驱动。首先安装存储设备驱动（如果已经安装了，下面的命令会输出 “is alreay installed.”）：<code>opkg install kmod-usb-storage</code>
+  - 如果要验证整个 USB 驱动链是否正确工作，可以选择安装 **usbutils** 包：<code>opkg install usbutils</code>
+  - 现在把你的 USB 移动硬盘或者U盘连接到设备上，然后用下面这条 **usbutils** 提供的命令来列出已连接的设备：<code>lsusb -t</code>
+  - 这将输出设备 USB 接口的列表，以及已连接的外置存储设备：<code>
+/:  Bus 02.Port 1: Dev 1, Class=root_hub, Driver=xhci-mtk/1p, 5000M
+/:  Bus 01.Port 1: Dev 1, Class=root_hub, Driver=xhci-mtk/2p, 480M
+    |** Port 1: Dev 5, If 0, Class=Mass Storage, Driver=usb-storage, 480M
+</code>
+  * “Bus...” 这一行代表主机芯片。在这里，“Driver” 是 “xhci” 表示 USB3.0, “ehci” 表示 USB2.0, 而 “uhci” 或 “ohci”　表示 USB1.1
+  * 有 “Class=Mass Storage” 的行表示已连接的 USB 设备。在这里，“Driver” 是 “usb-storage” 代表类型 “[[https://en.wikipedia.org/wiki/USB_mass_storage_device_class|Bulk only Transport]]” 或 “usb-storage-uas” 代表类型 “[[https://en.wikipedia.org/wiki/USB_Attached_SCSI|USB_Attached_SCSI]]”
+
+从第三步开始，验证输出的内容无误且至少有一行 **root_hub** 和 **Mass Storage** 输出，并且每个 “**Driver=**” 都有驱动的名字。如果没有的话，参考 [[docs:guide-user:storage:usb-installing|the Installing USB Drivers]].
+
+===== 确认操作系统可以识别磁盘及其分区 =====
+
+这是一个可选的验证步骤，可以用于检查操作系统是否正确的识别了已连接的外置设备。
+
+  - 确保你的 USB 移动硬盘或者U盘已经连接
+  - 运行下面的命令：<code>ls -l /dev/sd*</code>
+  - 这将展示操作系统已知的块设备（block devices）列表<code>brw-------    1 root     root        8,   0 Oct 30 12:49 /dev/sda
+brw-------    1 root     root        8,   1 Oct 30 12:49 /dev/sda1</code>这应该至少展示一个已连接的磁盘，例如 “/dev/sda” 或 “/dev/sdb”。如果列表中没有磁盘，请重新检查 USB 驱动安装，并且重启你的 LEDE 设备。
+  - 安装 **block** 工具获取更多已存在分区的信息<code>opkg install block-mount</code>
+  - 运行 **block** 工具：<code>block info | grep "/dev/sd"</code>如果你的磁盘上已经有分区的话，你应该看到这样的输出：<code>/dev/sda1: UUID="2eb39413-83a4-4bae-b148-34fb03a94e89" VERSION="1.0" TYPE="ext4"</code>如果磁盘上已经存在分区，他们应该被列为 **/dev/sda1**, **/dev/sda2**, **/dev/sda3** 等等。如果我们有一个以上的存储设备连接，我们将看到 **/dev/sdb1**(第二个设备的第一个分区)，**/dev/sdc1**（第三个设备的第一个分区）等等。
+
+===== 在 USB 磁盘上创建一个分区 =====
+
+如果上一节中没有列出任何已存在的分区（像是 "/dev/sda1", "/dev/sda2", "/dev/sdb1"...），你必须在使用存储功能前创建一个分区。
+
+  - 要做这件事，先安装 **gdisk** <code>opkg install gdisk</code>
+  - 用上一节中识别到的磁盘标识来开始 **gdisk**: <code>gdisk /dev/sda</code>
+  - 在可交互的 gdisk 菜单中，使用 gdisk 命令创建一个分区<code>n</code>这会触发一个交互对话框：使用默认配置来创建分区（number，起始扇区，Hex code）
+  - 完成之后，通过 gdisk 命令确认更改<code>w</code>然后确认你的选择：<code>Y</code>
+  - 在下一个步骤中记住已创建分区的名字
+
+如果你需要更多帮助，参考 gdisk 的帮助内容（标记有“?”）。要完全符合本文接下来的内容，请保持一个分区。
+
+===== 安装文件系统驱动并在分区上创建一个文件系统 =====
+
+要将分区用于数据存储，它必须被格式化为某一文件系统。
+
+下面是对于 LEDE 来说最简单（并且推荐）的默认文件系统配置。对于高级用户，这里有 [[zh:docs:guide-user:storage:filesystems-and-partitions|更多可用的文件系统选项]]
+
+<WRAP center round important 80%>
+**警告: 这一步骤将销毁分区上所有已存在的数据。请确保备份了重要文件之后再开始！**
+</WRAP>
+
+  * 对于 USB 硬盘，安装 EXT4 文件系统，并使用 EXT4 来格式化分区（在本例中是 “/dev/sda1”）：<code>opkg install e2fsprogs
+opkg install kmod-fs-ext4
+mkfs.ext4 /dev/sda1</code>
+  * 对于 SSD 设备或者 U 盘，安装 F2FS 文件系统，并使用 F2FS 来格式化分区（在本例中是 “/dev/sda1”）：<code>opkg install f2fs-tools
+opkg install kmod-fs-f2fs
+mkfs.f2fs /dev/sda1</code>
+
+===== 自动挂载分区 =====
+
+自动挂载可以让 LEDE 设备启动后，外置硬盘分区自动变得可用。
+
+  - 为 fstab 生成一个配置入口文件：<code>block detect > /etc/config/fstab</code>
+  - 现在，在配置入口中启用自动挂载：<code>uci set fstab.@mount[0].enabled='1'
+uci commit</code>
+  - （可选）启用每次 LEDE 设备启动后的自动文件系统检查：<code>uci set fstab.@global[0].check_fs='1'
+uci commit</code>
+  - 重启你的 LEDE 设备（验证自动挂载是否工作）
+  - 重启后，检查结果，运行：<code>uci show fstab</code>会看到像这样的内容：<code>fstab.@global[0]=global
+fstab.@global[0].anon_swap='0'
+fstab.@global[0].anon_mount='0'
+fstab.@global[0].auto_swap='1'
+fstab.@global[0].auto_mount='1'
+fstab.@global[0].check_fs='0'
+fstab.@global[0].delay_root='5'
+fstab.@mount[0]=mount
+fstab.@mount[0].target='/mnt/sda1'
+fstab.@mount[0].uuid='49c35b1f-a503-45b1-a953-56707bb84968'
+fstab.@mount[0].enabled='0'</code>
+  - 注意 “target” 项目。这是文件路径，是现在你可以访问 USB 存储设备的地方。例如，你可以使用这个命令列出外置硬盘的文件：<code>ls -l /mnt/sda1</code>
+  - 运行下面的命令，来验证磁盘是否正确挂载到了这个路径<code>block info</code>结果会是：<code>...
+/dev/sda1: UUID="2eb39413-83a4-4bae-b148-34fb03a94e89" VERSION="1.0" MOUNT="/mnt/sda1" TYPE="ext4"</code>
+  - 你的外置存储现在就可以使用啦！
+
+===== 可选：对于 NAS 用途，避免硬盘闲置时空转 =====
+
+这是对于硬盘的可选步骤。
+
+如果你把 LEDE 作为永久的 NAS 使用，你可能需要在非活动期间降速硬盘的马达。一方面你可能需要在晚上让你的房间变得更安静，另一方面这也可以提高硬盘的使用寿命（例如当你使用一个家庭版的硬盘，而不是 24*7 的数据中心版）。
+
+这里有两个不同的选项，可以让硬盘在持续特定时间不活动后就降速马达运转。它们都需要安装额外的 LEDE 软件包。
+
+**1. 选项：hdparm**\\
+这个工具使用标准的 SATA 磁盘命令，在硬盘本身永久的存储一个降速计时器（硬盘将记住这个是计时器值，即使断电了，即使重启了，即使接入了其他设备）。他只是硬盘内置功能的一个命令行接口。所以 LEDE 不需要为了这个功能在后台运行任何服务，而 “hdparm” 本身甚至也可以在设置完这个参数后被卸载调。不幸的是，很多比较老的 USB2.0-PATA/SATA 适配器不支持需要的 SATA 命令，不过很多10年以上的硬盘倒是支持它。幸运的是，大多数的 USB3.0-SATA 硬盘盒看起来是支持需要的 SATA 命令的。要安装这个软件包：<code>opkg update && opkg install hdparm</code>
+例如，要在硬盘上设置一个合理的 20 分支空闲延迟，使用：<code>hdparm -S 240 /dev/sda2</code>
+  * 如果该命令失败，并输出了错误信息，你的 USB-SATA 硬盘盒不幸的不支持它，如果你继续使用这个硬盘盒的话，你将不能使用 “hdparm” 来降速硬盘。
+  * 需要更多这个命令详情的话，参考 [[https://linux.die.net/man/8/hdparm]] 的 “-S” 参数部分
+    *  0 代表“空闲延时关闭”
+    *  1 到 240 代表 5 秒的倍数，意味着延时从 5 秒到 20 分钟的设置
+    *  241 到 251 代表 1 到 11 倍的 30 分钟，意味着延时从 30 分钟 到五个半小时的设置
+
+当然，你之后可以随时再次改变延时或关闭自动降速。取决于你的硬盘，这个值将被激活直到下次重置，或永久存储于硬盘上。硬盘本身的固件会管理这个降速延时，而不是 LEDE 的服务。
+
+**2. 选项：hd-idle （有 Luci 界面）**\\
+
+这是一个运行于 LEDE 后台的服务，并管理着自己的空闲延时计时器。如果定义的延时计时器到了 0, 它就给硬盘发送一个 “live” 降速 SATA 命令。不同于 hdparm 永久性的降速命令，大部分 USB2.0-SATA 硬盘盒看起来都支持这个 “spindown-now” SATA 命令。
+
+要安装这个软件包以及 Luci 前端交互的话：<code>opkg update && opkg install luci-app-hd-idle</code>
+
+要配置它，使用你设备上 Luci 文件界面的“服务”菜单。

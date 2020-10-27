@@ -1,0 +1,57 @@
+====== Guest Wi-Fi on a wireless AP using LuCI ======
+Guest Wi-Fi provides internet access to your network members.
+It also provides firewall security rules to isolate your guest network from the rest.
+This recipe is based on the [[docs:guide-user:network:wifi:guestwifi:guest-wlan|Guest Wi-Fi basics]] and [[docs:guide-user:network:wifi:guestwifi:extras#restricting_upstream_accesswireless_ap|Guest Wi-Fi extras]], providing a more user-friendly approach through the LuCI web interface.
+
+The changes below assume an OpenWrt default configuration.  
+We assume that you have a private WLAN set on 192.168.1.xxx and want a guest WLAN on 192.168.2.xxx.
+
+===== 1. Define a new network =====
+{{docs:guide-user:network:wifi:guestwifi_dumbap_config_01.png|}}
+
+Add a new wireless radio
+
+{{docs:guide-user:network:wifi:guestwifi_dumbap_config_02.png|}}
+
+Give it an SSID and add it to the guest network.
+
+===== 2. Edit the newly created interface =====
+{{docs:guide-user:network:wifi:guestwifi_dumbap_config_03.png|}}
+
+At the interfaces, edit the `guest` interface that you just created.
+
+{{docs:guide-user:network:wifi:guestwifi_dumbap_config_04.png|}}
+
+Switch the protocol to a static address.
+
+{{docs:guide-user:network:wifi:guestwifi_dumbap_config_05.png|}}
+
+Fill in the static IP, subnet mask and enable DHCP.\\
+Make sure the static IP is on a different subnet.
+
+===== 3. Set up the firewall zone =====
+{{docs:guide-user:network:wifi:guestwifi_dumbap_config_06.png|}}
+
+At firewall settings, create a new guest firewall zone.
+
+{{docs:guide-user:network:wifi:guestwifi_dumbap_config_07.png|}}
+
+At the firewall settings, edit the newly created guest zone.
+
+{{docs:guide-user:network:wifi:guestwifi_dumbap_config_08.png|}}
+
+Set Input to REJECT, Output to ACCEPT and Foward to REJECT.
+Allow forward to destination zone: `lan`.
+
+It should look as follows
+
+{{docs:guide-user:network:wifi:guestwifi_dumbap_config_08b.png|}}
+
+Also enable masquarading for lan
+
+===== 4. Set up the firewall traffic rules =====
+Now go to the traffic rules tab inside firewall and add the following three rules:
+
+{{docs:guide-user:network:wifi:guestwifi_dumbap_config_09.png|}}
+{{docs:guide-user:network:wifi:guestwifi_dumbap_config_10.png|}}
+{{docs:guide-user:network:wifi:guestwifi_dumbap_config_11.png|}}

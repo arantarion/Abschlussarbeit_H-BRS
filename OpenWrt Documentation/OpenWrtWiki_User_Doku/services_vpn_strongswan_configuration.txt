@@ -1,0 +1,89 @@
+====== strongSwan IPsec Configuration via UCI ======
+Linux Charon IPsec daemon can be configured through /etc/config/ipsec.
+
+===== Sections =====
+==== ipsec ====
+^Name^Type^Required^Default^Description^
+|zone|string|no|vpn|Firewall zone. Has to match the defined [[docs:guide-user:services:vpn:strongswan:firewall#zones|firewall zone]]|
+|listen|list|yes|''|Interface that accept VPN traffic (empty for all interfaces, multiple lines for several interfaces)|
+|debug|string|no|0|Trace level. Logs are written to /var/log/charon.log|
+
+==== remote ====
+Contains tunnel definition.
+
+^Name^Type^Required^Default^Description^
+|enabled|boolean|yes|(none)|Configuration is enabled or not|
+|gateway|ipaddr|yes|(none)|IP address or FQDN name of the tunnel remote endpoint. |
+|exchange_mode|string|no|main|Phase 1 negotiation (main, aggressive)| 
+|local_identifier|string|no|(none)|local identifier for phase 1 |
+|remote_identifier|string|no|(none)|remote identifier for phase 1 |
+|authentication_method|string|yes|(none)|Phase 1 authentication. Only allowed value ath the moment is psk|
+|pre_shared_key|string|no|(none)|The preshared key for the tunnel if authentication is psk|
+|p1_proposal|list|yes|(none)|Name of phase 1 proposal (see below)|
+|tunnel|list|yes|(none)|Name of phase 2 section (see below)|
+
+==== p1_proposal ====
+Definition of phase 1 proposals. Derived from [[https://wiki.strongswan.org/projects/strongswan/wiki/IKEv1CipherSuites|stronSwan cipher suites]]
+
+^Name^Type^Required^Default^Description^
+|encryption_algorithm|string|yes|(none)|Phase 1 encryption method (aes128, aes192, aes256, 3des)|
+|hash_alogrithm|string|yes|(none)|Phase 1 hash alogrithm (md5,sha1) |
+|dh_group|string|yes|(none)|Diffie-Hellman exponentiation (modp768, modp1024, ...|
+
+==== tunnel ====
+Contains network defintion per tunnel.
+
+^Name^Type^Required^Default^Description^
+|local_subnet|subnet|yes|(none)|Local network|
+|remote_subnet|subnet|yes|(none)|Remote network|
+|local_nat|subnet|no|(none)|NAT range for tunnels with [[docs:guide-user:services:vpn:strongswan:overlappingsubnets|overlapping IP addresses]]|
+|p2_proposal|string|yes|(none)|link to phase 2 proposal|
+
+==== p2_proposal ====
+Definition of phase 2 proposal. Derived from [[https://wiki.strongswan.org/projects/strongswan/wiki/IKEv1CipherSuites|strongSwan cipher suites]]
+
+^Name^Type^Required^Default^Description^
+|pfs_group|string|yes|(none)|Comma separated list of of Diffie-Hellman exponentiations (you can omit this, when peer is Cisco ASA)|
+|encryption_algorithm|string|yes|(none)|Comma separaeted list of encryption algorithms (aes128, aes192, aes256, 3des)|
+|authentication_algorithm|string|yes|(none)|Comma separated list of authentications (md5, sha1)|
+
+Example 1 taken from the [[docs:guide-user:services:vpn:strongswan:site2site|IPSec site to site howto]].
+
+<code bash>
+config 'ipsec'
+  option 'zone' 'vpn'
+
+config 'remote' 'acme'
+  option 'enabled' '1'
+  option 'gateway' '7.7.7.7'
+  option 'authentication_method' 'psk'
+  option 'pre_shared_key' 'yourpasswordhere'
+  list   'p1_proposal' 'pre_g2_aes_sha1'
+  list   'sainfo' 'acme_dmz'
+  list   'sainfo' 'acme_lan'
+
+config 'p1_proposal' 'pre_g2_aes_sha1'
+  option 'encryption_algorithm' 'aes128'
+  option 'hash_algorithm' 'sha1'
+  option 'dh_group' 'modp1024'
+
+config 'tunnel' 'acme_lan'
+  option 'local_subnet' '192.168.2.64/26'
+  option 'remote_subnet' '10.1.2.0/24'
+  option 'p2_proposal' 'g2_aes_sha1'
+
+config 'p2_proposal' 'g2_aes_sha1'
+  option 'pfs_group' 'modp1024'
+  option 'encryption_algorithm' 'aes 128'
+  option 'authentication_algorithm' 'sha1'
+</code>
+
+===== Windows Native VPN Client Proposals =====
+The following table lists the phase 1 proposals offered by the Windows native VPN client (as tested with Windows 7)
+
+^Proposal^Encryption^Hash^DH Group^
+|#1|aes256|sha1|20|
+|#2|aes128|sha1|19|
+|#3|aes256|sha1|modp2048|
+|#4|3des|sha1|modp2048|
+|#5|3des|sha1|modp1024|

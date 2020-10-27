@@ -1,0 +1,23 @@
+====== D-Link Recovery GUI ======
+{{section>docs:guide-user:installation:installation_methods:d-link_recovery_gui&noheader&firstseconly&noindent&nofooter&noreadmore&noeditbtn}}
+
+===== Accessing the recovery mode =====
+{{section>docs:guide-user:installation:installation_methods:d-link_recovery_gui#Accessing the recovery mode&noheader&noindent&nofooter&noeditbtn}}
+
+===== About encrypted firmwares =====
+{{section>docs:guide-user:installation:installation_methods:d-link_recovery_gui#About encrypted firmwares&noheader&noindent&nofooter&noeditbtn}}
+
+===== Devices with this recovery method =====
+Devices listed on this table have the emergency recovery mode on their bootloaders and are able to use this recovery method not only to recover from bricks but also to install OpenWrt and even to go back to the stock firmware (as long as an unencrypted firmware file is provided).
+
+---- datatable ----
+cols       : Brand, Model, Versions, Supported Current Rel_releasecurrent, Recovery method(s)_method-recoverys, Comment recovery, Device Page_page, Device Techdata_pageid
+dynfilters : 1
+filter     : Model!=@@Model@@
+filter     : recovery method(s)*~D-Link Recovery GUI
+sort       : Brand
+limit      : 25
+----
+
+===== Notes =====
+{{section>docs:guide-user:installation:installation_methods:d-link_recovery_gui#Notes&noheader&noindent&nofooter&noeditbtn}}

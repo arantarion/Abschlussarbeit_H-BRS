@@ -1,0 +1,61 @@
+====== Quick Start for Adding a USB drive ======
+
+**The Goal:** This guide describes how to add a single USB stick or drive to your OpenWrt device. The result will be a USB drive with an **ext4** file system and mounted at **/mnt/sdXX** (where //sdXX// is the name of the USB). 
+
+This is all you'll need for most purposes, however, there are plenty of options described below.
+
+/* Moved NOTES down to the bottom... */
+
+===== Requirements =====
+
+  * Your device/router itself must have at least 8 MB Flash. Lower capacity devices will not be able to hold the required packages.
+  * You can add a USB drive of any capacity.
+  * This procedure **WILL ERASE THE USB DRIVE** (unless you stop at step 5 and just want to mount a preformated drive). Copy any data you care about to another destination. 
+  * This quickstart requires you to [[docs:guide-quick-start:sshadministration | ssh into the router.]]
+
+===== Procedure =====
+
+1. Use your **laptop/desktop computer** to format your USB device. Use the default name and format options. This prepares the USB drive for the process below, which will erase those settings (again). //Warning: This initial formatting will erase the entire USB drive.// 
+
+2. [[docs:guide-quick-start:sshadministration | SSH into the router]] and enter the following commands into the SSH window. ++More...| The [[docs:guide-quick-start:sshadministration | SSH Access for Newcomers]] page tells how to install and use a terminal emulator on your computer.++
+
+3. Get the required packages: ++More...|You may see error messages about installing kmod-usb3 on certain routers. These can be ignored since the hardware may not support USB3.++
+<code>opkg update && opkg install block-mount e2fsprogs kmod-fs-ext4 kmod-usb-storage kmod-usb2 kmod-usb3</code>
+
+4. Enter '' ls -al /dev/sd* '' to show the name of all attached USB devices. The list may be empty if there are no USB devices.   ++More...|**/dev/sda** is the first USB device; **/dev/sdb** is the second, and so on. **/dev/sda1** is the first partition on the first device; **/dev/sda2** is the second partition, etc.++
+
+5. Insert the USB drive into your router. Enter '' ls -al /dev/sd* '' again, and this time you should see a new **/dev/sdXX** device. **sdXX** is the //device name// of your new USB device.
+    root@OpenWrt:~# ls -al /dev/sd*
+    brw-------    1 root     root        8,   0 Feb  4 15:13 /dev/sda
+    brw-------    1 root     root        8,   1 Feb  4 14:06 /dev/sda1
+
+/* Thanks for contributing the "temporary experiment" language.  */
+/* I moved it down to preserve this as a no-options, "Just Do This" guide. */
+/*  -richb-hanover */
+
+6. Make an ext4 filesystem on the USB device using the device name you just discovered. **Note:** Be certain you enter the proper device name - this step will completely erase the device. ++More...|This command creates an ext4 file system on the first partition of the first USB device - /dev/sda1.++
+<code>mkfs.ext4 /dev/sda1</code>
+
+7. Create the fstab config file based on all the block devices found. ++More...|This command writes the current state of all block devices, including USB drives, into the '' /etc/config/fstab '' file.++
+<code>block detect | uci import fstab</code>
+
+8. Update the fstab config file to mount all drives at startup. ++More...|**/dev/sda** is mount[0], **/dev/sdb** is mount[1], etc. If you have more than one USB device attached, substitute the proper index (0 or 1 or ...) as needed. This command mounts all drives - named or anonymous.++
+<code>uci set fstab.@mount[0].enabled='1' && uci set fstab.@global[0].anon_mount='1' && uci commit fstab</code>
+
+9. Mount the device. ++More...|Automount is enabled on boot.++
+<code>/etc/init.d/fstab boot</code>
+
+10. **You're done!** This procedure has mounted the drive at **/mnt/sdXX** (whatever the device name was.) The drive is ready to save data at that part of the filesystem. 
+
+
+===== More Details =====
+
+More information about this procedure and about USB drives:
+
+  * You can change the mount point in the web interface, in **System** -> **Mount Points** menu.
+  * The [[docs:guide-user:storage:usb-drives| full USB Drive tutorial]] has much more about USB drives.
+  * If you have a memory limited router (say with 4MBytes Flash internal storage), and want to be able to install more packages, you should instead read the [[docs:guide-user:additional-software:extroot_configuration|Extroot Configuration]] page.
+  * For NTFS disks, refer to [[docs:guide-user:storage:writable_ntfs|Writable NTFS]]
+  * Look at the [[docs/guide-user/storage/fstab|fstab documentation]] to configure from the command line
+  * This Forum article also has a lot of background information: [[https://forum.openwrt.org/t/more-on-usb-drive-installation/30695/2]]
+  * If you just want to temporarily mount the drive (say, for testing), you can simply enter: '' mkdir /tmp/MyDrive; mount /dev/sda1 /tmp/MyDrive'' Note that, as of OpenWRT v18, the Ext4 file system will be autodetected. After finishing the test reading/writing the drive: '' umount /tmp/MyDrive'' 

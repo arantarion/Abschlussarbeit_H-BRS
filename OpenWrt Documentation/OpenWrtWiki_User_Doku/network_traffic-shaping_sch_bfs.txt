@@ -1,0 +1,6 @@
+====== Brain Fuck Scheduler ======
+
+  * [[man>tc-bfs|Man Page]]
+  * [[http://lxr.free-electrons.com/source/net/sched/sch_bfs.c|Source Code]]
+  * [[wp>Brain Fuck Scheduler]]
+  * [[https://lkml.org/lkml/2012/12/15/96|lkml 2012-12-15 Multiple run-queues for BFS]]

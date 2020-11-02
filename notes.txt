@@ -1,1 +1,9 @@
-TR.D.12/TR.D.13 == D.18/D.19
+- TR.D.12/TR.D.13 == D.18/D.19
+- Kritik von CCC und OpenWrt -> was hat sich geändert? 
+	Vendors should have to tell users how long they intended to support products with security updates
+	and customers should have the right to install custom software
+		Z.B. gibt es ja TR.D.25 
+- soll ich ARM / MIPS erklären. Ich finde es eigentlich nicht nötig
+- Public vs Private Internet
+- Brauche in "Kapitel 2: Grundlagen" mit Erklärungen zu Technologien und Protokollen?
+

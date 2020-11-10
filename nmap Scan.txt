@@ -1,8 +1,5 @@
 sudo nmap -sS -p- -n -Pn --min-rate=9362 ipHere
 
-There you go - Nmap scanning 65,535 ports in 7 and a half seconds.
-
-Your move RustScan!
 
 sudo Syn Scans require root permissions on Linux
 -sS Syn Scan - Faster than a regular ping scan

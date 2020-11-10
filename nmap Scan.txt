@@ -1,0 +1,16 @@
+sudo nmap -sS -p- -n -Pn --min-rate=9362 ipHere
+
+There you go - Nmap scanning 65,535 ports in 7 and a half seconds.
+
+Your move RustScan!
+
+sudo Syn Scans require root permissions on Linux
+-sS Syn Scan - Faster than a regular ping scan
+-p- All 65535 TCP Ports
+-n Skips the DNS resolution
+-Pn Assume the host is online (Skips initial online check)
+--min-rate=9362 Scan a minimum of 9362 ports at once (Chosen since it would be around 1 second faster)
+
+docker run --rm -it instrumentisto/nmap -sS -p- -n -Pn --min-rate=9362 192.168.1.1
+
+ nmap -p- -n -Pn --min-rate=1000 localhost

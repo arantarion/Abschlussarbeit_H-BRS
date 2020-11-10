@@ -1,1 +1,33 @@
-TR.D.12/TR.D.13 == D.18/D.19
+- TR.D.12/TR.D.13 == D.18/D.19
+- Kritik von CCC und OpenWrt -> was hat sich geändert? 
+	Keine Änderungen
+	
+	Vendors should have to tell users how long they intended to support products with security updates
+	and customers should have the right to install custom software
+		z.B. gibt es ja TR.D.25 
+
+
+- soll ich ARM / MIPS erklären. Ich finde es eigentlich nicht nötig
+
+- Public vs Private Internet
+- Brauche in "Kapitel 2: Grundlagen" mit Erklärungen zu Technologien und Protokollen?
+
+- Ist der Aufbau ein Problem? Double Natting etc. / Subnetz erstellen?
+
+- Was mache ich mit der Dokumentation von OpenWrt -> Website verwenden?
+
+Was ist mit Public Network (Module B) gemeint?
+
+- Zum Test Environment: "native internet access"
+
+- TR.A.1.3: gibt es ein Tool was die alle kann? -> identified interface aka LAN oder Wlan anschluss? bruteforce tools
+
+- Reicht nmap als portscanner
+
+TP.A.6.1: all -preset- Wlan profiles -> wenn keins preset, dann egal?
+
+TR.A.7: Soll ich Wlan dafür anmachen? Standard = aus
+
+TP.A.8.2: functional testing des ESSID changes. -> irgendein program nehmen?
+
+TR.A.12: Code analyse?

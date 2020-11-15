@@ -11,3 +11,15 @@ sudo Syn Scans require root permissions on Linux
 docker run --rm -it instrumentisto/nmap -sS -p- -n -Pn --min-rate=9362 192.168.1.1
 
  nmap -p- -n -Pn --min-rate=1000 localhost
+
+
+
+nmap -sSCV -p- -oN <dateiname>.txt 192.168.1.1
+
+nmap -sC -sS -sV -p- 192.168.1.1
+
+-sC: equivalent to --script=default
+-sS/sT/sA/sW/sM: TCP SYN/Connect()/ACK/Window/Maimon scans
+sV: Probe open ports to determine service/version info
+
+-T Timing template (higher is faster)

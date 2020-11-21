@@ -31,3 +31,11 @@ TR.A.7: Soll ich Wlan dafür anmachen? Standard = aus
 TP.A.8.2: functional testing des ESSID changes. -> irgendein program nehmen?
 
 TR.A.12: Code analyse?
+
+------------------------------
+
+- TR.D.2 fehlt in Excel File
+- Wie genau WAN SCAN
+- reicht der UDP Scan so wie er ist?
+- Guest WLAN machen oder nicht?
+- 

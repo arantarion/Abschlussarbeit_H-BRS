@@ -114,7 +114,7 @@ print(myStr.translate(myStr.maketrans("'{},", "    ")))
 # -------------------------------------------------------------------------- #
 
 # Final login to see if login is still possible
-print("\n\nThis should print the OpenWrt Banner if the ssh server did not block the ip\n")
+print("\n\nThis should print the OpenWrt Banner if the ssh server did not block the IP\n")
 ssh.open_connection(IP, port=PORT)
 openwrt_banner_new = ssh.login(USERNAME, CORR_PW)
 print(openwrt_banner_new)

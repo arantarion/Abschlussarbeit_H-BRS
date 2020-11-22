@@ -1,1 +1,3 @@
 dir /b /a-d
+
+find ./  -printf "%f\n"

@@ -38,4 +38,8 @@ TR.A.12: Code analyse?
 - Wie genau WAN SCAN
 - reicht der UDP Scan so wie er ist?
 - Guest WLAN machen oder nicht?
-- 
+- Module C schwierig. wie prüfen? reicht das so?
+- TR.D.3 ist fail richtig und ist das dann anwendbar oder nicht?
+- TR.D.5 was mache ich in solchen Fällen?? Natürlich geht das irgendwie aber dann halt auch immer so wie ich das mache
+
+

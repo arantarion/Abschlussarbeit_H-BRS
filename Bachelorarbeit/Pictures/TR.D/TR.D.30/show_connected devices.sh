@@ -2,7 +2,6 @@
 
 # /etc/config/show_wifi_clients.sh
 # Shows MAC, IP address and any hostname info for all connected wifi devices
-# written for openwrt 12.09 Attitude Adjustment
 
 echo    "# All connected wifi devices, with IP address,"
 echo    "# hostname (if available), and MAC address."

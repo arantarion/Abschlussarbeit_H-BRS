@@ -34,15 +34,14 @@ TR.A.12: Code analyse?
 
 ------------------------------
 
-- TR.D.2 fehlt in Excel File
-- Wie genau WAN SCAN
-- reicht der UDP Scan so wie er ist?
-- Guest WLAN machen oder nicht?
-- Module C schwierig. wie prüfen? reicht das so?
-- TR.D.3 ist fail richtig und ist das dann anwendbar oder nicht?
-- TR.D.5 was mache ich in solchen Fällen?? Natürlich geht das irgendwie aber dann halt auch immer so wie ich das mache
-- TR.D.25 rechtschreibfehler
-- TR.E.2 ist das dann passed?
+-    Wie genau WAN SCAN 
+- -- reicht der UDP Scan so wie er ist?
+---- Guest WLAN machen oder nicht?
+--- Module C schwierig. wie prüfen? reicht das so?
+-.--- TR.D.3 ist fail richtig und ist das dann anwendbar oder nicht?
+- --TR.D.5 was mache ich in solchen Fällen?? Natürlich geht das irgendwie aber dann halt auch immer so wie ich das mache
+- ---TR.D.25 rechtschreibfehler
+- --TR.E.2 ist das dann passed?
 - Firmware validation ist komisch!
 - TR.E.10 ungenau
 

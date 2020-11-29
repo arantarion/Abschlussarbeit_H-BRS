@@ -1,0 +1,8 @@
+====== Alternate Firewall Builders ======
+The integrated application [[docs:guide-user:firewall:overview|Firewall3]] should be used for building local firewall/iptables rules.  However, these alternative applications have been used in the past to generate rules.
+
+<WRAP center round alert 60%>
+None of the third-party firewall builders have been tested.  They are included here for completeness.
+</WRAP>
+
+{{pagequery>@:docs:guide-user:firewall:other_firewall_rules_builders *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

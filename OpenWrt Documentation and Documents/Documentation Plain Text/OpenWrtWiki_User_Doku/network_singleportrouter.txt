@@ -1,0 +1,9 @@
+====== Particularities of Single-Port Devices ======
+
+By default, devices with a single ethernet port (e.g. the [[toh:tp-link:TL-WR703N]], [[toh:tp-link:TL-MR3020]], [[toh:tp-link:TL-WA901ND]] or the [[toh:d-link:DIR-505]], amongst others) come with their only ethernet port assigned to LAN through which they will need to be initially configured.
+
+===== Using a Single-Port Device as Router/Access Point =====
+
+In order to use a single-port device as a regular router/access point, the single ethernet port needs to be reassigned to a newly created WAN interface. Before that, their Wifi needs to be configured and activated to allow access to the router because the default firewall configuration will allow neither Telnet, SSH, nor access to the LuCI web interface through the WAN interface, effectively disabling configuration through the ethernet port.
+
+The article at https://stuff.purdon.ca/?page_id=370 explains the process for a TP-Link WR703N (but can be used for other devices as well). (Note: This is only a placeholder until this information is included in this page.)

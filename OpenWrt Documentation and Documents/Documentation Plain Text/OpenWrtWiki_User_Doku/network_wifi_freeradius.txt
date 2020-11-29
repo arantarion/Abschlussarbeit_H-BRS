@@ -1,0 +1,110 @@
+======= FreeRADIUS =======
+
+[[https://freeradius.org|FreeRADIUS]] is one of the top open source **RADIUS** servers in [[docs:guide-user:network:wifi:wireless.security.8021x|802.1x]] authentication and accounting. It can be set up rather easily with the default configuration and minimal changes.
+
+This guide will only cover FreeRADIUS 3 because (as of Dec 30, 2018) it is the latest stable release available to Openwrt systems. The router which got tested was [[toh:tp-link:td-w8980|TP-Link TD-W8980 V1]] running OpenWrt v18.06.1. For now the SQL database packages are not available for FreeRADIUS 3, accounting setup will not be explained.
+
+**Note:** If you are looking for **FreeRADIUS 2** you may find [[http://www.blog.10deam.com/2015/01/08/install-freeradius2-on-a-openwrt-router-for-eap-authentication/|this blog post]] helpful.
+
+
+===== Installation =====
+
+802.1x authentication is only available with full ''wpad'' package, ''wpad-mini'' does not have the required modules in it.
+So install ''wpad'' and remove ''wpad-mini'' with ''opkg remove wpad-mini ; opkg install wpad''.
+
+To install FreeRADIUS 3, install the following packages:
+<code>
+opkg update
+opkg install freeradius3 freeradius3-common freeradius3-democerts freeradius3-mod-always freeradius3-mod-attr-filter freeradius3-mod-chap freeradius3-mod-detail freeradius3-mod-digest freeradius3-mod-eap freeradius3-mod-eap-gtc freeradius3-mod-eap-leap freeradius3-mod-eap-md5 freeradius3-mod-eap-mschapv2 freeradius3-mod-eap-peap freeradius3-mod-eap-tls freeradius3-mod-eap-ttls freeradius3-mod-exec freeradius3-mod-expiration freeradius3-mod-expr freeradius3-mod-files freeradius3-mod-ldap freeradius3-mod-logintime freeradius3-mod-mschap freeradius3-mod-pap freeradius3-mod-passwd freeradius3-mod-preprocess freeradius3-mod-radutmp freeradius3-mod-realm freeradius3-mod-unix freeradius3-utils
+</code>
+Or you can also just install all of the above with another command but this is not recommended:
+<code>eval $(opkg find freeradius3* | sed 's/ - .*//' | sed 's/^/opkg install /')</code>
+
+Note: In rare occasions, While installing the above packages, you may encounter an error saying that the same file is being provided by two packages. If this happens, delete the offending file and look for the yet-not-installed package due to the error and install it again.
+
+
+===== Configuration =====
+
+Please make sure you can access your router through SSH because this will be necessary for this tutorial to work. You can also use WinSCP for Windows to edit files easily.
+==== Step 1: Stop the server ====
+
+If you just installed FreeRADIUS, it will start running automatically. It's better to stop it before changing config for the first time.
+<code>service radiusd stop</code>
+
+
+==== Step 2: Set up FreeRADIUS for testing ====
+
+The config files get installed in ''/etc/freeradius3'' directory and with default config the server will be listening on 127.0.0.1 (loopback). According to FreeRADIUS documentation for v3, testing the server requires that ''radtest'' be used to test it, but in OpenWrt ''radtest'' is not available so you may need to use Linux OS or Windows Subsystem for Linux (WSL) to install FreeRADIUS. This way you will have ''radtest'' command to test your server.
+
+
+==== Step 3: Add test client ====
+
+After you have set up FreeRADIUS on another machine which includes ''radtest'' as described above, you need to add that machine as a client in FreeRADIUS config. Edit ''/etc/freeradius3/clients.conf'' to add your machine and add the following lines after the ''localhost'' section.
+<code>
+# my laptop
+client laptop {                  # name 'laptop' can be anything
+	ipaddr = 192.168.1.101   # change it according to your needs
+	secret = testing123      # you will need it for testing purposes
+}
+</code>
+Make sure you put correct IP address above, in case the IP address is not correct your test will fail. Once you have added correct details for your client, then you need to add a user and password to test the configuration.
+
+
+==== Step 4: Add test user ====
+
+The default config contains a user '**bob**' with '**hello**' as password but it needs to be un-commented before it can be used.
+Edit the ''authorize'' file in ''/etc/freeradius3/mods-config/files/'' and un-comment the above mentioned lines. If you cant find the lines then add the following to the top of the file.
+<code>
+bob	Cleartext-Password := "hello"
+	Reply-Message := "Hello, %{User-Name}"
+</code>
+Please make sure, you insert an indent after the name of the person with a 'Tab'. The authorize file itself provides more information on how to add users and their individual config options. The ''Reply-Message'' option is not mandatory and can be left out.
+
+
+==== Step 5: Test RADIUS server ====
+
+Once you have completed the config, it's time to start FreeRADIUS. In order to see whether the server is working properly you need to start it in debug mode. SSH to the router and make sure it's not already running and run the below command:
+<code>LD_LIBRARY_PATH=/usr/lib/freeradius3 radiusd -X</code>
+**Note**: Setting ''LD_LIBRARY_PATH'' is important as documented on [[https://github.com/openwrt/packages/issues/7667|GitHub]] because ''radiusd'' normally looks for it's modules in ''/etc/lib'' directory but in OpenWrt these are located in ''/etc/lib/freeradius3'' and this is why you first need to set the variable.
+
+After the command is executed a bunch of text will fly by and if everything is okay, it will end up saying ''Ready to process requests''. If it shows any errors please make sure to correct them before proceeding.
+
+Now that your ''radiusd'' server is running it's time to test it from your radiusd client machine that you have set up above. Open WSL/Terminal in your client machine and issue ''radtest'' command to see its output. The correct command to test your server will be along the lines as follows:
+<code>
+radtest bob hello 192.168.1.1 0 testing123
+# bob is user
+# hello is password
+# 192.168.1.1 is the IP address of the server/router where the radiusd is running
+# if you are running the server from the same machine you are testing on it, it will be 127.0.0.1
+# 0 is the port as default
+# testing123 is the secret for client
+</code>
+Once you execute the command you will see output as **''Sent Access-Request Id ...''** and at the same time you will be able to see text flowing through in the SSH terminal where **''radiusd''** is running. At the end **''radiusd''** will show **''Sent Access-Accept ...''** and WSL/Terminal for **''radtest''** will show **''Received Access-Accept ...''**. If this is the case then you have successfully configured your RADIUS server and now you can go ahead and use it for WiFi interfaces. If you get any other output it means something is wrong and you did not configure the **''radiusd''** server properly so you need to see the output for any errors and fix them as most of the time **''radiusd''** will tell you what file is causing the problems and at which line.
+
+Now that you have tested your server, and it works, you can remove your client from **clients.conf** file or just comment it out in case you need it for future testing purposes.
+
+
+==== Step 6: Wireless configuration ====
+
+The sample config for Wi-Fi Access Point with RADIUS server enabled should be similar to the following:
+<code>
+config wifi-iface 'default_radio0'
+        option device 'radio0'
+        option network 'lan'
+        option mode 'ap'
+        option ssid 'OpenWrt'
+        option encryption 'wpa2+ccmp'
+        option auth_server '127.0.0.1'
+        # server IP will be different if your router does not serve RADIUS authentication itself
+        option auth_secret '**********'
+        # the auth_secret will be taken from the 'localhost' client in '/etc/freeradius3/clients.conf' file
+</code>
+
+Please make sure you change your default **auth_secret** for **localhost** client in the clients.conf file. The default is **testing123** but you may want to change it with a secure one.
+
+When you will want to connect to this Wi-Fi AP you will need **Username** and **Password** for anyone who wants to connect through Wireless. These can be configured through [[#Step 4: Add test user]] where User:**bob** was added. You should stop the ''radiusd'' server, if it's still running from above, with ''Ctrl-C'' and start it again once you have added the users.
+
+**Note:** You will need to add a client in the **clients.conf** file [[#Step 4: Add test user|above]] for any STA client you may add to extend your Wireless network through the use of RADIUS server. Please note [[docs:guide-user:network:wifi:atheroswds|WDS]] config does not work, if you want to extend Wireless coverage with multiple APs, you will need [[docs:guide-user:network:wifi:relay_configuration|Wifi Extender through relayd]] config instead. The discussion for this can be found on OpenWrt Forum [[https://forum.openwrt.org/t/wds-client-with-802-1x/27994|here]].
+==== Conclusion ====
+
+In case you have any problems configuring or installing, create a topic at OpenWrt Forum and mention my username **ahmar16**.

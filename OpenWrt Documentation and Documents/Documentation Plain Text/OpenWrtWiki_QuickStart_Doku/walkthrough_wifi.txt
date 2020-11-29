@@ -1,0 +1,64 @@
+FIXME **This page is not fully translated, yet. Please help completing the translation.**\\ //(remove this paragraph once the translation is finished)//
+
+=====  安全和开启WiFi =====
+
+上一件事我们想要开启和确保我们的WiFi网络安全。每当你安装一个新的OpenWrt副本在一个路由器上，在你改变wifi密码之前这个WiFi网络总是不安全的。 来设置密码吧。
+
+首先呢我们先到wifi配置页面。可以通过顶部的“Network”菜单选择“Wifi”这个条目。 
+
+{{media:doc:walkthrough-wifi-1-1.png?750x750|}}
+
+我们现在在wifi的主页面了 This page contains the information related to the physical radios in the router which handle wifi communication and the wifi networks associated with them. While it's possible for each physical radio to have multiple wifi networks set up, ours should only have a single network on each of them with an SSID of "OpenWrt".
+
+<WRAP round box 60%>
+You might see a different number of radios on this page. Most routers have one or two radios but it depends on how the router is designed.
+</WRAP>
+
+You'll notice the buttons next to each of the networks. These buttons allow us to enable the network, edit the network's settings or remove the network. In our case, we're going to want to edit the network settings. Click the "Edit" button on the top-most network on the page.
+
+{{media:doc:walkthrough-wifi-1-2.png?750x750|}}
+
+We're at the configuration page for our wifi network. From this page, you can control advanced settings for the wifi network. Feel free to scan through the settings, they're pretty interesting if you want to learn more about OpenWrt works. Most importantly for our purposes, we can set up the security for our wifi network. Additionally at the top you'll see some tabs. Each tab contains the settings for one of the wifi networks on the router. In our case, the first one should be selected.
+
+{{media:doc:walkthrough-wifi-2-1.png?750x750|}}
+
+Let's set our wifi password now. The wifi password settings are in "Wireless Security" in the "Interface Configuration" section about halfway down the page. Click "Wireless Security".
+
+{{media:doc:walkthrough-wifi-1-3.png?750x750|}}
+
+Next you should see a drop down box titled "Encryption". We want to select "WPA2-PSK" in the drop down box.
+
+{{media:doc:walkthrough-wifi-1-4.png?750x750|}}
+
+Once you select "WPA2-PSK", two new form fields will pop up: "cipher" and "key". We don't need to do anything with "cipher" so we'll leave that as "auto". The field we really care about "key". "Key" is the technical name for the password you'll use when connecting to your wifi network. We'll set that next.
+
+{{media:doc:walkthrough-wifi-1-5.png?750x750|}}
+
+Once you've come up with a password, type it into the the "key" box. If you want to make sure you've typed the password correctly, press the green cycle icon next to the password box. Once you do so, you should be able to see the password you've typed.
+
+Now that we've set our password, let's press the "Save & Apply" button to finalize the changes on the router. You should be brought back to the top of the page. A set of notifications will update you on the changes being saved and tell you when the changes are done.
+
+{{media:doc:walkthrough-wifi-1-6.png?750x750|}}
+
+Now that our wifi password has been set, it's time to turn on our Wifi network! We'll do that by pressing the "Enable" button.
+
+
+{{media:doc:walkthrough-wifi-1-7.png?750x750|}}
+
+After about 15 seconds, the Wifi status should no longer say disabled. Additionally, it should provide additional information about the wifi network. This information includes:
+
+  * Network name (SSID)
+  * The current connection quality for clients. If none are connected, it's normal for this to say 0%.
+  * Encryption method
+  * Wifi channel
+  * Transfer speed. If no clients are connected, this will say 0.0. That's normal!
+
+If you only have one wireless network on your router, you're done setting up networks. You'll know this because near the top of the page, you'll only have one tab for wifi networks. If you have more wireless networks, then you should go to each of them in turn and set them up using the same process. You can do that by clicking on the tab for each of the wireless networks as shown in the screenshot below.
+
+For ease of use, I highly recommend using the same password for every network on your router. There's no real harm in this unless you have a set up that is quite different from the one described in this walkthrough.
+
+{{media:doc:walkthrough-wifi-1-8.png?750x750|}}
+
+Your wifi network is set up! You can connect to the wifi network "OpenWrt" with the proper key. You should have access to the internet. If you don't normally connect with a network cable to the device you've been using to set up your router, feel free to unplug that.
+
+**[[docs:guide-quick-start:checks_and_troubleshooting|Last step: Internet connectivity, troubleshooting and what to do next ->]]** 

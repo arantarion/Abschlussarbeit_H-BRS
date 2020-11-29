@@ -1,0 +1,165 @@
+====== Atheros and MAC80211 WDS to implement a wireless network bridge (wireless repeater) ======
+
+Most OpenWrt supported wireless drivers support since kernel 2.6 the AP-to-STA WDS mode to connect two or more devices using wireless bridging to form one common broadcast domain.
+
+With this configuration you will be able to wirelessly connect a remote wireless OpenWrt device (acting as the wireless station) to a local wireless OpenWrt point (acting as the wireless access point) and the wired devices connected to both devices will be on the same network and broadcast domain. Other wireless client devices can continue to connect to the wireless access point as before.
+
+The method below is a layer 2 transparent bridge. All broadcast packets (such as DHCP requests) will be sent in both directions over the wireless bridge and the original source MAC address of the wired devices on both sides are preserved even over the bridge. The wiki article [[https://oldwiki.archive.openwrt.org/doc/howto/clientmode|clientmode]] has technical background on how this is accomplished.
+
+===== Configuration =====
+
+  * Tested with OpenWrt 12.09 using a TP-LINK TL-WR1043ND as the local wireless access point device and a Rosewill RNX-N300RT as the remote wireless client bridge device
+  * Tested with OpenWrt 15.05 using two TP-LINK TL-WR1043ND
+  * Tested with OpenWrt 15.05.1 using a Netgear WNDR3700v4 as the access point and a Nexx WT3020 as the client bridge device.
+  * Tested with OpenWRT 19.07.2 to 19.07.4 using a Netgear R6220 as the access point and a Wavlink WL-WN575A3 as the client bridge device.
+
+With both [[docs:guide-user:base-system:uci|uci]] and [[docs:guide-user:luci:luci.essentials|luci]] the configuration of the network is split in two sections: the AP section and the STA section. It is important to follow the order of the steps as failure to do so could render the routers inoperable.
+
+==== Using SSH ====
+
+=== The Access Point ===
+
+Connect to the router that will serve as the wireless access point over SSH. This is the device that connects to the internet or the main network using a wired connection. Ensure that the device is already set up as a normal wireless access point with a SSID, channel selection, WPA2 encryption as desired, etc. and that normal wireless clients can connect to it fine.
+
+Only one change is needed from a normal wireless access point configuration.
+
+Once logged in, edit the [[docs:guide-user:network:wifi:basic|/etc/config/wireless]] file. In the existing ''wifi-iface'' section that is being used, add a line with ''option wds '1'''. Note that there may be multiple ''wifi-iface'' sections in this file, especially if the router is a dual band device, in which case you need to ensure that you're editing the correct section.
+
+Once that is done, save the file and reboot the device to restart all settings.
+
+Normal wireless clients should be able to connect to the wireless access point exactly as they did before and access the Internet.
+
+This is an example from /etc/config/wireless on the access point device:
+
+<code>
+config wifi-device 'radio0'
+        option type 'mac80211'
+        option macaddr 'unique device MAC address here'
+        option hwmode '11g'
+        option htmode 'HT20'
+        list ht_capab 'SHORT-GI-40'
+        list ht_capab 'DSSS_CCK-40'
+        option txpower '27'
+        option channel '1'
+        option country 'CA'
+
+config wifi-iface
+        option device 'radio0'
+        option network 'lan'
+        option ssid 'my-wireless-ssid'
+        option encryption 'psk2'
+        option key 'wireless-secret-password'
+        option mode 'ap'
+        option wds '1'
+</code>
+
+After rebooting, the "ifconfig" command should show a new device named something like "wlan.staN" (where N is a number) in addition to the base "wlan0" wireless interface device. (**Note:** when tested on Barrier Breaker, there was no new interface created, neither on the AP nor on the STA, despite WDS working properly.)
+
+The new wlan.staN interface WILL NOT be bridged by default with the originating wlan interface if that interface is not itself part of a bridge,
+If in your setup the AP interface is not already part of a bridge you will need to create a new bridge interface and associate only the AP wlan interface to it. In this case hostapd will automatically add any new wlan.staN interface to the bridge.
+
+=== The remote wireless station ===
+
+Initially connect to the router that will server as remote wireless station using an Ethernet cable. If you haven't already done so, [[docs:guide-user:installation:generic.flashing|install openwrt]] and [[docs:guide-quick-start:walkthrough_login|setup the password]]. SSH into the station.
+
+The first step is preparing the device for the bridging. 
+
+If this is a new OpenWrt setup, a DHCP server is enabled on the lan interface of the device by default. This needs to be disabled before the device is connected to the production network (assuming the production network already has DHCP set up). To do so, edit the [[docs:guide-user:base-system:dhcp|/etc/config/dhcp]] file. Find the ''config dhcp 'lan''' section and add the line ''option ignore '1''' to this section. This will disable the DHCP server on the lan interface. (The lan DHCP section will look like the wan DHCP section, as the DHCP server is already disabled on the wan interface by default.)[On Chaos Calmer 15.05 / LuCI (git-15.248.30277-3836b45), I had to disable the DHCP6 server as well, by changing ''option dhcpv6 'server''' to ''option dhcpv6 'disabled'''. MariusMatutiae]
+
+Following this, reconfigure the lan interface to have another address than the default static IP assignment of 192.168.1.1. Edit the [[docs:guide-user:base-system:basic-networking|/etc/config/network]] file. Set the IP to an another address from the same subnet. For example 192.168.1.2. After rebooting the router, remember to access the console & config via the new IP addess.  [Now that I rebooted the router with its dhcp server disabled, I had to temporarily set my PC's IP manually in order to access the router and continue this setup process. --Steve Newcomb]
+
+Alternatively, you may try to let the router itself to fetch an  IP address via DHCP from the AP, but that may leave router inaccessible if the WDS connection does not work and that STA router does not reach the AP with DHCP. If you want to try that: in the ''lan'' section, remove the static IP configuration and reconfigure the interface to use DHCP. This is an example:
+
+<code>
+config interface 'lan'
+        option ifname 'eth0'
+        option type 'bridge'
+        option proto 'dhcp'
+</code>
+
+__**NOTE:**__ LAN interface can stay static ip but need to disable dhcp server for LAN interface. If set LAN interface to get ip from dhcp server then you have to search remote router ip each time you reboot it.
+
+Once those steps are completed, we can setup the actual wireless link.
+
+Edit the [[docs:guide-user:network:wifi:basic|/etc/config/wireless]] file. In the ''radio0'' section, make sure that the wireless settings match the values in the access point.
+
+Further down in the same file, modify the ''wifi-iface'' section to include the desired SSID to which to connect (the same one as on the access point) and ensure WDS is enabled by setting this value to 1.
+
+This is an example from /etc/config/wireless on the wireless client bridge device. The specific options may be different depending on the hardware but the SSID, channel, encryption type and password must match the access point, and WDS mode must be turned on.
+
+<code>
+config wifi-device 'radio0'
+        option type 'mac80211'
+        option macaddr 'unique device MAC address here -- NOT the same one as used in the access point configuration file'
+        option hwmode '11g'
+        option htmode 'HT20'
+        list ht_capab 'SHORT-GI-20'
+        list ht_capab 'SHORT-GI-40'
+        list ht_capab 'TX-STBC'
+        list ht_capab 'RX-STBC1'
+        list ht_capab 'DSSS_CCK-40'
+        option txpower '27'
+        option country 'CA'
+        option channel '1'
+        option disabled '0'
+
+config wifi-iface
+        option device 'radio0'
+        option network 'lan'
+        option mode 'sta'
+        option wds '1'
+        option ssid 'my-wireless-ssid'
+        option encryption 'psk2'
+        option key 'wireless-secret-password'
+</code>
+
+See the [[docs:guide-user:network:wifi:encryption|Configure WiFi encryption]] for pointer on how to specify encryption and keys.
+
+Disconnect the device from the wired network and reboot the device without any wired connection.
+
+The device should boot and automatically connect wirelessly to the access point. **Wait until the client bridge device associates with the access point. This can take 1-2 minutes for the association to happen.** Once this has happened, the **wired interface (e.g. eth0)** should succeed in getting a DHCP address through the new wireless bridge connection. Note that the wireless interface itself on the remote client bridge device does not get an IP address as it is now acting as a transparent bridge.
+
+Any //wired devices// connected via Ethernet to the LAN ports on the remote client bridge device should now be transparently bridged into the main network over the wireless link.
+
+**For wireless connection, one additional step is required:**
+
+Create a //new wireless interface//. You can simply add it in LuCi -> WiFi, or create a new //wifi-iface// section in /etc/config/wireless. Copy all the values from the existing interface, but make two changes: use mode 'ap' instead of 'sta' and leave out the WDS option or set it to 0. SSID and key may be the same as with the host SSID for transparent roaming, but they can also be different. As long as you connect this new interface to //lan//, which is the default, your other wireless devices connecting through this AP will also be seen as part of the big network.
+
+==== LuCI ====
+
+Everything shown in the manual SSH configuration section above should be possible using LuCI in OpenWrt 12.09. 
+
+=== The Access Point ===
+For the wireless access point, just set the wireless mode to "Access Point (WDS)" ([[http://i.imgur.com/pzj2KFY.png|screenshot]])
+
+=== The remote wireless station ===
+
+On the LAN Interface, change the default IP to a different one within the target subnet and disable the DHCP server. ([[http://i.imgur.com/21pJD9E.png|screenshot]])
+
+For each wireless interface, click **Scan**, join the previously created wireless network and when asked, set the firewall zone to ''lan''.
+
+The wireless mode should be ''Client (WDS)'' and the **Network** in **Interface Configuration** has to be changed from ''wwan'' to ''lan''. ([[http://i.imgur.com/cx8dAae.png|screenshot]])
+
+Go to **Network**, **DHCP and DNS**. Set ''DNS forwardings'' to the ip address of the AP router.
+
+Go to **Network**, **Interfaces**, **Lan**, **Edit**. Set ''IPv4 gateway'' to the ip address of the AP router.
+
+Go to **Physical Settings** and enable ''STP''. Failing to do so can allow a network loop to form that will take down all routers.
+
+Finally, add a new wifi network if you want to join the network via wifi. It can have the same name, password and settings than the WDS access point, but they can be certainly different. When creating the new wifi network, under **General Setup**, ensure that **Mode**  is ''Access Point'' and **Network** is set to ''Lan''.
+===== Old Stuff =====
+
+Relevant configuration files:
+
+  * [[docs:guide-user:network:wifi:basic|/etc/config/wireless]]
+  * [[docs:guide-user:firewall:start|/etc/config/firewall]]
+  * [[docs:guide-user:base-system:dhcp|/etc/config/dhcp]]
+
+
+Multiple //WDS Stations// can connect to a single //WDS Access Point//.
+
+  * On the Access Point, add ''option wds 1'' to the existing ''wifi-iface'' section and proceed with configuring SSID, channel, encryption etc.
+  * On the Client, set ''option mode'' to ''sta'' and add ''option wds 1'' to the ''wifi-iface'' section. Disable the DHCP server, e.g. by adding ''option ignore 1'' for LAN interface in /etc/config/dhcp.
+  *To create a repeater, add a WDS Access Point along with the WDS Station on the client,(with the same ssid and key, or not). Don't forget to add the newly created AP to the LAN firewall Zone.  
+
+On MAC80211 OpenWRT use 4 address (option wds 1) (with ap or sta mode) and not repeater mode. See also [[http://linuxwireless.org/en/users/Documentation/iw#Setting_up_a_WDS_peer]]

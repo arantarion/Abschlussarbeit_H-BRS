@@ -1,0 +1,298 @@
+====== Collectd ======
+collectd is a small daemon which collects system information periodically and provides mechanisms to store the values in a variety of ways.
+
+===== Preparation =====
+==== Prerequisites ====
+==== Required Packages ====
+^ Name ^ Version ^ Size ^ Description  ^
+| collectd    |  4.10.2-2   |   59725 | collectd is a small daemon which collects system information periodically and provides mechanisms to store the values in a variety of ways.  |
+| libpthread  |  0.9.32-66  |   30687 | POSIX thread library                 |
+| librt       |  0.9.32-66  |    5528 | POSIX.1b RealTime extension library  |
+| zlib        |  1.2.5-1    |   39403 | Library implementing the deflate compression method  |
+| libltdl     |  2.4-1      |   13614 | A generic dynamic object loading library  |
+
+A Total of about 148.957 Bytes on ar71xx. Goto [[docs:guide-user:perf_and_log:statistic.collectd#Available Packages]] for a list of Plugins with their dependencies.
+
+
+===== Installation =====
+[[docs:guide-user:additional-software:opkg]]
+<code bash>
+opkg install collectd
+vi /etc/collectd.conf
+. /etc/init.d/collectd enable
+. /etc/init.d/collectd start
+ps
+</code>
+
+===== Configuration =====
+
+==== Using LuCI ====
+  - Install ''luci-app-statistics''
+  - Configure collectd using the tools in **Statistics -> Setup** section of the LuCI web interface.
+
+**Note:** By default, collectd saves its RRD data in '' /tmp/rrd '' a RAM-based directory.
+Its contents will be lost when the device reboots. 
+To save the data across power failure/restarts, consider [[/docs/guide-user/storage/usb-drives-quickstart|Adding an external USB Drive]] and then configuring collectd to save the data to that new storage.
+Do this using the **Output plugins -> RRDTool** tab in the GUI (configure the //Storage directory//), or the //DataDir// command of the <Plugin rrdtool> section of the collectd configuration file at '' /etc/collectd.conf ''. 
+==== Command-line Configuration ====
+Configure the file ''/etc/collectd.conf'' according to:
+  *[[http://collectd.org/documentation/manpages/collectd.1.shtml|collectd(1)]]
+  *[[http://collectd.org/documentation/manpages/collectd.conf.5.shtml|collectd.conf(5)]]
+
+Assuming the daemon is already running, use the commands ''sh /etc/init.d/collectd stop'' and ''sh /etc/init.d/collectd start'' to reload and apply changes on the fly.
+
+
+===== Example Configurations =====
+
+==== Minimal Configuration ====
+
+| <code>
+#
+# OpenWrt Config file for collectd(1).
+# Please read collectd.conf(5) for a list of options.
+# http://collectd.org/
+#
+
+#Hostname   "localhost"
+#FQDNLookup  true
+BaseDir     "/var/lib/collectd"
+PIDFile     "/var/run/collectd.pid"
+#PluginDir  "/usr/lib/collectd"
+#TypesDB    "/usr/share/collectd/types.db"
+Interval    30
+ReadThreads 2
+
+</code> |
+
+==== Simple Configuration ====
+
+  - Install ''collectd-mod-rrdtool'', ''collectd-mod-processes'', and ''collectd-mod-interface''
+
+| <code>
+BaseDir "/var/run/collectd"
+Include "/etc/collectd/conf.d"                                                                            
+PIDFile "/var/run/collectd.pid"                                                                           
+PluginDir "/usr/lib/collectd"                                                                             
+TypesDB "/usr/share/collectd/types.db"                                                                    
+Interval 30                                                                                               
+ReadThreads 2                                                                                             
+                                                                                                          
+                                                                                                          
+LoadPlugin rrdtool                                                                                        
+<Plugin rrdtool>                                                                                          
+        DataDir "/tmp/rrd"                                                                                
+        RRARows 100                                                                                       
+        RRASingle true                                                                                    
+        RRATimespan 3600                                                                                  
+        RRATimespan 86400                                                                                 
+        RRATimespan 604800                                                                                
+        RRATimespan 2678400                                                                               
+        RRATimespan 31622400                                                                              
+</Plugin>                                                                                                 
+                                                                                                          
+LoadPlugin processes                                                                                      
+<Plugin processes>                                                                                        
+        Process uhttpd                                                                                    
+        Process dnsmasq                                                                                   
+        Process dropbear                                                                                  
+</Plugin>                                                                                                 
+                                                                                                          
+LoadPlugin interface                                                                                      
+<Plugin interface>                                                                                        
+        IgnoreSelected false                                                                              
+        Interface eth0                                                                                    
+        Interface eth1                                                                                    
+        Interface eth2                                                                                    
+</Plugin>                                                                                                 
+                                                                                                          
+LoadPlugin memory
+
+LoadPlugin uptime
+       
+LoadPlugin cpu
+       
+LoadPlugin load
+</code> |
+
+==== Advanced Configuration ====
+
+  - Follow [[doc:howto:tc]] or [[docs:guide-user:network:traffic-shaping:qos]] to set up some traffic control
+  - Expand your storage resources by [[doc:howto:client.overview#Mounting Filesystems]]
+  - Install ''collectd-mod-rrdtool'', ''collectd-mod-iptables'' and ''collectd-mod-netlink'' (Total of additional about 271.030 Bytes (on ar71xx))
+  - ''mkdir /mnt/storage/rrd'' ''mkdir /mnt/storage/rrd/openwrt'' ''mkdir /mnt/storage/rrd/openwrt/netlink-pppoe-dsl''
+  - ''vim /etc/collectd.conf'':
+
+| <code>
+#
+# OpenWrt Config file for collectd(1).
+# Please read collectd.conf(5) for a list of options.
+# http://collectd.org/
+#
+
+
+
+#Hostname   "localhost"
+#FQDNLookup  true
+BaseDir     "/var/lib/collectd"
+PIDFile     "/var/run/collectd.pid"
+#PluginDir  "/usr/lib/collectd"
+#TypesDB    "/usr/share/collectd/types.db"
+Interval    30
+ReadThreads 2
+
+#LoadPlugin interface
+#LoadPlugin load
+#LoadPlugin memory
+LoadPlugin netlink
+LoadPlugin iptables
+LoadPlugin rrdtool
+
+
+<Plugin netlink>
+        VerboseInterface pppoe-dsl
+        QDisc "pppoe-dsl" "hfsc-1:0"
+        Class "pppoe-dsl" "hfsc-1:1"
+        Class "pppoe-dsl" "hfsc-1:10"
+        Class "pppoe-dsl" "hfsc-1:101"
+        Class "pppoe-dsl" "hfsc-1:102"
+        Class "pppoe-dsl" "hfsc-1:103"
+        Class "pppoe-dsl" "hfsc-1:20"
+        Class "pppoe-dsl" "hfsc-1:201"
+        Class "pppoe-dsl" "hfsc-1:202"
+        Class "pppoe-dsl" "hfsc-1:203"
+        Class "pppoe-dsl" "hfsc-1:30"
+        Class "pppoe-dsl" "hfsc-1:301"
+        Class "pppoe-dsl" "hfsc-1:302"
+        Class "pppoe-dsl" "hfsc-1:303"
+        Class "pppoe-dsl" "hfsc-1:40"
+        Class "pppoe-dsl" "hfsc-1:50"
+</Plugin>
+
+# We use iptables filter only, so:
+<Plugin iptables>
+        chain mangle TC_USER1
+        chain mangle TC_USER2
+        chain mangle TC_USER3
+</Plugin>
+
+
+<Plugin rrdtool>
+       DataDir "/mnt/storage/rrd"
+       CacheTimeout 120
+       CacheFlush   900
+</Plugin>
+</code> |
+
+''ls /mnt/storage/rrd/openwrt/netlink-pppoe-dsl''
+
+| <code>
+if_collisions.rrd                 if_tx_errors-carrier.rrd          ipt_bytes-class-hfsc-1:30.rrd     ipt_packets-class-hfsc-1:201.rrd
+if_dropped.rrd                    if_tx_errors-fifo.rrd             ipt_bytes-class-hfsc-1:301.rrd    ipt_packets-class-hfsc-1:202.rrd
+if_errors.rrd                     if_tx_errors-heartbeat.rrd        ipt_bytes-class-hfsc-1:302.rrd    ipt_packets-class-hfsc-1:203.rrd
+if_multicast.rrd                  if_tx_errors-window.rrd           ipt_bytes-class-hfsc-1:303.rrd    ipt_packets-class-hfsc-1:30.rrd
+if_octets.rrd                     ipt_bytes-class-hfsc-1:1.rrd      ipt_bytes-class-hfsc-1:40.rrd     ipt_packets-class-hfsc-1:301.rrd
+if_packets.rrd                    ipt_bytes-class-hfsc-1:10.rrd     ipt_bytes-class-hfsc-1:50.rrd     ipt_packets-class-hfsc-1:302.rrd
+if_rx_errors-crc.rrd              ipt_bytes-class-hfsc-1:101.rrd    ipt_bytes-qdisc-hfsc-1:0.rrd      ipt_packets-class-hfsc-1:303.rrd
+if_rx_errors-fifo.rrd             ipt_bytes-class-hfsc-1:102.rrd    ipt_packets-class-hfsc-1:1.rrd    ipt_packets-class-hfsc-1:40.rrd
+if_rx_errors-frame.rrd            ipt_bytes-class-hfsc-1:103.rrd    ipt_packets-class-hfsc-1:10.rrd   ipt_packets-class-hfsc-1:50.rrd
+if_rx_errors-length.rrd           ipt_bytes-class-hfsc-1:20.rrd     ipt_packets-class-hfsc-1:101.rrd  ipt_packets-qdisc-hfsc-1:0.rrd
+if_rx_errors-missed.rrd           ipt_bytes-class-hfsc-1:201.rrd    ipt_packets-class-hfsc-1:102.rrd
+if_rx_errors-over.rrd             ipt_bytes-class-hfsc-1:202.rrd    ipt_packets-class-hfsc-1:103.rrd
+if_tx_errors-aborted.rrd          ipt_bytes-class-hfsc-1:203.rrd    ipt_packets-class-hfsc-1:20.rrd
+</code> |
+
+===== Graphs and Visualization =====
+
+collectd is strictly a statistics collection service and does not provide any way to visualize the gathered data. To enable visualization of the gathered data, install and configure the ''collectd-mod-rrdtool'' plugin, and make sure the ''luci-app-statistics'' package is installed. The statistics gathered by collectd should then be viewable in the LuCI web interface. 
+
+For more information about RRDTool, see [[docs:guide-user:perf_and_log:statistic.rrdtool]] and [[http://oss.oetiker.ch/rrdtool/]].
+
+
+===== Start on boot =====
+To enable/disable start on boot:\\
+''. /etc/init.d/collectd enable'' this simply creates a symlink: ''/etc/rc.d/S80collectd -> /etc/init.d/collectd''\\
+''. /etc/init.d/collectd disable'' this removes the symlink again\\
+
+===== Administration =====
+
+
+===== Troubleshooting =====
+
+
+===== Notes =====
+  * [[http://www.collectd.org/]]
+
+===== Available Packages =====
+**Note 1:** This list is true for r25513 (2011-02), additional packages could be available.\\
+**Note 2:** The sizes are true for that version compiled for ar71xx. They will differ for other versions and other architectures. Some dependencies are already installed together with the ''collectd'' package. Don't count them double to estimate the size.
+
+^ Name ^ Version ^ Dependencies ^ Size in Bytes ^ Description  ^
+| collectd-mod-apache      |  4.10.2-2  |  libcurl           |   10455 | apache status input plugin  |
+| collectd-mod-apcups      |  4.10.2-2  |        |   8435 | apcups status input plugin  |
+| collectd-mod-ascent      |  4.10.2-2  |  libcurl, libxml2  |    9874 | ascent status input plugin  |
+| collectd-mod-bind        |  4.10.2-2  |  libcurl, libxml2  |   12726 | BIND server/zone input plugin  |
+| collectd-mod-conntrack   |  4.10.2-2  |        |   6576 | connection tracking table size input plugin  |
+| collectd-mod-contextswitch  |  4.10.2-2  |     |   6832 | context switch input plugin  |
+| collectd-mod-cpu         |  4.10.2-2  |        |   7105 | CPU input plugin  |
+| collectd-mod-csv         |  4.10.2-2  |        |   8259 | CSV output plugin  |
+| collectd-mod-curl        |  4.10.2-2  |  libcurl           |    9722 | cURL input plugin  |
+| collectd-mod-dbi         |  4.10.2-2  |  libdbi            |   15462 | relational database input plugin  |
+| collectd-mod-df          |  4.10.2-2  |        |  10448 | disk space input plugin  |
+| collectd-mod-disk        |  4.10.2-2  |        |   8789 | disk usage/timing input plugin  |
+| collectd-mod-dns         |  4.10.2-2  |  libpcap           |   12201 | DNS traffic input plugin  |
+| collectd-mod-email       |  4.10.2-2  |        |  10072 | email output plugin  |
+| collectd-mod-exec        |  4.10.2-2  |        |  12769 | process exec input plugin  |
+| collectd-mod-filecount   |  4.10.2-2  |        |   9041 | file count input plugin  |
+| collectd-mod-fscache     |  4.10.2-2  |        |   7088 | file-system based caching framework input plugin  |
+| collectd-mod-interface   |  4.10.2-2  |        |   6951 | network interfaces input plugin  |
+| collectd-mod-iptables    |  4.10.2-2  |  iptables          |   19468 | iptables status input plugin  |
+| collectd-mod-irq         |  4.10.2-2  |        |   7547 | interrupt usage input plugin  |
+| collectd-mod-load        |  4.10.2-2  |        |   6715 | system load input plugin  |
+| collectd-mod-logfile     |  4.10.2-2  |        |   7781 | log files output plugin  |
+| collectd-mod-madwifi     |  4.10.2-2  |        |  12004 | MadWifi status input plugin  |
+| collectd-mod-memory      |  4.10.2-2  |        |   7183 | physical memory usage input plugin  |
+| collectd-mod-mysql       |  4.10.2-2  |  libmysqlclient    |    7464 | MySQL status input plugin  |
+| collectd-mod-netlink     |  4.10.2-2  |  ip                |   13653 | netlink input plugin  |
+| collectd-mod-network     |  4.10.2-2  |        |  17383 | network input/output plugin  |
+| collectd-mod-nginx       |  4.10.2-2  |  libcurl           |    8132 | nginx status input plugin  |
+| collectd-mod-ntpd        |  4.10.2-2  |        |  10468 | NTP daemon status input plugin  |
+| collectd-mod-olsrd       |  4.10.2-2  |        |   9538 | OLSRd status input plugin  |
+| collectd-mod-openvpn     |  4.10.2-2  |        |   9816 | OpenVPN traffic/compression input plugin  |
+| collectd-mod-ping        |  4.10.2-2  |  liboping          |    9874 | ping status input plugin  |
+| collectd-mod-postgresql  |  4.10.2-2  |  libpq             |   16046 | PostgreSQL status input plugin  |
+| collectd-mod-powerdns    |  4.10.2-2  |        |  11746 | PowerDNS server status input plugin  |
+| collectd-mod-processes   |  4.10.2-2  |        |  11752 | process status input plugin  |
+| collectd-mod-protocols   |  4.10.2-2  |        |   7821 | network protocols input plugin  |
+| collectd-mod-rrdtool     |  4.10.2-2  |  librrd1           |   13579 | RRDtool output plugin  |
+| collectd-mod-snmp        |  4.10.2-2  |  libnetsnmp        |   12999 | SNMP input plugin  |
+| collectd-mod-syslog      |  4.10.2-2  |        |   6418 | syslog output plugin  |
+| collectd-mod-table       |  4.10.2-2  |        |  10007 | table-like structured file input plugin  |
+| collectd-mod-tail        |  4.10.2-2  |        |   7945 | tail input plugin  |
+| collectd-mod-tcpconns    |  4.10.2-2  |        |   8103 | TCP connection tracking input plugin  |
+| collectd-mod-teamspeak2  |  4.10.2-2  |        |  10068 | TeamSpeak2 input plugin  |
+| collectd-mod-ted         |  4.10.2-2  |        |   8211 | The Energy Detective input plugin  |
+| collectd-mod-thermal     |  4.10.2-2  |        |   7999 | system temperatures input plugin  |
+| collectd-mod-unixsock    |  4.10.2-2  |        |  13072 | unix socket output plugin  |
+| collectd-mod-uptime      |  4.10.2-2  |        |   6874 | uptime status input plugin  |
+| collectd-mod-users       |  4.10.2-2  |        |   6470 | user logged in status input plugin  |
+| collectd-mod-vmem        |  4.10.2-2  |        |   7751 | virtual memory usage input plugin  |
+| collectd-mod-wireless    |  4.10.2-2  |        |   7327 | wireless status input plugin  |
+| collectd-mod-write-http  |  4.10.2-2  |  libcurl           |   11407 | HTTP POST output plugin  |
+| libcurl                  |  7.21.3-1  |  libopenssl, zlib  |  130498 | A client-side URL transfer library  |
+| libdbi                   |  0.8.3-3   |                    |   20321 | SQLite is a small C library that implements a self-contained, embeddable, zero-configuration SQL database engine.      This package contains the SQLite (v3.x) shared library, used by other programs.  |
+| libelf                   |  0.8.13-1  |                    |   26800 | ELF object file access library  |
+| libmysqlclient           |  5.1.53-2  |  zlib              |  161737 | MySQL client library  |
+| libncurses               |  5.7-3     |                    |  115370 | Terminal handling library  |
+| libnetsnmp               |  5.4.2.1-4 |  libelf            |  330435 | Simple Network Management Protocol (SNMP) is a widely used protocol for monitoring the health and welfare of network equipment (eg. routers), computer equipment and even devices like UPSs. Net-SNMP is a suite of applications used to implement SNMP v1, SNMP v2c and SNMP v3 using both IPv4 and IPv6. . This package contains shared libraries, needed by other programs.  |
+| libopenssl               |  1.0.0d-1  |  zlib              |  582261 | The OpenSSL Project is a collaborative effort to develop a robust, commercial-grade, full-featured, and Open Source toolkit implementing the Secure Sockets Layer (SSL v2/v3) and Transport Layer Security (TLS v1) protocols as well as a full-strength general purpose cryptography library. This package contains the OpenSSL shared libraries, needed by other programs.  |
+| liboping                 |  1.6.0-1   |                    |   10140 | C library to generate ICMP echo requests.  |
+| libpcap                  |  1.0.0-2   |                    |   75960 | This package contains a system-independent library for user-level network packet capture.  |
+| libpq                    |  9.0.1-1   |  zlib, libreadline, libncurses, coreutils-su  |  55112 | PostgreSQL client library.  |
+| libreadline              |  5.2-2     |                    |  109121 | The Readline library provides a set of functions for use by applications that allow users to edit command lines as they are typed in. Both Emacs  and vi editing modes are available. The Readline library includes  additional functions to maintain a list of previously-entered command  lines, to recall and perhaps reedit those lines, and perform csh-like  history expansion on previous commands.  |
+| librrd1                  |  1.0.50-1  |  zlib              |  138968 | RRD is the Acronym for Round Robin Database. RRD is a system to store and display time-series data (i.e. network bandwidth, machine-room temperature, server load average). It stores the data in a very compact way that will not expand over time, and it presents useful graphs by processing the data to enforce a certain data density. It can be used either via simple wrapper scripts (from shell or Perl) or via frontends that poll network devices and put friendly user interface on it.  This is version 1.0.x with cgilib-0.4, gd1.3 and libpng-1.0.9 linked into librrd.so. The library is much smaller compared to the 1.2.x version with separate dynamic linked libraries. This package contains a shared library, used by other programs.  |
+| libxml2                  |  2.7.8-1   |  libpthread, zlib  |  470900 | A library for manipulating XML and HTML resources.  |
+| zlib                     |  1.2.5-1   |                    |   39403 | Library implementing the deflate compression method  |
+| coreutils-su             |  8.8-1     |  coreutils         |   13021 | Full version of standard GNU su utility.  Normally, you would not use this package, since the functionality in BusyBox is more than sufficient.  |
+| coreutils                |  8.8-1     |                    |     782 | Full versions of standard GNU utilities.  Normally, you would not use this package, since the functionality in BusyBox is more than sufficient and much smaller.  |
+| ip                       |  2.6.35-3  |                    |   85362 | Routing control utility  |
+

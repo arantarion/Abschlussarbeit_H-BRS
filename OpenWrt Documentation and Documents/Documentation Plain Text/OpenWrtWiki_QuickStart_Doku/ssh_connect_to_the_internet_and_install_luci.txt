@@ -1,0 +1,26 @@
+====== Use SSH to connect to the internet and install LuCI web interface ======
+The following instructions give the OpenWrt device a IP address in the same network of the ISP modem, then set the ISP modem IP address as "gateway" and "dns" for the OpenWrt device, which is the device providing internet access to client devices.
+
+The OpenWrt device will act as a client and will be accessible through its LAN port.
+
+For example that the **ISP modem** has IP **192.168.2.1**, so we can assign any IP that starts with 192.168.2.xxx.
+I will assign **192.168.2.200** to the **OpenWrt device** in the example.
+
+<code bash>
+uci set network.lan.ipaddr="192.168.2.200"
+uci set network.lan.gateway="192.168.2.1"
+uci set network.lan.dns="192.168.2.1"
+uci commit
+/etc/init.d/network restart
+</code>
+
+This should save the setting and close the ssh connection as the IP address was changed.
+
+You can also disconnect power from the OpenWrt device now, the setting is saved.
+
+Disconnect the cable from the laptop and connect it to the ISP modem Ethernet port.
+
+Connect the PC to the ISP modem with DHCP (normal "automatic IP" way), Wi-Fi or Ethernet should be the same.
+Connect to the OpenWrt device with ssh at IP 192.168.2.200.
+
+Now it should be able to [[docs:guide-user:luci:luci.essentials#basic_installation|install LuCI]].

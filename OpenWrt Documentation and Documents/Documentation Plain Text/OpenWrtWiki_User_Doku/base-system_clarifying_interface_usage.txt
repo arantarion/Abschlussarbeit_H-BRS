@@ -1,0 +1,39 @@
+====== 明确概念“接口” ======
+
+如果您曾使用过其他 Linux 发行版或者 pfSense 之类的路由器，那么“接口”的概念可能会导致您的困惑。
+
+配置中的“接口”概念不应与物理上的接口混淆。这个词确实具有误导性。作为 Unix 管理员，您知道''ifconfig''命令，所以可能自然认为''config interface lan''执行的操作与''ifconfig''相同。不过，这只说对了一部分。
+
+为了明确概念，我们避免使用术语“接口”，而用更中性的词汇代替它。我们在 OpenWrt 中实际可配置的名称可以称为“连接器”。“连接器”的配置包含了为了将运行 OpenWrt 的设备连接到网络而所需的所有属性。其包括物理设备（为避免完全使用术语“接口”，我们称之为“控制器”）和设置信息。设置信息应用于控制器，使设备能够加入网络。
+
+<WRAP center round warning 80%>
+**以下并非有效的配置代码！**\\
+<code>config "connector" 'lan'
+        option "controller" 'eth0'
+        option "setup" 'static'
+        option ipaddr '192.168.1.1'
+        option netmask '255.255.255.0'
+</code>
+</WRAP>
+
+如果您已经对 OpenWrt 语法略有了解，可以发现我把 ''interface'' 替换成了 ''"connector"''，''ifname'' 替换成了 ''"controller"''，''proto'' 替换成了 ''"setup"''，以回避相关概念。
+
+当然，此配置信息对控制器有影响，您可以使用''ifconfig''或更好的''ip a s eth0''命令查看效果。但请注意，这不是“eth0”的完整配置。可能有更多的连接器连接到涉及同一控制器的其他网络。并且，根据所选择的设置，连接器配置可能对控制器之外的其他可配置项产生影响。
+
+例如，我们考虑 IPv6 连接。IPv4 和 IPv6 定义了不同的网络。具有 IPv4 地址的设备无法与具有 IPv6 地址的设备通信。因此，如果我们希望设备与其他 IPv6 设备通信，就需要另外一个连接器。
+
+<WRAP center round warning 80%>
+**以下并非有效的配置代码！**\\
+<code>config "connector" 'lan6'
+        option "controller" 'eth0'
+        option "setup" 'dhcp6'
+</code>
+</WRAP>
+
+这将配置另一个连接器，并且与上一个连接器使用同一控制器((Luckily, using IPv6 does not require new physical devices.))，但是使用不同的设置策略：一种使用dhcp（用于IPv6）的自动策略。因此，此配置不仅影响控制器，还影响辅助进程（在本例中为''odhcpd''）。
+
+总之，在读写 OpenWrt 网络配置时，请记住：
+
+  * ''config interface ...'' 不是物理接口的配置，而是某些网络连接器的规范。
+  * ''ifname'' 通常不是通过 ''config interface'' 配置的名称，而是物理接口的名称((I'm not really sure about this feature, but it seems that you can use ''ifname '@...' '' as a shortcut to refer to the physical interfaces used in another interface configuration.)).
+  * ''proto'' 不是网络中使用的协议，而是用来设置物理接口的协议，以便它可以加入应该连接的网络。

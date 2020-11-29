@@ -1,0 +1,238 @@
+====== Asterisk ======
+===== Introduction =====
+[[https://www.asterisk.org/|Asterisk]] is an open-source software PBX whose functionality can be extended by various modules. OpenWrt provides packages for Asterisk and most of its official modules via the telephony [[docs:guide-developer:feeds|feed]]. On routers with Lantiq SoCs it's possible to use built in analogue FXS ports with Asterisk, turning these devices into [[wp>VoIP_gateway|VoIP gateways]] (see [[docs:guide-user:services:voip:chan-lantiq|chan-lantiq for Asterisk]]).
+
+This article focuses on Asterisk installation and basic SIP configuration on OpenWrt.
+===== Installation =====
+==== Choosing an Asterisk version ====
+Asterisk has standard and long term support (LTS) releases. Have a look at [[https://wiki.asterisk.org/wiki/display/AST/Asterisk+Versions|Asterisk versions]] on the Asterisk wiki for the current upstream support status.
+An OpenWrt release usually includes both the latest standart and LTS release of Asterisk. If you're unsure which version you should install, pick the latest LTS release.
+
+You can query the package table to get information about the Asterisk versions in OpenWrt, module names and their descriptions: [[https://openwrt.org/packages/table/start?dataflt%5BName_pkg-dependencies*%7E%5D=asterisk16&dataflt%5BCategoriess*%7E%5D=|Packages for Asterisk 16]]
+==== Choosing a SIP stack ====
+You can choose between two SIP stacks in Asterisk: ''chan_sip'' and ''chan_pjsip''. [[http://www.pjsip.org/|PJSIP]] is the newer and more modern implementation and is the default one. With the release of Asterisk 13 ''chan_sip'' was marked as [[https://wiki.asterisk.org/wiki/display/AST/Asterisk+Module+Support+States|extended support module]], which means that it doesn't receive core support anymore.
+
+If you plan to set up a new Asterisk installation it is therefore recommended to use PJSIP.
+
+==== Opkg ====
+While it's perfectly possible to install Asterisk via [[docs:guide-user:additional-software:opkg]], keep in mind that space on the [[docs:techref:filesystems|OverlayFS]] ist limited on most devices. An Asterisk installation can be quite big and if you plan to use several modules, you may easily tun out of space. In this case, you can try to build a custom image using the image builder.
+
+==== Image builder ====
+The [[docs:guide-user:additional-software:imagebuilder|image builder]] can be used to build Asterisk packages directly into the SquashFS partition. Optionally you can exclude packages you don't need to save space.
+
+Example command for an [[toh:arcadyan:vgv7510kw22|o2 Box 6431]]:
+<code>
+make image PROFILE=arcadyan_vgv7510kw22-nor PACKAGES="kmod-ltq-tapi kmod-ltq-vmmc kmod-ltq-ifxos asterisk16 asterisk16-pjsip asterisk16-bridge-simple asterisk16-codec-alaw asterisk16-codec-ulaw asterisk16-res-rtp-asterisk asterisk16-chan-lantiq"
+</code>
+
+===== Security considerations =====
+VoIP services are a common attack target, so it's important to implement at least some basic security measures before putting an Asterisk server online. Take a look at [[https://www.lifewire.com/security-threats-in-voip-3426532|this short overview]] on VoIP threats.
+
+Asterisk security advisories are announced here: [[https://www.asterisk.org/downloads/security-advisories]]
+==== Modules ====
+Only install modules you really need, don't start by installing all Asterisk modules OpenWrt can offer. This not only wastes space, but also enlarges the possible attack surface.
+
+For basic SIP operation it's enough to install a RTP stack (''*-res-rtp-asterisk''), a channel bridging module (''asterisk*-bridge-simple'') and needed audio codecs (normally ''*-codec-alaw'' or ''*-codec-ulaw'') in addition to the SIP stack.
+==== Firewall ====
+Don't expose SIP related ports on your WAN Interface. It's not necessary in most cases, but greatly affects security in a negative way.
+A lot of people think they need to forward ports for incoming calls, but in fact this isn't necessary - the registration process takes care to establish a connection to your SIP provider and to keep it alive.
+==== Blocking of unneeded numbers ====
+Most SIP providers offer to block foreign or special numbers. It's highly recommended to make use of that if you don't need them. That way an attacker can't make calls to these numbers, even if your Asterisk installation gets compromised.
+
+===== Configuration =====
+Asterisk configurations can differ to a great extend depending on provider/hardware/country, so it's difficult to provide generic configurations.
+On OpenWrt, Asterisk configuration files can be found under ''/etc/asterisk/''. The most important files are the dialplan (''extensions.conf'') and the SIP channel configuration (''pjsip.conf'' or ''sip.conf''). Location specific tone indications are set in ''indications.conf''. Links to the corresponding Asterisk-wiki-pages with details on configuration options  are given below, together with working examples, taken from [[https://forum.openwrt.org/t/voip-configuration-for-asterisk13-pjsip-chan-lantiq-and-vodafone-germany/9470|this forum thread]].
+
+After changing your Asterisk configuration, restart the server: ''/etc/init.d/asterisk restart''
+==== pjsip.conf ====
+[[https://wiki.asterisk.org/wiki/display/AST/Configuring+res_pjsip]]
+
+Example for Vodafone Germany:
+<code ini pjsip.conf>
+[global]
+type = global
+endpoint_identifier_order = ip,username
+
+[acl]
+type = acl
+deny = 0.0.0.0/0.0.0.0
+permit = 127.0.0.1
+;permit = 192.168.1.0/24 ;uncomment if you want to connect clients from LAN
+permit = 88.79.152.xxx ;nslookup <area_code>.sip.arcor.de
+
+[transport-udp]
+type = transport
+protocol = udp
+bind = 0.0.0.0:5060
+local_net = 127.0.0.1
+local_net = 192.168.1.0/24
+
+[reg_arcor]
+type = registration
+transport = transport-udp
+contact_user = <area_code><your_number>
+client_uri = sip:<area_code><your_number>@<area_code>.sip.arcor.de
+server_uri = sip:<area_code>.sip.arcor.de
+outbound_auth = auth_arcor
+retry_interval = 30
+forbidden_retry_interval = 300
+max_retries = 10
+auth_rejection_permanent = false
+
+[auth_arcor]
+type = auth
+auth_type = userpass
+realm = arcor.de
+username = <area_code><your_number>
+password = <password>
+
+[aor_arcor]
+type = aor
+contact = sip:<area_code>.sip.arcor.de
+
+[id_arcor]
+type = identify
+match = <area_code>.sip.arcor.de
+endpoint = in_arcor
+
+[in_arcor]
+type = endpoint
+transport = transport-udp
+context = lantiq1_inbound
+disallow = all
+allow = alaw,g722,ulaw
+disable_direct_media_on_nat = yes
+rewrite_contact = yes
+
+[out_arcor]
+type = endpoint
+transport = transport-udp
+disallow = all
+allow = alaw,g722,ulaw
+disable_direct_media_on_nat = yes
+callerid = <area_code><your_number>
+from_user = <area_code><your_number>
+from_domain = <area_code>.sip.arcor.de
+outbound_auth = auth_arcor
+aors = aor_arcor
+</code>
+Vodafone also supports the [[https://blogs.asterisk.org/2016/01/27/the-pjsip-outbound-registration-line-option/|line option]], which can simplify the configuration by omitting the ''[id_arcor]'' section. The above configuration is shown to present a more generic example.
+
+==== extensions.conf ====
+[[https://wiki.asterisk.org/wiki/display/AST/Dialplan]]
+
+Example for Vodafone Germany:
+<code ini extensions.conf>
+[general]
+static=yes
+writeprotect=yes
+autofallthrough=yes
+
+[default]
+exten => _X.,1,Answer()
+same => n,Verbose(1,${CALLERID(num)} reached context DEFAULT by calling ${EXTEN})
+same => n,Hangup()
+
+[out_arcor]
+; national numbers with country code
+exten => _+49ZXX!.,1,Dial(PJSIP/${EXTEN}@out_arcor,60,Trg)
+same => n,Hangup()
+
+; national numbers called with leading 0
+exten => _0Z.,1,Dial(PJSIP/${EXTEN}@out_arcor,60,Trg)
+same => n,Hangup()
+
+; local area numbers
+exten => _Z.,1,Dial(PJSIP/${EXTEN}@out_arcor,60,Trg)
+same => n,Hangup()
+
+; emergency calls
+exten => 110,1,Dial(PJSIP/${EXTEN}@out_arcor,60,Trg)
+exten => 110,n,Hangup()
+exten => 112,1,Dial(PJSIP/${EXTEN}@out_arcor,60,Trg)
+exten => 112,n,Hangup()
+
+; add rules for expensive special numbers. Get German examples from:
+; https://www.linuxmaker.com//asterisk-pbx/dialplan-extensionsconf.html
+exten => _0137Z.,1,Verbose(1,Blocked: ${EXTEN})
+;same => n,Playback(forbidden)
+same => n,Hangup()
+
+[lantiq1_inbound]
+exten => <area_code><your_number>,1,Dial(TAPI/1,60,t)
+same => n,Hangup()
+
+[lantiq1]
+include => out_arcor
+
+;[lantiq2]
+;include => ltq2_out
+</code>
+
+==== indications.conf ====
+[[https://wiki.asterisk.org/wiki/display/AST/Configuring+Localized+Tone+Indications]]
+
+Example for Vodafone Germany:
+<code ini indications.conf>
+[general]
+country=de
+</code>
+
+==== lantiq.conf ====
+If you plan to use Asterisk on a Lantiq device, see [[docs:guide-user:services:voip:chan-lantiq]] for detailed configuration examples.
+
+<code ini lantiq.conf>
+[interfaces]
+channels = 2
+per_channel_context = on
+</code>
+''per_channel_context = on'' is important, as it will place calls from the Lantiq FXS ports in contexts ''lantiq1'' and ''lantiq2'' instead of ''default'', which should be avoided.
+==== SQM/QoS ====
+For VoIP you will need some form of traffic shaping to reduce latency. On OpenWrt the best choice is using [[docs:guide-user:network:traffic-shaping:sqm|SQM with cake]]. To prioritize VoIP traffic choose ''layer_cake.qos'' as the queue setup script. For more details read [[https://forum.openwrt.org/t/simple-qos-for-voip/10382|this forum thread]].
+
+More information on TOS/CoS values can be found in the [[https://wiki.asterisk.org/wiki/display/AST/IP+Quality+of+Service|IP QoS article]] on the Asterisk Wiki.
+
+===== Asterisk CLI =====
+[[https://wiki.asterisk.org/wiki/display/AST/Asterisk+Command+Line+Interface|Asterisk provides its own CLI]], which can be used to debug problems. Execute ''asterisk -r'', to connect to a already running Asterisk server.
+
+Commands follow a general syntax of ''<module name> <action type> <parameters>''. The CLI supports command-line completion using the ''<Tab>'' key.
+
+==== Increasing the log level ====
+To see what's going on during a call run the following command inside the Asterisk CLI:
+<code>
+core set verbose 3
+</code>
+After that run ''module reload logger'' and make a call.
+To get even more verbose information, you can execute the following commands (:!: enabling all of them will produce a lot of output!):
+<code>
+core set verbose 5
+core set debug 5
+pjsip set logger on
+rtp set debug on
+</code>
+
+==== Other useful commands ====
+
+<code>
+dialplan show <context>
+
+pjsip show endpoints
+pjsip show endpoint <endpoint>
+pjsip show registration <registration>
+</code>
+During a call:
+<code>
+core show channels
+core show channel <channel>
+</code>
+
+==== Executing commands from outside the CLI ====
+You can execute Asterisk commands from outside the CLI, for example to control the Asterisk server via a shell script:
+<code>
+asterisk -rx "pjsip show endpoints"
+</code>
+
+===== Finding further information about Asterisk =====
+  * The first place to look for information is [[https://wiki.asterisk.org/wiki/display/AST/Home|the Asterisk wiki]]
+  * Another great resource is //The Asterisk Book//. It's about an older Asterisk version, but explains the core principles in a very profound way: [[http://the-asterisk-book.com/|English version]], [[http://das-asterisk-buch.de/|German version]]
+  * [[https://community.asterisk.org/|Official Asterisk forum]]

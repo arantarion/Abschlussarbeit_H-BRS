@@ -1,0 +1,104 @@
+====== SSH tunnel ======
+SSH tunnelling in OpenWrt can be done by using the [[https://openwrt.org/packages/pkgdata/sshtunnel|sshtunnel]] package. Its uci configuration is located in ''/etc/config/sshtunnel''. This file is responsible for defining //ssh servers// and //tunnels//. Sshtunnel depends on [[https://openwrt.org/packages/pkgdata/openssh-client|openssh-client]], because the ssh client included by default on OpenWrt (dropbear) doesn't support most of the needed features. There are two versions:
+
+  * sshtunnel 1: early 2009
+  * sshtunnel 2: 2010 Oct 6
+    * Added several config options.
+    * Added possibility of setting several tunnels on the same ssh connection.
+
+===== Sections =====
+A typical sshtunnel config file contains at least one //server// specifying the connection to a ssh server and one //tunnelL// or //tunnelR// defining the Local or Remote tunnel.
+
+==== Server ====
+In most cases there will be only one server defined, but possibly several tunnels to this server.
+
+A minimal ''server'' declaration may look like the example below.
+
+<code bash>
+config 'server' 'home'
+	option 'user'       'jonh'
+	option 'hostname'   'myhome.jonh.me'
+	option 'port'       '22'
+</code>
+
+  * ''home'' will identify this server on the tunnels sections
+  * ''jonh'' specifies the username on the remote machine
+  * ''myhome.jonh.me'' is the hostname of a machine running a openssh ssh server.
+
+The possible options for server sections are listed in the table below.
+
+^ Name ^ Type ^ Required ^ Default ^ Description ^
+| ''user'' | string | yes | //(none)// | remote host username. |
+| ''hostname'' | string | yes | //(none)// | remote host hostname. |
+| ''port'' | integer | yes | //(none)// | Port to connect to on the remote host. Note that this seems to be REQUIRED although being optional in older releases. |
+| ''retrydelay'' | integer | no | //10// | Delay after a connection failure before trying to reconnect. |
+| ''CheckHostIP'' | string | no | //(openssh ssh_config default)// | If this flag is set to “yes”, ssh(1) will additionally check the host IP address in the known_hosts file.  This allows ssh to detect if a host key changed due to DNS spoofing.  If the option is set to “no”, the check will not be executed.  The default is “yes”. |
+| ''Compression'' | string | no | //(openssh ssh_config default)// | Specifies whether to use compression.  The argument must be “yes” or “no”.  The default is “no”. |
+| ''CompressionLevel'' | string | no | //(openssh ssh_config default)// | Specifies the compression level to use if compression is enabled.  The argument must be an integer from 1 (fast) to 9 (slow, best).  The default level is 6, which is good for most applications.  The meaning of the values is the same as in gzip(1).  Note that this option applies to protocol version 1 only. |
+| ''IdentityFile'' | string | no | //(openssh ssh_config default)// | Specifies a file from which the user's RSA or DSA authentication identity is read.  The default is ~/.ssh/identity for protocol version 1, and ~/.ssh/id_rsa and ~/.ssh/id_dsa for protocol version 2.  Additionally, any identities represented by the authentication agent will be used for authentication.  ssh(1) will try to load certificate information from the filename obtained by appending -cert.pub to the path of a specified IdentityFile. The file name may use the tilde syntax to refer to a user's home directory or one of the following escape characters: ‘%d’ (local user's home directory), ‘%u’ (local user name), ‘%l’ (local host name), ‘%h’ (remote host name) or ‘%r’ (remote user name). |
+| ''LogLevel'' | string | no | //(openssh ssh_config default)// | Gives the verbosity level that is used when logging messages from ssh(1).  The possible values are: QUIET, FATAL, ERROR, INFO, VERBOSE, DEBUG, DEBUG1, DEBUG2, and DEBUG3.  The default is INFO.  DEBUG and DEBUG1 are equivalent.  DEBUG2 and DEBUG3 each specify higher levels of verbose output. |
+| ''ServerAliveCountMax'' | string | no | //(openssh ssh_config default)// | Sets the number of server alive messages (see below) which may be sent without ssh(1) receiving any messages back from the server.  If this threshold is reached while server alive messages are being sent, ssh will disconnect from the server, terminating the session.  It is important to note that the use of server alive messages is very different from TCPKeepAlive (below).  The server alive messages are sent through the encrypted channel and therefore will not be spoofable.  The TCP keepalive option enabled by TCPKeepAlive is spoofable.  The server alive mechanism is valuable when the client or server depend on knowing when a connection has become inactive. The default value is 3.  If, for example, ServerAliveInterval (see below) is set to 15 and ServerAliveCountMax is left at the default, if the server becomes unresponsive, ssh will disconnect after approximately 45 seconds.  This option applies to protocol version 2 only. |
+| ''ServerAliveInterval'' | string | no | //(openssh ssh_config default)// | Sets a timeout interval in seconds after which if no data has been received from the server, ssh(1) will send a message through the encrypted channel to request a response from the server.  The default is 0, indicating that these messages will not be sent to the server. This option applies to protocol version 2 only. |
+| ''StrictHostKeyChecking'' | string | no | //(openssh ssh_config default)// | If this flag is set to “yes”, ssh(1) will never automatically add host keys to the ~/.ssh/known_hosts file, and refuses to connect to hosts whose host key has changed.  This provides maximum protection against trojan horse attacks, though it can be annoying when the /usr/local/etc/ssh_known_hosts file is poorly maintained or when connections to new hosts are frequently made.  This option forces the user to manually add all new hosts.  If this flag is set to “no”, ssh will automatically add new host keys to the user known hosts files.  If this flag is set to “ask”, new host keys will be added to the user known host files only after the user has confirmed that is what they really want to do, and ssh will refuse to connect to hosts whose host key has changed.  The host keys of known hosts will be verified automatically in all cases.  The argument must be “yes”, “no”, or “ask”.  The default is “ask”. |
+| ''TCPKeepAlive'' | string | no | //(openssh ssh_config default)// | Specifies whether the system should send TCP keepalive messages to the other side.  If they are sent, death of the connection or crash of one of the machines will be properly noticed.  However, this means that connections will die if the route is down temporarily, and some people find it annoying. The default is “yes” (to send TCP keepalive messages), and the client will notice if the network goes down or the remote host dies.  This is important in scripts, and many users want it too. To disable TCP keepalive messages, the value should be set to “no”. |
+| ''VerifyHostKeyDNS'' | string | no | //(openssh ssh_config default)// | Specifies whether to verify the remote key using DNS and SSHFP resource records.  If this option is set to “yes”, the client will implicitly trust keys that match a secure fingerprint from DNS.  Insecure fingerprints will be handled as if this option was set to “ask”.  If this option is set to “ask”, information on fingerprint match will be displayed, but the user will still need to confirm new host keys according to the StrictHostKeyChecking option.  The argument must be “yes”, “no”, or “ask”.  The default is “no”.  Note that this option applies to protocol version 2 only. |
+
+==== Tunnels ====
+A complete sshtunnel configuration contains at least one ''tunnelR'' or ''tunnelL'' section per server.
+
+=== tunnelR ===
+A example for a ''tunnelR'' declaration is given below:
+
+<code bash>
+config 'tunnelR' 'local_ssh'
+        option 'server'         'home'
+        option 'remoteaddress'  '*'
+        option 'remoteport'     '14000'
+        option 'localaddress'   '127.0.0.1'
+        option 'localport'      '22'
+</code>
+
+  * **''*''** means to accept a connection from any interface on the **Server side** 
+'':!: Specifying a remote bind_address will only succeed if the server's GatewayPorts option is enabled (see sshd_config(5))''
+  * **''14000''** is the TCP port to bind on the **Server side**
+  * **''127.0.0.1''** is the **Openwrt side** address to where the remote connection will be forwarded
+  * **''22''** is the **OpenWrt side** TCP port where to the remote connection will be forwarded
+
+The equivalent ''ssh(1)'' command would be ''"ssh -R *:14000:127.0.0.1:22 jonh@myhome.jonh.me"''
+
+The possible options for ''tunnelR'' sections are listed in the table below:
+
+^ Name ^ Type ^ Required ^ Default ^ Description ^
+| ''server'' | string | yes | //(none)// | Specifies the used server, must refer to one of the defined server sections  |
+| ''remoteaddress'' | string | no | //*// | Server side address |
+| ''remoteport'' | integer | yes | //(none)// | Server side TCP port |
+| ''localaddress'' | string | yes | //(none)// | OpenWrt side address |
+| ''localport'' | integer | yes | //(none)// | OpenWrt side TCP port |
+
+=== tunnelL ===
+For a ''tunnelL'' the declaration is similiar: 
+
+<code bash>
+config 'tunnelL' 'server_http'
+        option 'server'         'home'
+        option 'remoteaddress'  '127.0.0.1'
+        option 'remoteport'     '80'
+        option 'localaddress'   '*'
+        option 'localport'      '4422'
+</code>
+
+  * **''127.0.0.1''** is the **Server side** address to where the connection will be forwarded
+  * **''80''** is the **Server side** TCP port to where the local connection will be forwarded 
+  * **''*''** means to accept a connection from any interface on the **OpenWrt side**
+  * **''4422''** is the local TCP port to bind on the **OpenWrt side**
+
+The equivalent ''ssh(1)'' command would be ''"ssh -L *:4422:127.0.0.1:80 jonh@myhome.jonh.me"''
+
+The possible options for ''tunnelL'' sections are listed in the table below:
+
+^ Name ^ Type ^ Required ^ Default ^ Description ^
+| ''server'' | string | yes | //(none)// | Specifies the used server, must refer to one of the defined server sections  |
+| ''remoteaddress'' | string | yes | //(none)// | Server side address |
+| ''remoteport'' | integer | yes | //(none)// | Server side TCP port |
+| ''localaddress'' | string | no | //*// | OpenWrt side address |
+| ''localport'' | integer | yes | //(none)// | OpenWrt side TCP port |...  :-O

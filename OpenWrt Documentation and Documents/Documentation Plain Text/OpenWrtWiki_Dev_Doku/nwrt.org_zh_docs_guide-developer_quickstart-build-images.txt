@@ -1,0 +1,44 @@
+====== 固件构建快速入门 ======
+这是一个关于如何构建您自己第一个**快照版**OpenWrt固件的简短指南，如果您想编译一个**稳定版**使用[[docs:guide-user:additional-software:beginners-build-guide|构建自己固件的入门指南]]作为指南。
+它没有掩饰任何陷阱，但如果一切顺利，提供了一个快速的方法。实现相同目标的替代指南有：
+[[docs:guide-user:additional-software:imagebuilder|使用Image Builder]]，
+[[docs:guide-user:additional-software:beginners-build-guide|构建自己固件的入门指南]]。
+
+
+{{page>releases:snapshot&noheader&nofooter&noeditbtn&firstseconly}}
+
+首先，我们需要确认所有的依赖软件已安装。下面以Debian/Ubuntu为例：
+<code>
+sudo apt-get install subversion g++ zlib1g-dev build-essential git python rsync man-db
+sudo apt-get install libncurses5-dev gawk gettext unzip file libssl-dev wget zip time
+</code>
+接下来，使用以下命名获取OpenWrt的源代码：
+<code>
+git clone https://git.openwrt.org/openwrt/openwrt.git/
+cd openwrt
+
+./scripts/feeds update -a
+./scripts/feeds install -a
+
+make menuconfig
+</code>
+最后一个命令将打开一个菜单，如果您想为"TL-WR841N v11"这款无线路由构建固件，您可以这样设置：
+
+  * "Target System" => "Atheros AR7xxx/AR9xxx"
+  * "Target Profile" => "TP-LINK TL-WR841N/ND v11"
+
+然后选择退出并保存设置。现在我们就可以开始使用以下命令构建固件了，该过程将持续一段时间:
+
+<code>
+make
+</code>
+
+完成以后，固件可以在目录 ./bin/targets/ar71xx/generic/ 中找到。
+  * 以 *-factory.bin 命名的固件是用于首次安装。
+  * 以 *-sysupgrade.bin 命名的固件是用于更新已安装的OpenWrt。
+
+备注:
+  * 如需重新编译固件，再次执行''make''命令。
+  * 如需快速编译，可使用''make -j N''命令, 其中N为CPU内核数+1。请注意，此方法在编译期间容易出错。如果遇到编译错误，**你的第一步是在没有''-j N''的情况下再次编译**. 建议在并行编译之前使用''make download''命令以防止出现这些错误（对于那些拥有更快Internet连接的用户来说，使用''-jN''命令在下载环节通常可以更安全）
+  * 使用 ''make menuconfig'' 命令可以更改设置并再次编译。
+  * 您可以将固件中的自定义文件放入目录''<buildroot>/files''。例如，您想将''my_config''在固件的''/etc/config/''目录中，则对应路径为''<buildroot>/files/etc/config/my_config''。如果''files'' 目录在您的构建系统中不存在，手动创建即可。

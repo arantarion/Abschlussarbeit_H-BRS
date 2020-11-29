@@ -1,0 +1,282 @@
+====== WireGuard extras ======
+{{section>meta:infobox:howto_links#cli_skills&noheader&nofooter&noeditbutton}}
+
+===== Introduction =====
+  * This how-to describes the most common [[wp>WireGuard|WireGuard]] tuning scenarios adapted for OpenWrt.
+  * Follow [[docs:guide-user:services:vpn:wireguard:server|WireGuard server]] for server setup and [[docs:guide-user:services:vpn:wireguard:client|WireGuard client]] for client setup.
+  * Follow [[docs:guide-user:network:tunneling_interface_protocols#protocol_wireguard_wireguard_vpn|WireGuard protocol]] for protocol-specific interface options.
+  * Follow [[docs:guide-user:services:rng|Random generator]] to overcome low entropy issues.
+
+===== Extras =====
+==== References ====
+  * [[https://www.wireguard.com/install/|WireGuard for mobile/desktop/server]]
+  * [[https://www.wireguard.com/quickstart/|WireGuard documentation]]
+  * [[https://wiki.archlinux.org/index.php/WireGuard|WireGuard configuration examples]]
+
+==== Web interface ====
+Install the necessary packages if you want to manage VPN settings and view VPN status using web interface.
+
+<code bash>
+# Install packages
+opkg update
+opkg install luci-proto-wireguard luci-app-wireguard
+</code>
+
+  * Navigate to **[[http://openwrt.lan/|LuCI]] -> Network -> Interfaces** to configure WireGuard.
+  * Navigate to **[[http://openwrt.lan/|LuCI]] -> Status -> WireGuard Status** to view WireGuard status.
+
+==== Dynamic connection ====
+Preserve default route to restore WAN connectivity when VPN is disconnected.
+
+<code bash>
+# Preserve default route
+uci set network.wan.metric="100"
+uci set network.wan6.metric="100"
+uci commit network
+/etc/init.d/network restart
+</code>
+
+==== Dynamic IP ====
+Periodically re-resolve inactive peer hostnames for VPN peers with dynamic IP addresses.
+
+<code bash>
+# Periodically re-resolve inactive peers
+cat << "EOF" >> /etc/crontabs/root
+* * * * * /usr/bin/wireguard_watchdog
+EOF
+uci set system.@system[0].cronloglevel="9"
+uci commit system
+/etc/init.d/cron restart
+</code>
+
+==== Race conditions ====
+Resolve the [[https://forum.openwrt.org/t/problematic-wireguard-at-the-time/56435|race condition]] with sysntpd service.
+
+<code bash>
+# Resolve race conditions
+cat << "EOF" >> /etc/crontabs/root
+* * * * * date -s 2030-01-01; /etc/init.d/sysntpd restart
+EOF
+uci set system.@system[0].cronloglevel="9"
+uci commit system
+/etc/init.d/cron restart
+</code>
+
+==== Site-to-site ====
+Implement plain routing between server side LAN and client side LAN assuming that:
+  * ''192.168.1.0/24'' - server side LAN
+  * ''192.168.2.0/24'' - client side LAN
+
+Add route to client side LAN on VPN server.
+
+<code bash>
+uci set network.wgclient.route_allowed_ips="1"
+uci add_list network.wgclient.allowed_ips="192.168.2.0/24"
+uci commit network
+/etc/init.d/network restart
+</code>
+
+Add route to server side LAN on VPN client.
+
+<code bash>
+uci set network.wgserver.route_allowed_ips="1"
+uci add_list network.wgserver.allowed_ips="192.168.1.0/24"
+uci commit network
+/etc/init.d/network restart
+</code>
+
+Consider VPN network as private and assign VPN interface to LAN zone on VPN client.
+
+<code bash>
+uci del_list firewall.wan.network="vpn"
+uci add_list firewall.lan.network="vpn"
+uci commit firewall
+/etc/init.d/firewall restart
+</code>
+
+==== IPv6 site-to-site ====
+Provide IPv6 site-to-site connectivity assuming that:
+  * ''fdf1:e8a1:8d3f:1::/64'' - server side LAN
+  * ''fdf1:e8a1:8d3f:2::/64'' - client side LAN
+
+Add route to client side LAN on VPN server.
+
+<code bash>
+uci set network.lan.ip6assign="64"
+uci set network.lan.ip6hint="1"
+uci set network.vpn.ip6prefix="fdf1:e8a1:8d3f::/48"
+uci add_list network.wgclient.allowed_ips="fdf1:e8a1:8d3f:2::/64"
+uci commit network
+/etc/init.d/network restart
+</code>
+
+Add route to server side LAN on VPN client.
+
+<code bash>
+uci set network.lan.ip6assign="64"
+uci set network.lan.ip6hint="2"
+uci set network.vpn.ip6prefix="fdf1:e8a1:8d3f::/48"
+uci add_list network.wgserver.allowed_ips="fdf1:e8a1:8d3f:1::/64"
+uci commit network
+/etc/init.d/network restart
+</code>
+
+==== Split gateway ====
+If VPN gateway is not your LAN gateway.
+Implement plain routing between LAN network and VPN network assuming that:
+  * ''192.168.1.0/24'' - LAN network
+  * ''192.168.1.2/24'' - VPN gateway
+  * ''192.168.9.0/24'' - VPN network
+
+Add port forwarding for VPN server on LAN gateway.
+
+<code bash>
+uci -q delete firewall.wg
+uci set firewall.wg="redirect"
+uci set firewall.wg.name="Redirect-WireGuard"
+uci set firewall.wg.src="wan"
+uci set firewall.wg.src_dport="51820"
+uci set firewall.wg.dest="lan"
+uci set firewall.wg.dest_ip="192.168.1.2"
+uci set firewall.wg.family="ipv4"
+uci set firewall.wg.proto="udp"
+uci set firewall.wg.target="DNAT"
+uci commit firewall
+/etc/init.d/firewall restart
+</code>
+
+Add route to VPN network via VPN gateway on LAN gateway.
+
+<code bash>
+uci -q delete network.vpn
+uci set network.vpn="route"
+uci set network.vpn.interface="lan"
+uci set network.vpn.target="192.168.9.0/24"
+uci set network.vpn.gateway="192.168.1.2"
+uci commit network
+/etc/init.d/network restart
+</code>
+
+==== Multi-client ====
+Set up multi-client VPN server.
+Generate client keys and profiles.
+Configure VPN peers.
+
+<code bash>
+# Configuration parameters
+WG_IDS="wgserver wgclient wglaptop wgmobile"
+WG_PKI="."
+WG_IF="vpn"
+WG_PORT="$(uci get network.${WG_IF}.listen_port)"
+WG_ADDRS="$(uci get network.${WG_IF}.addresses)"
+WG_ADDR="${WG_ADDRS%% *}"
+WG_ADDR6="${WG_ADDRS##* }"
+
+# Fetch WAN IP address
+. /lib/functions/network.sh
+network_flush_cache
+network_find_wan NET_IF
+network_get_ipaddr NET_ADDR "${NET_IF}"
+WG_SERV="${NET_ADDR}"
+
+# Fetch FQDN from DDNS client
+NET_FQDN="$(uci -q get "$(uci -q show ddns \
+| sed -n -e "/\.enabled='1'$/s//.lookup_host/p" \
+| sed -n -e "1p")")"
+if [ -n "${NET_FQDN}" ]
+then WG_SERV="${NET_FQDN}"
+fi
+
+# Generate client keys
+umask go=
+mkdir -p ${WG_PKI}
+for WG_ID in ${WG_IDS#* }
+do
+if [ ! -e "${WG_PKI}/${WG_ID}.pub" ]
+then wg genkey \
+| tee ${WG_PKI}/${WG_ID}.key \
+| wg pubkey > ${WG_PKI}/${WG_ID}.pub
+fi
+if [ ! -e "${WG_PKI}/${WG_ID}.psk" ]
+then wg genpsk > ${WG_PKI}/${WG_ID}.psk
+fi
+done
+
+# Generate client profiles
+WG_SFX="1"
+for WG_ID in ${WG_IDS#* }
+do
+let WG_SFX++
+cat << EOF > ${WG_PKI}/${WG_ID}.conf
+[Interface]
+Address = ${WG_ADDR%.*}.${WG_SFX}/24, ${WG_ADDR6%:*}:${WG_SFX}/64
+PrivateKey = $(cat ${WG_PKI}/${WG_ID}.key)
+DNS = ${WG_ADDR%/*}, ${WG_ADDR6%/*}
+[Peer]
+PublicKey = $(cat ${WG_PKI}/${WG_IDS%% *}.pub)
+PresharedKey = $(cat ${WG_PKI}/${WG_ID}.psk)
+PersistentKeepalive = 25
+AllowedIPs = 0.0.0.0/0, ::/0
+Endpoint = ${WG_SERV}:${WG_PORT}
+EOF
+done
+ls ${WG_PKI}/*.conf
+
+# Back up client profiles
+cat << EOF >> /etc/sysupgrade.conf
+/root
+EOF
+
+# Add VPN peers
+WG_SFX="1"
+for WG_ID in ${WG_IDS#* }
+do
+let WG_SFX++
+uci -q delete network.${WG_ID}
+uci set network.${WG_ID}="wireguard_${WG_IF}"
+uci set network.${WG_ID}.public_key="$(cat ${WG_PKI}/${WG_ID}.pub)"
+uci set network.${WG_ID}.preshared_key="$(cat ${WG_PKI}/${WG_ID}.psk)"
+uci add_list network.${WG_ID}.allowed_ips="${WG_ADDR%.*}.${WG_SFX}/32"
+uci add_list network.${WG_ID}.allowed_ips="${WG_ADDR6%:*}:${WG_SFX}/128"
+done
+uci commit network
+/etc/init.d/network restart
+</code>
+
+Perform OpenWrt [[docs:guide-user:troubleshooting:backup_restore|backup]].
+Extract client profiles from the archive and import them to your clients.
+
+==== DNS over VPN ====
+Utilize DNS over VPN to prevent DNS leak.
+
+Disable peer DNS and configure a VPN-routed [[docs:guide-user:base-system:dhcp_configuration#upstream_dns_provider|DNS provider]] on OpenWrt client.
+
+Modify the VPN connection using NetworkManager on Linux desktop client.
+
+<code bash>
+nmcli connection modify id VPN_CON ipv4.dns-search ~. ipv6.dns-search ~. ipv4.dns-priority -50 ipv6.dns-priority -50
+</code>
+
+==== Kill switch ====
+Prevent traffic leak on OpenWrt client isolating VPN interface in a separate firewall zone.
+
+<code bash>
+uci rename firewall.@forwarding[0]="lan_wan"
+uci set firewall.lan_wan.enabled="0"
+uci -q delete firewall.vpn
+uci set firewall.vpn="zone"
+uci set firewall.vpn.name="vpn"
+uci set firewall.vpn.input="REJECT"
+uci set firewall.vpn.output="ACCEPT"
+uci set firewall.vpn.forward="REJECT"
+uci set firewall.vpn.masq="1"
+uci set firewall.vpn.mtu_fix="1"
+uci add_list firewall.vpn.network="vpn"
+uci del_list firewall.wan.network="vpn"
+uci -q delete firewall.lan_vpn
+uci set firewall.lan_vpn="forwarding"
+uci set firewall.lan_vpn.src="lan"
+uci set firewall.lan_vpn.dest="vpn"
+uci commit firewall
+/etc/init.d/firewall restart
+</code>

@@ -1,0 +1,218 @@
+====== Connect to ISP using L2TP with dual access ======
+Many ISP's in Russia, Ukraine, Israel and other countries offer connection using [[wp>Layer 2 Tunneling Protocol]]. In many cases ISP provides a "local" network, where internal resources of ISP are located (ftp, forums, etc.) Also users can exchange files through "local" network by P2P programs, like [[docs:guide-user:services:dc:dc.overview|Direct Connect|]]. Traffic in "local" network is free or not limited by speed. This is called Dual Access.
+
+The only OpenWrt package which uses the kernel to pass L2TP traffic is ''openl2tp''. This guide will help to configure OpenWrt to connect to ISP using this package.
+
+===== Preparation =====
+==== Required Packages ====
+  ***''openl2tp-full''**
+
+===== Installation =====
+<code>
+opkg install openl2tp-full
+</code>
+
+===== Configuration =====
+  - Create openl2tpd script in /etc/init.d/<code bash>
+#!/bin/sh /etc/rc.common
+
+
+START=90
+STOP=10
+
+USER='login'
+# Next line L2TP server domain name or IP
+L2TPSERVER=''
+
+L2TP='openl2tpd'
+OPTS='-u 1701'
+CONF='l2tpconfig'
+RPC='portmap'
+MOD='pppol2tp'
+export L2TP_HISTFILE='/dev/null'
+
+
+start() {
+  echo -n "Checking for $L2TP... "
+  L2TP_PROG=`which $L2TP`
+  if [ -n "$L2TP_PROG" ] && [ -x $L2TP_PROG ]; then
+    echo "yes"
+  else
+    echo "no"
+    return 1
+  fi
+
+  echo -n "Checking for $CONF... "
+  CONF_PROG=`which $CONF`
+  if [ -n "$CONF_PROG" ] && [ -x $CONF_PROG ]; then
+    echo "yes"
+  else
+    echo "no"
+    return 1
+  fi
+
+  if ! pidof $RPC 1> /dev/null 2> /dev/null; then
+    echo -n "Starting $RPC... "
+    RPC_PROG=`which $RPC`
+    if [ -n "$RPC_PROG" ] && [ -x $RPC_PROG ] && start-stop-daemon -q -S -x $RPC_PROG; then
+      echo "done"
+    else
+      echo "failed"
+      return 1
+    fi
+  fi
+  
+  echo -n "Checking WAN status..."
+  while [ -z "$(uci_get_state network wan up)" ] ; do
+    	  sleep 1
+  done
+  echo "done"
+                     
+  echo -n "Starting $L2TP... "
+  if ! start-stop-daemon -q -S -x $L2TP_PROG -- $OPTS; then
+    start-stop-daemon -q -K -x $L2TP_PROG
+  fi
+  echo "done"
+        
+  echo -n "Establishing tunnel... "
+  ( echo "peer profile modify profile_name=default lac_lns=lac"
+    echo "ppp profile modify profile_name=default mtu=1460 auth_pap=no auth_eap=no default_route=yes auth_none=no lcp_echo_interval=10"
+    echo "tunnel create tunnel_name=corbina dest_ipaddr=$L2TPSERVER framing_caps=sync"
+    echo "quit" ) | $CONF_PROG 1> /dev/null 2> /dev/null
+  if [ $? -ne 0 ]; then
+    echo "failed"
+    rm -f /var/run/$L2TP.pid
+    return 1
+  fi
+  ( echo "session create tunnel_name=corbina session_name=corbina user_name=$USER"
+    echo "quit" ) | $CONF_PROG 1> /dev/null 2> /dev/null
+  if [ $? -ne 0 ]; then
+    echo "failed"
+    rm -f /var/run/$L2TP.pid
+    return 1
+  fi
+  echo "done"
+    
+}
+
+stop() {
+  echo -n "Checking for $L2TP... "
+  L2TP_PROG=`which $L2TP`
+  if [ -n "$L2TP_PROG" ] && [ -x $L2TP_PROG ]; then
+    echo "yes"
+  else
+    echo "no"
+    return 1
+  fi
+
+  echo -n "Checking for $CONF... "
+  CONF_PROG=`which $CONF`
+  if [ -n "$CONF_PROG" ] && [ -x $CONF_PROG ]; then
+    echo "yes"
+  else
+    echo "no"
+    return 1
+  fi
+
+  echo -n "Deleting tunnel... "
+  ( echo "session delete tunnel_name=corbina session_name=corbina"
+    echo "quit" ) | $CONF_PROG 1> /dev/null 2> /dev/null
+  if [ $? -ne 0 ]; then
+    echo "failed"
+  else
+
+    ( echo "tunnel delete tunnel_name=corbina"
+      echo "quit" ) | $CONF_PROG 1> /dev/null 2> /dev/null
+    if [ $? -ne 0 ]; then
+      echo "failed"
+    else
+
+      echo "done"
+    fi
+  fi
+    
+  echo -n "Stopping $L2TP... "
+  if ! start-stop-daemon -q -K -x $L2TP_PROG; then
+    echo "not running"
+    return 1
+  else
+    rm -f /var/run/$L2TP.pid
+    echo "done"
+  fi
+  
+}
+
+restart() {
+  stop
+  sleep 10
+  start
+}
+</code> The sсript has a lot of debug, which can be removed.
+  - Insert your username and server name or IP address into this script.
+  - Give permission to execute the script:<code>
+chmod 755 /etc/init.d/openl2tpd
+</code>
+  - Enter user name and password to ''/etc/ppp/chap-secrets'':<code>
+"username" * "password"
+</code>
+  - Create scripts to add and delete routes to L2TP server
+    - ''/etc/ppp/ip-up.d/addroute''<code>
+#!/bin/sh
+
+. /etc/functions.sh
+. /lib/network/config.sh
+
+GW="$(uci_get_state network wan gateway)"
+WAN="$(uci_get_state network wan ifname)"
+
+route add $PPP_REMOTE gw $GW dev $WAN
+route del $PPP_REMOTE dev $PPP_IFACE
+</code>
+    - ''/etc/ppp/ip-down.d/delroute''<code>
+#!/bin/sh
+
+route del $PPP_REMOTE
+</code>
+    - Give permissions to execute these scripts:<code>
+chmod 755 /etc/ppp/ip-up.d/addroute
+chmod 755 /etc/ppp/ip-down.d/delroute
+</code>
+  - Add string **replacedefaultroute** and **ipparam vpn** to ''/etc/ppp/options''. (ipparam is not needed for trunk).
+  - Create new interface in ''[[docs:guide-user:base-system:basic-networking|/etc/config/network]]''<code>
+...
+config 'interface' 'vpn'
+	option 'ifname' 'ppp0'
+	option 'proto' 'none'
+...
+</code>
+  - Add reqopts to wan section of ''/etc/config/network'' (msstaticroutes option works only in trunk).<code>
+option reqopts 'staticroutes msstaticroutes'
+</code> They are needed to get static routes from ISP. Which reqopts to choose depends on ISP. They mean which dhcp option to use.\\    * //''"staticroutes"'' = option 121 \\    * //''"msstaticroutes"'' = option 249 \\    * ''"routes"'' = option 33 (This is non yet implemented in default.script See [[https://dev.openwrt.org/ticket/10294|Ticket 10294]]).
+  - Add vpn interface to zone wan in ''[[docs:guide-user:firewall:firewall_configuration|/etc/config/firewall]]'':<code>
+option network 'wan vpn'
+</code>
+  - Now after reboot you can start openl2tp.<code>
+/etc/init.d/openl2tpd start
+</code>
+  - To start openl2tp on boot<code>
+/etc/init.d/openl2tpd enable
+</code>
+
+
+==== Keepalive ====
+Option persist in pppd not always works correctly. that is why I made a keepalivel2tp script to reconnect.
+
+/etc/ppp/keepalivel2tp
+<code>
+#!/bin/sh
+
+if [ ! -f /var/run/openl2tpd.pid ]; then 
+	while [ ! -f /var/run/ppp0.pid ]; do
+		{
+			/etc/init.d/openl2tpd restart
+			sleep 60
+		}
+	done
+fi 
+</code>
+To use this script you need to give permission to execute the script and setup cron to start  it periodically.

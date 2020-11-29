@@ -1,0 +1,15 @@
+====== RedBoot TFTP recovery ======
+
+Recovery can be done via RedBoot TFTP recovery.
+
+  * -> [[docs:guide-user:installation:generic.flashing.tftp|Installing OpenWrt via TFTP]]
+
+===== Devices with this recovery method =====
+---- datatable ----
+cols       : Brand, Model, Versions, Supported Current Rel_releasecurrent, Recovery method(s)_method-recovery, Comment recovery, Device Page_page, Device Techdata_pageid
+dynfilters : 1
+filter     : Model!=@@Model@@
+filter     : recovery method(s)=RedBoot TFTP recovery
+sort       : Brand
+limit      : 25
+----

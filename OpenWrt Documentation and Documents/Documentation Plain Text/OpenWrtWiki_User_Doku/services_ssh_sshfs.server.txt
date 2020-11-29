@@ -1,0 +1,24 @@
+====== SSH FileSystem ======
+
+Both solutions [[docs:guide-user:services:nas:samba]] and [[docs:guide-user:services:nas:nfs.server]] do not offer security though encryption and are thus only suited for use in a closed intranet. If you need to remotely access files over the internet it is better to use an encrypted solution. The two common ways to do that are to use sshfs or to use samba or nfs over a VPN. In this recipe you will be shown how to set up and configure sshfs. sshfs is based on SFTP so you need to install sftp support on the server.
+
+
+===== Needed Packages =====
+
+  * openssh-sftp-server
+
+===== Configuration =====
+
+There is nothing more to be done on the server. Now you can mount your sshfs by executing:
+  sshfs [user@]host:[dir] mountpoint
+
+If you did not install the package to the standard destination (e.g. using opkg -d ram), you need to specify the sftp executable in your sshfs command:
+  sshfs [user@]host:[dir] mountpoint -o sftp_server=/tmp/usr/libexec/sftp-server
+
+The more convenient way would be to link the binary to the default destination, so execute on your OpenWrt:
+  mkdir -p /usr/libexec
+  ln -s /tmp/usr/libexec/sftp-server /usr/libexec/sftp-server
+
+===== Links =====
+  * [[http://en.wikipedia.org/wiki/Secure_Shell_Filesystem]]
+  * [[http://fuse.sourceforge.net/sshfs.html]]

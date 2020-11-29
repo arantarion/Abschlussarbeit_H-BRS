@@ -1,0 +1,39 @@
+====== Regresar al Firmware Original del Fabricante ======
+Ralmente no existe un proceso de <color red>//desinstalación//</color> provisto mediante la funcionalidad de OpenWrt. Lo que se debe hacer para regresar al firmware original del fabricante es <color red>//reemplazar//</color> el firmware OpenWrt con el firmware OEM. Si está leyendo esta página del wiki, probablemente es a causa de la inexistencia de dicha información en la página wiki correspondiente a su dispositivo específico. Así que, en primer orden debe dar un vistazo al documento [[docs:techref:flash.layout]].
+
+Para reemplazar OpenWrt con el firmware original del fabricante, usted //casi nunca// tendrá que cambiar la partición de arranque, o la partición que contiene información específica como "NVRAM" o "ART", aún si sobrescribió el cargador de arranque cuando instaló OpenWrt en su dispositivo.
+
+
+=====Método 1: Mediante Interfaz de Línea de Comandos (CLI) de OpenWrt =====
+Usted puede utilizar el programa **''[[docs:techref:mtd]]''** para esto:
+
+<code bash>
+cd /tmp
+wget http://www.example.org/original_firmware.bin
+mtd -r write /tmp/original_firmware.bin firmware
+</code>
+
+Si usted desea eliminar DD-WRT para instalar OpenWRT, debererá escribir al dispositivo "linux" en lugar de "firmware". (validado en router TP-Link TL-WR841ND V7):
+<code bash>
+mtd -r write /tmp/original_firmware.bin linux
+</code>
+
+OpenWrt no integra "cortesías" para impedirle regresar al firmware original del dispositivo. Sin embargo, necesitará ser cuidadoso, vea el siguiente ejemplo [[toh/tp-link/tl-wr1043nd#back.to.original.firmware]]. Si se le presenta el mensaje de error <color green>//"no valid command given"//</color> en la sentencia **mtd** anterior, significa que está utilizando una versión vieja del programa que no soporta los parámetros **-r** o **-e**. Para resolver este problema descargue una versión más reciente compilada estáticamente:
+<code bash>
+cd /tmp
+wget http://www.freewrt.org/downloads/tools/mtd-static
+chmod a+x mtd.static
+wget http://www.example.org/original.trx
+./mtd.static -e linux -r write original.trx linux
+</code>
+
+:!: Si el firmware de reemplazo que haya cargado en su dispositivo dispone de una interfaz web, recuerde purgar el chaché de su navegador web, sesión, etc. Esto evitará los engañosos errores ''404''.
+
+:!: LEA la información del foro titulada [[http://forum.openwrt.org/viewtopic.php?id=3474| Errores Comunes]], incuyendo la sección 2 del hilo de discusión. La misma describe cuando debería utilizar la imagen ''openwrt-brcm-squashfs.trx''.
+
+==== Diferencia entre archivos de Imagen de firmware TRX / BIN ====
+La imagen ''openwrt-brcm-squashfs.trx'' es un archivo trx genérico que funcionará en cualquier plataforma Broadcom soportada. El archivo ''openwrt-wrt54g-squashfs.bin'' contiene un encabezado bin + la imágen openwrt-brcm-squashfs.trx. El encabezado bin contiene el número de versión del firmware y los modelos de dispositivo en los que puede ser cargado, su fin es únicamente para verificación antes de escribir la información del trx a la memoria flash. La utilidad ''mtd'' escribirá el archivo indicado a la flash sin realizar esa verificación; por tanto, utilice una de las imagenes ''openwrt-brcm-squashfs.trx'' cuando haga uso de mtd. Convertir el archivo ''openwrt-wrt54g-squashfs.bin'' de vuelta a trx es un paso simplemente ignorante.
+
+
+=====Método 2: Mediante Cargador de Arranque (Bootloader) =====
+Para instalar el firmware original del fabricante de vuelta al dispositivo también puede utilizar el cargador de arranque (bootloader). Por favor, verifique los procedimientos descritos en la guía [[docs:guide-user:installation:generic.flashing| Instalando OpenWrt]]. Siga las mismas guías, sólo que en este caso, cargando el firmware original del fabricante.

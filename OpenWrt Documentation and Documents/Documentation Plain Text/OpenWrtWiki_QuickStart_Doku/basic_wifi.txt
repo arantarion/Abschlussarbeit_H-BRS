@@ -1,0 +1,33 @@
+======Enabling a Wi-Fi access point on OpenWrt======
+
+Devices that have Ethernet ports have Wi-Fi turned off by default.
+This is a basic description of how to enable a Wi-Fi network and most importantly, how to properly configure your country code such that your Wi-Fi network complies with the legal regulations of your country.
+
+
+===== Using the web admin GUI ======
+
+  - Connect to the web GUI at http://192.168.1.1, and login with your "root" password
+  - Go to **Network → Wireless**. This page lists a separate Wi-Fi configuration section for each of your physical radios, (many devices you may have, will have one radio for 2.4 GHz and a second one for 5 GHz).
+  - For each of your radios, you can create a Wi-Fi network by clicking ''Add'':
+    - On the first Wi-Fi network that you configure, go to the **Device Configuration** and open the tab **Advanced Settings**: in the ''Country Code'' field, select the correct county code, where your OpenWrt device is installed. This is important to ensure your OpenWrt device meets the legal regulations in your country. (all other configured radios will use the same device settings)
+    - For each Wi-Fi network, in the "Interface Configuration" section, configure your Wi-Fi settings:
+      * In the tab **General Setup**, enter an ''ESSID'' to become the name of your Wi-Fi network
+      * In the tab **Wireless Security**, select an ''Encryption'' method (e.g. "WPA2-PSK", recommended for home/small office networks)
+      * In the tab **Wireless Security**, select a ''Cipher'' (e.g. "auto" is recommended)
+      * In the tab **Wireless Security**, enter a ''Key'', a secret phrase which clients must use to connect to your Wi-Fi network. NB: With WPA2-PSK, the Key must be at least eight (8) characters.
+      * If needed, configure further settings according to your needs. Other default settings ordinarily correct for general usage.
+  - Click ''Save & Apply'' when done.
+
+Troubleshooting:
+  * If you have configured 5GHz Wi-Fi and have just enabled it, but the 5 GHz Wi-Fi does not seem to start up, consider the following: If your device supports Wi-Fi channels > 100, your OpenWrt device first must scan for weather radar on these channels, before you can actually use such channels for Wi-Fi. This may take 1-10 minutes onetime after first reboot depending on your Wi-Fi situation and depending on the number of device-supported channels > 100. You may also experience 1 minute delay on each automatic channel change, as the same scan delay is required for regulation compliance.
+  * Network / Wireless / Edit / Interface Configuration / General Setup / Network should be left to the "lan" default or to another interface where there is an active DHCP server, DO NOT select "wan" or "wan6" as that's the upstream interface for Internet connection only
+===== Using the SSH command line =====
+
+This is not a complete howto, to create a Wi-Fi network on the command line.\\
+It just shows you the important steps to initially set your country code for proper Wi-Fi on the command line, to meet the legal regulations of your country:
+
+  * Connect with SSH to your OpenWrt device.
+  * Execute ''uci show wireless'' to see all the wireless configuration and how many Wi-Fi chips (called “radio” in the config) there are on the device
+  * Find out your country in a list of ISO/IEC 3166 alpha2 country codes. There is a list in the Wikipedia article about [[wp>ISO 3166-1 alpha-2]]
+  * Execute ''uci set wireless.radio0.country='XX' '' to set the country code XX for radio0 device, and adjust this command to set the same country code for all wireless radios in the device.
+

@@ -1,0 +1,103 @@
+====== SQM (aka Smart Queue Management) ======
+
+OpenWrt/LEDE has pre-built packages for controlling [[wp>Bufferbloat]] - the undesirable latency that arises when the router buffers too much data. 
+OpenWrt calls this SQM, although it's also called [[wp>Active_queue_management|active queue management]] - AQM.
+
+Bufferbloat is most evident when the link is heavily loaded. It causes bad performance for voice and video conversations, causes gamers to lag out, and generally makes people say, "The Internet is slow today."
+
+The "luci-app-sqm" package of OpenWrt/LEDE solves the problem of Bufferbloat. In a three-minute installation and configuration, you'll have a much more lively network connection. Here's how:
+
+**TL;DR** Install OpenWrt 18.06 or newer (or back to LEDE 17.01), and follow the video at: [[https://www.youtube.com/watch?v=FvYhifdQ92Q]]
+
+===== Preparation: Measure Your Current Speed and Latency ===== 
+
+Before you can optimize your network, you need to know its current state. Run a speed test to find your down/upload link speeds. To do this:
+/* I removed the discussion of the very cool speedtest-netperf package because it's a distraction from getting SQM configured. We should advise readers simply to use DSLReports... - richb-hanover */
+/*
+To install the //speedtest-netperf// package:
+  * From LuCI web GUI: 
+    * choose **System -> Software**, then filter on the name **speedtest-net** and click the **Install..** button.
+  * Or, from cmd: <code>opkg update && opkg install speedtest-netperf</code>
+
+To use the script, ssh to the OpenWRT device and run the following (example results shown, additional options are available):
+<code>
+speedtest-netperf.sh -H netperf-west.bufferbloat.net -t 20
+2020-08-25 14:35:40 Starting speedtest for 20 seconds per transfer session.
+Measure speed to netperf-west.bufferbloat.net (IPv4) while pinging gstatic.com.
+Download and upload sessions are sequential, each with 5 simultaneous streams.
+.....................
+ Download: 805.68 Mbps
+  Latency: [in msec, 21 pings, 0.00% packet loss]
+      Min:  19.125
+    10pct:  21.901
+   Median:  29.465
+      Avg:  31.586
+    90pct:  36.378
+      Max:  63.253
+ CPU Load: [in % busy (avg +/- std dev) @ avg frequency, 18 samples]
+     cpu0:  89.4 +/-  4.7  @ 1415 MHz
+     cpu1:  31.3 +/-  2.7  @  848 MHz
+ Overhead: [in % used of total CPU available]
+  netperf:  27.2
+.....................
+   Upload:  600.61 Mbps
+  Latency: [in msec, 21 pings, 0.00% packet loss]
+      Min:  19.627
+    10pct:  19.683
+   Median:  21.432
+      Avg:  21.521
+    90pct:  22.424
+      Max:  26.307
+ CPU Load: [in % busy (avg +/- std dev) @ avg frequency, 19 samples]
+     cpu0:  89.0 +/-  5.5  @  1401 MHz
+     cpu1:  33.5 +/-  4.0  @  890 MHz
+ Overhead: [in % used of total CPU available]
+  netperf:   2.5
+</code>
+*/
+  * When your network is relatively quiet, use DSLReports Speedtest at: http://www.dslreports.com/speedtest You will need this information below. (See [[https://forum.openwrt.org/t/sqm-qos-recommended-settings-for-the-dslreports-speedtest-bufferbloat-testing/2803]] for how to get the most out of the dslreports speedtest)
+  * //This is probably a good time to [[docs:guide-user:troubleshooting:backup_restore|back up your configuration]]. (Optional, but always a good idea.)//
+ 	
+===== Configuring the SQM Bufferbloat Packages =====
+
+The default values described below work quite well for most situations. They represent conservative estimates that may slightly overestimate the real overhead, which is generally desirable compared to under-estimating. You may be able to improve performance by experimenting with settings, see [[#a_little_about_tuning_sqm|A little about tuning SQM]] below.
+
+To configure SQM, choose **Network -> SQM QoS** to see the Smart Queue Management (SQM) GUI.
+
+  - In the **Basic Settings** tab:
+    * Check the **Enable** box
+    * Set the **Interface name:** to your wide area link (usually //eth0// for OpenWrt/LEDE, but check **Network -> Interfaces** to find the name for the WAN port.)
+    * Set the **Download** and **Upload** speeds to 80-95% of the speed you measured above in the Preparation.
+  - In the **Queue Discipline** tab, you can leave the settings at their default.
+    * Choose //cake// as the Queueing Discipline
+    * Choose //piece_of_cake.qos// as the Queue Setup Script
+    * The Advanced Configuration defaults are designed to work well out of the box.
+  - In the **Link Layer Adaptation** tab, choose the kind of link you have:
+    * //For VDSL// - Choose **Ethernet**, and set per packet overhead to 34 (or 26 if you know you are not using PPPoE)
+    * //For DSL of any other type// - Choose **ATM**, and set per packet overhead to 44
+    * //For Cable// - Choose **Ethernet**, and set per packet overhead to 22
+    * //For true ethernet or Fiber to the Premises// - Choose **Ethernet**, and set per packet overhead to 44
+    * //When in Doubt, it's better to overestimate// - Choose packet overhead 44
+  - Click **Save & Apply**. That's it!
+
+Measure your latency again with the speed test. You should notice that the measured ping times should only be slightly larger during the downloads and uploads. Try using VoIP, Skype, Facetime, gaming, DNS, and general web browsing. They should be much more pleasant, even if someone's uploading or downloading a lot of data. 
+
+You've reduced your connection's  bufferbloat! 
+===== A Little More SQM Tuning  =====
+
+The steps above will control latency well without additional effort. The 80-95% figures mentioned above are good first-cut estimates, but you can often gain more speed while still controlling latency by making a couple experiments to adjust the settings.
+
+If you want to spend a few more minutes tuning, do these steps.
+
+  * Increase the Download speed until the latency begins to increase, then go back to a slightly lower value. 
+  * Do the same for the Upload speed entry. 
+  * It may be worth your time to tweak the two a bit up and down to find a sweet spot for your connection and usage.
+  * We recommend you use [[http://dslreports.com/speedtest|DSLReports Speed Test]] for the latency tests because it measures both speed and latency at the same time. 
+  
+**Note:** If you have a DSL link, the experiments above may produce Download and Upload values that are actually //higher// than the original speed test results. This is OK: the ATM framing bytes of a DSL link add an average of 9% overhead, and these settings simply tell SQM how to make up for that overhead.
+
+**Note:** If you use a cable modem, you should use a speed test that runs for a longer time. Cable modem makers have gamed speed tests thoroughly by using "Speedboost", which usually gives you an extra 10 mbits or so for the first 10 seconds (so the speed test will look good(!)). Don't be surprised if the "right" setting for your queue rates is significantly lower than the no-SQM speed test results. You may need to tune the speeds //down// from your initial settings to get the latency to the point you need for your own usage of your connection.
+
+**Note:** You can also experiment with the other settings (read [[docs:guide-user:network:traffic-shaping:sqm-details|SQM - The Details]]  for more information), but they will not make nearly as large a difference as ensuring that the Download and Upload speeds are maximized. 
+
+**Note:** Also check the [[docs:guide-user:network:traffic-shaping:sqm-details#faq|FAQ]] and [[docs:guide-user:network:traffic-shaping:sqm-details#troubleshooting_sqm|Troubleshooting SQM]] guides.  

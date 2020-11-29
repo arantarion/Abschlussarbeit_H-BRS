@@ -1,0 +1,227 @@
+====== Command-line interpreter ======
+====== 使用命令行工具 ======
+A command-line interpreter is a computer program that reads singular lines of text entered by a user and interprets them in the context of a given operating system or programming/scripting language. The interaction takes place by means of a [[wp>command-line interface]]. Other common, but technically not quite correct, denominations are **console** or **shell**.
+
+**中文翻译**：一个命令行工具是一个计算机程序，用于输入单行文本，并且把这行文本翻译成你要执行的操作系统，或者某种语言的命令，然后执行。这样的交互操作方式也称为“命令行接口”。还有其他在技术上不是很准确的叫法，比如“控制台”，或者“外壳程序”。
+
+**翻译约定**：shell统一翻译成*命令行控制台*
+
+The OpenWrt standard [[wp>unix shell]] is the Busybox-fork of the Debian implementation of the [[wp>Almquist shell]] (see -> [[https://www.in-ulm.de/~mascheck/various/ash/#busybox]]). In case you want to read about it.
+
+**中文翻译**：OpenWrt的标准的控制台程序，选用了Debian Linux发行版实现的Busybox工具箱软件（该工具箱源自[[wp>Almquist shell]]）。如果你想深入了解的话，请移步-> [[https://www.in-ulm.de/~mascheck/various/ash/#busybox]]。
+
+===== Start =====
+===== 启动 =====
+At the end of the boot up process, the **init daemon** is started, this can be [[wp>init]] or [[wp>systemd]] or [[wp>upstart]], etc. OpenWrt currently uses **''[[docs:techref:procd]]''**. Following the boot up scripts located in ''/etc/rd.d'', ''init'' will then start all sorts of programs, amongst them the chosen shell. This listens to keyboard strokes and outputs a more or less colorful command-line interface to the connected display.
+
+**中文翻译**：在设备启动流程的最后阶段，启动了**初始化程序**。一般而言，这个初始化程序可以是 [[wp>init]]，或者是[[wp>systemd]]， 或者是[[wp>upstart]]，或其他别的什么程序；但OpenWrt目前使用的是 **''[[docs:techref:procd]]''**程序。该阶段接下来执行的的启动脚本，就放在系统目录的“/etc/rd.d”目录下，“初始化”进程将执行所有该目录下的脚本，然后运行命令行控制台（shell）。之后就可以输入键盘字符，以及在显示终端里输出彩色的命令行文本信息了。
+
+But most devices you run OpenWrt on, have neither a keyboard nor a display adapter. So we need to access it over the [[docs:techref:hardware:port.serial|serial port]] (=local) or over the Ethernet port (= over the network).
+
+**中文翻译**：但是大部分你用来运行OpenWrt的设备上，既没有集成键盘，也没有显卡。所以，我们需要通过串口 [[docs:techref:hardware:port.serial|serial port]]（通过本机方式访问），或者通过以太网接口（通过网络方式访问）。
+===== Network =====
+===== 网络访问 =====
+To gain access to a shell over the network, you obviously need some other programs to help you with that. And the whole data exchange (aka communication) has to involve some kind of [[wp>Communications protocol|network protocol]].
+
+**中文翻译**：为了能通过网络登录使用命令行控制台，你当然需要一些能够连接的程序了。而且这整个通信的过程，必须使用一些通信或网络协议来完成。
+
+Network protocols of choice are [[wp>telnet]] and [[wp>Secure Shell|SSH]]. Both follow the server <-> client scheme. On the device running OpenWrt we deploy ''telnetd'' for the telnet protocol and ''dropbear'' for for the SSH protocol. Try [[wp>PuTTY]] for the real look-and-feel, but you should definitely also checkout [[wp>WinSCP]]! The latter won't work quite correctly, however [[wp>Konqueror]] with ''fish:%%/%%%%/%%'' does! See [[wp>Files transferred over shell protocol|FISH (Files transferred over shell protocol)]].
+
+**中文翻译**：网络协议可以选用telnet、SSH。这两种协议采用客户端到服务器的通信模式。在运行了OpenWrt的设备商，我们安装“telnetd”软件来提供telnet协议访问，安装“dropbear”软件来提供SSH协议的访问。然后用[[wp>PuTTY]] 软件来连接，你八成也下载了[[wp>WinSCP]]软件来访问文件，但WinSCP访问不是很正常，因此你最好用[[wp>Konqueror]]软件，采用“ fish:%%/%%%%/%%”来访问文件。详情请参见 [[wp>Files transferred over shell protocol|FISH (Files transferred over shell protocol)]]。
+
+(OpenWrt does also include a SSH-client ''ssh'' and a telnet-client ''telnet'', in case you want to login from it to somewhere else.)
+
+**中文翻译**：（OpenWrt也包含了SSH-client和telnet-client这样的客户端，如果你想在OpenWrt系统里访问别的地方，你就可以直接用ssh或者telnet命令。）
+
+| {{:meta:icons:tango:dialog-information.png?nolink}} | **Note:** Before [[docs:guide-quick-start:walkthrough_login]] only ''telnetd'' will run, and after only ''dropbear''.|
+| |**中文翻译**：**注意:** 在你要登录访问时，系统里dropbear软件运行成功的条件是，telnetd先要运行成功。 |
+
+In case of a successful login ''dropbear'' will (generate a LOG and) spawn an instance of the specified shell (more shells can be installed simultaneously) with the users ID.
+
+**中文翻译**：一旦用dropbear登录成功，以这个用户的ID生成的登录实例，就会通过指定的命令控制台程序产生出来（你可以同时安装好几种不同的命令行控制台软件）。
+
+  * [[docs:guide-quick-start:sshadministration|SSH Access for Newcomers]]
+  * **中文翻译**： [[docs:guide-quick-start:sshadministration|新手SSH手册]]
+
+===== Configuration =====
+===== 系统配置 =====
+In OpenWrt this is done in the file: ''[[docs:guide-user:base-system:notuci.config#etcprofile|/etc/profile]]'' by setting [[wp>Environment variable|environment variables]] and aliases. It comes (of course) pre-configured and will work out-of-the-box, but you can alter and augment it's configuration:
+
+**中文翻译**:OpenWrt系统通过修改文件''[[docs:guide-user:base-system:notuci.config#etcprofile|/etc/profile]]''来完成环境变量的设置。
+
+  * you can configure the [[wp>command-line_interface#Command_prompt|command prompt]] via the variable ''PS1''. see -> [[https://controlc.de/2010/03/12/bash-shell-einrichten/]] and many many many other pages in the web on help with that
+  * you change the content of existent variables and can define new ones
+  * etc.
+**中文翻译**:
+  * 你可以通过你可以通过修改PS1这个变量来，改变命令行控制台窗口的提示符。详见-> [[https://controlc.de/2010/03/12/bash-shell-einrichten/]] ，还有很多很多很多其他的网页说明如何修改
+  * 你可以修改的现有环境变量，也可以定义新的变量
+  * 如此等等
+
+
+===== Copy & Paste =====
+===== 复制粘贴 =====
+When in PuTTY, you can mark text content with the mouse and, without pressing any key (like [Ctrl]+[c]), it is being automatically stored. You can then insert it the usual way (with [Ctrl]+[v]) in an other windows, e.g. an open firefox. The other way around, you copy text the usual way [Ctrl]+[c]) and then paste it in PuTTY by pressing the [right mouse button]!
+
+**中文翻译**：当你使用PuTTY这个软件的时候，你可以用鼠标来标记显示的文字，然后它们就被自动复制了，甚至不用按Ctrl+C这样的按键。你还可以使用类似于Ctrl+v按键组合来在另外的窗口粘贴这些内容，比如在浏览器里粘贴。其他的方法，如在别的窗口里按Ctrl+c复制，在PuTTY软件里面用鼠标右键来粘贴。
+
+==== Numpad in PuTTY while using Vi ====
+==== 使用Vi文本编辑器时，将PuTTY软件里数字键盘关闭 ====
+In PuTTY goto //"Terminal"// => //"Features"// and check //"Disable application keypad mode"//.
+
+**中文翻译**：在PuTTY软件里，找到//"Terminal"// => //"Features"// ，然后选中 //"Disable application keypad mode"//进行关闭.
+
+===== Issue commands =====
+===== 重要的命令 =====
+ * For some orientation with the file system and the whole directories, check [[docs:techref:flash.layout]].
+
+At login you will be in your $HOME directory, which is ''/root'' for user root and would be ''/home/user1'' for user1, etc. Commands:
+
+**中文翻译**：当以某个用户身份登录系统时，默认进入你的$HOME目录，比如root用户进入“/root”目录，user1就进入“/home/user1”目录。其他命令如下：
+
+^ 命令 ^ 助记信息 ^ 功能描述 ^^
+| ''pwd'' | //print working directory// | 显示你当前处于的目录位置 |
+| ''cd'' | //change directory// | 切换所在的目录位置: ''cd ..'', ''cd /'', ''cd /etc/init.d'', ''cd /tmp'' |
+| ''ls'' | //list// | 显示当前目录下的所有文件和目录, ''ls -l /etc'' |
+| ''cat'' | //concatenate// | 讲一个文件的内容显示出来: cat ''/etc/config/network'', ''cat /tmp/dhcp.leases'' |
+| ''cp'' | //copy// | 复制文件: ''cp network network.bak'' |
+| ''mv'' | //move// | 移动文件的位置（先复制然后删除原来的老文件）, ''mv /tmp/opkg-lists/snapshots /mnt/sda1/opkg/packages'' |
+| ''df'' | //disk free// | 显示当前可用的磁盘空间. 同样详见 [[docs:techref:flash.layout]] 理解''/rom''，以及其他内容. 以及参照[[man>df]] 的帮助文件，查看具体选项. 使用''df -h''获取帮助信息. |
+| ''free'' | | 查看内存的使用情况 |
+| ''uptime'' | | 从启动到现在经历的时间长度 |
+| ''dmesg'' | | 显示开机信息，或者控制系统内的环状缓冲区（ring buffer） |
+| ''logread'' | | 显示从syslogd服务程序产生的信息 (使用 circular buffer) |
+| ''cat /proc/version'' | |显示当前系统版本 |
+| ''cat /proc/meminfo'' | | 更详细的内存使用信息 |
+| ''cat /proc/cpuinfo'' | | CPU信息 |
+| ''cat /proc/mtd'' | | 存储设备（使用内存类似技术）的分局表 |
+| ''cat /proc/partitions'' | | 系统分区表 |
+| ''cat /proc/net/nf_conntrack'' | | 记录当前系统里存在的网络连接的表 |
+| ''cat /proc/cmdline'' | |  |
+| ''cat /proc/modules'' | | 显示当前系统已经加载的模块 |
+
+There is a ton of commands with a ton of options. On a full blown Linux distribution you would issue a ''man command'' to learn about the command and its options. However OpenWrt is minimalistic and thus does not contain this functionality. So either read the man-pages (manual pages) on another GNU/Linux machine or read them online: e.g. at [[https://man.cx/]]. Man pages are in the process of being translated.
+
+**中文翻译**：系统有巨量的命令还有巨量的选项。在一个完整的Linux发行版本中，你可以使用“man //命令名称//”命令来了解命令和它的选项。OpenWrt最小化配备地风格，以至于就没包含这个功能（译者注：指man帮助功能）。所以，你可以在另外一台包含了帮助文件的Linux机器上，或者在网页上去了解帮助内容：比如通过 [[https://man.cx/]]网站。帮助页面也正在被翻译之中。
+
+**''Tip''** In firefox, you can use [[https://kb.mozillazine.org/Using_keyword_searches|keywords]] to simplify the usage. Create a new bookmark, use ''https://man.cx/?page=%s'' as address and ''man'' as keyword.
+
+**中文翻译**：**提示** 在火狐浏览器中，你可以使用 [[https://kb.mozillazine.org/Using_keyword_searches|keywords]] 来简化查找命令帮助流程。标记一个新的书签，使用 ''https://man.cx/?page=%s''作为网址，以及 ''man''作为关键字。
+===== editing files =====
+===== 文本编辑 =====
+To edit a file you need an editor, to edit a text file, you would use a text editor.
+
+**中文翻译**：要想编辑文件你得有个编辑器才行，编辑一个文本文件，你就得用文本编辑器。
+
+The standard text editor included is ''[[wp>vi]]''. Until you get used to it, vi is neither intuitive nor pretty.
+  * ''vi'' has two modes: //command mode// and //insert mode//.
+  * to enter command mode press [Esc] (escape key)
+  * to enter insert mode press either [i] for //insert//  or [a] for //append//
+  * ''vi'' starts out in command mode
+
+**中文翻译**：标砖的文本编辑器是''[[wp>vi]]''。除非你用的很熟了，否则你会发现vi这个软件不好学，也不那么完美。
+  * vi编辑器有两种模式：命令行模式 和 插入编辑模式
+  * 先按下ESC键进入到命令行模式
+  * 先按下键盘i键进入到插入编辑模式，或者按下a键进入到追加编辑模式
+  * vi启动时首先进入的是命令行模式
+
+=== starting vi ===
+=== 启动vi编辑器 ===
+Start with ''vi'' or ''vi /etc/config/network'' or ''vi firewall.user'' if you are already in the same directory.
+
+**中文翻译**：使用vi命令启动编辑器。运行''vi /etc/config/network''来编辑network文件； 或者 ''vi firewall.user''来新建或者打开firewall.user文件。
+
+=== editing ===
+=== 编辑 ====
+In order to edit the file, you have to be in //insert mode//. Press [i] or [a].
+
+**中文翻译**：要编辑一个我呢见，你就要进入插入编辑模式。按i或者a键进入该模式。
+
+=== exiting vi ===
+=== 退出vi编辑器 ===
+In order to get out of vi, you have to be in //command mode//. Press [Esc] (the escape key). Then issue one of the following commands:
+  * '':w'' to write the current file to disc, this will overwrite the old file
+  * '':q'' to quit without writing
+  * '':wq!'' to (forcefully) write to disk and then quit vi
+  * '':%s/string1/string2/g'' replace string1 with string2 in the whole file
+
+**中文翻译**：为了退出vi编辑器，你必须切换到 命令行模式 才行。按下ESC键就可以进入命令行模式。然后敲下面的这些命令：
+  * 输入“:w” 用来把当前的文件写入存储器中，这会覆盖旧的文件内容。
+  * 输入“:q”用来不保存退出vi编辑器
+  * 输入“:wq!”用来强制写入存储器，然后退出vi
+  * 输入“:%s/string1/string2/g”用来将文件里的所有string1替换成string2
+
+=== configuring vi ===
+=== 配置vi编辑器 ===
+Vi can be configured in //command mode// by setting certain variables:
+  * '':set ai'' use auto indentation (sometimes annoying default)
+  * '':set noai'' NO auto indentation
+
+**中文翻译**：vi编辑器的参数可以在命令行模式下进行配置：
+  * 输入“:set ai”用来自动插入缩进（但有些时候自动功能很烦人）
+  * 输入“:set noai”用来关闭自动插入缩进
+
+=== alternative text editors ===
+=== 其他替代的文本编辑器 ===
+If you do not like ''vi'', try ''joe'', ''mg'', ''nano'', ''vim'', ''vim-full'', ''vim-help'', ''vim-runtime'', ''zile''
+  * ''[[wp>Vim (text editor)|vim]]''
+  * ''[[wp>Joe's Own Editor|joe]]''
+  * ''[[wp>nano (text editor)|nano]]''
+  * ''[[wp>Zile (editor)|zile]]''
+  * ''[[wp>mg (editor)|mg]]''
+  *  and there may be other text editors available in the OpenWrt repos ;-)
+  * when logged in via WinSCP/Konqueror you can also use some Editor on your PC
+  * You may need to restart the system to let vim be installed properly.
+
+**中文翻译**：如果你不喜欢vi编辑器，你可以尝试joe、mg、nano、vim、vim-full、vim-help、vim-rumtime、zile，介绍如下：
+  * ''[[wp>Vim (text editor)|vim]]''
+  * ''[[wp>Joe's Own Editor|joe]]''
+  * ''[[wp>nano (text editor)|nano]]''
+  * ''[[wp>Zile (editor)|zile]]''
+  * ''[[wp>mg (editor)|mg]]''
+  * 还有好多其他的文本编辑器在OpenWrt的软件库里：-）
+  * 你安装好vim之后得重启设备才能让它正常工作。
+===== Scripting language =====
+===== 脚本语言 =====
+OpenWrt uses [[https://www.busybox.net/BusyBox.html | busybox's]] ash shell by default, which is in most parts //[[wp>POSIX]]// conform. Visit //[[wp>shell script]]// for general Information about shell scripts.
+
+**中文翻译**：OpenWrt默认使用 [[https://www.busybox.net/BusyBox.html | busybox's]]ash命令行控制台软件，这个软件比较符合 //[[wp>POSIX]]// 规则。访问//[[wp>shell script]]//了解一般的控制台脚本的信息。
+===== Executing shell scripts =====
+===== 执行命令行控制台脚本文件 =====
+Shell scripts can be executed with:
+
+**中文翻译**：控制台脚本可以像下面这么执行：
+
+''sh /path/to/script.sh''
+
+After changing the executable bit its also possible to run it without the sh in front:
+
+**中文翻译**：如果修改了文件属性里的执行位，也可以达到不加sh就能执行的目的：
+  *为文件添加可直接执行的属性
+<code>
+chmod +x /path/to/script.sh
+</code>
+
+  *直接访问并执行文件
+<code>
+/path/to/script.sh
+</code>
+
+
+===== File Managers =====
+===== 文件管理器 =====
+You may also want to try ''[[wp>Midnight Commander|mc]]'' or ''[[wp>Demos Commander|deco]]''.
+
+**中文翻译**：你可以使用[[wp>Midnight Commander|mc]]命令，或者[[wp>Demos Commander|deco]]命令来管理文件。（译者注：这两个软件都需要单独安装，另外mc对中文比较友好）
+
+
+
+===== Use GUIs =====
+| {{:doc:howto:konqueror.fish1.png?300|Konqueror}} | {{:doc:howto:konqueror.fish_gvim.png?300|GVim}} | {{:doc:howto:winscp-ss1.png?300|WinSCP}} |
+
+===== Further Help =====
+===== 更多帮助信息 =====
+  * [[https://wiki.debian.org/CommandLineInterface]]
+  * [[http://linuxcommand.org/tlcl.php]] ---- William Shotts free pdf books starting from terminal basics
+
+===== 翻译信息 =====
+LongGenxing  20191101 第一次翻译

@@ -1,0 +1,71 @@
+====== PPTP extras ======
+{{section>meta:infobox:howto_links#cli_skills&noheader&nofooter&noeditbutton}}
+
+===== Introduction =====
+  * This how-to describes the most common [[wp>Point-to-Point_Tunneling_Protocol|PPTP]] tuning scenarios adapted for OpenWrt.
+  * Follow [[docs:guide-user:services:vpn:pptp:server|PPTP server]] for server setup and [[docs:guide-user:services:vpn:pptp:client|PPTP client]] for client setup.
+  * Follow [[docs:guide-user:network:tunneling_interface_protocols#protocol_pptp_point-to-point_tunneling_protocol|PPTP protocol]] for protocol-specific interface options.
+  * Follow [[docs:guide-user:services:rng|Random generator]] to overcome low entropy issues.
+
+===== Extras =====
+==== References ====
+  * [[http://poptop.sourceforge.net/dox/|Poptop PPTP server documentation]]
+
+==== Web interface ====
+Install the necessary packages if you want to manage VPN settings using web interface.
+
+<code bash>
+# Install packages
+opkg update
+opkg install luci-proto-ppp
+</code>
+
+Navigate to **[[http://openwrt.lan/|LuCI]] -> Network -> Interfaces** to configure PPTP.
+
+==== Dynamic connection ====
+{{section>docs:guide-user:services:vpn:wireguard:extras#dynamic_connection&noheader&nofooter&noeditbutton}}
+
+==== NAT traversal ====
+Provide PPTP passthrough for LAN clients over your router.
+
+<code bash>
+# Install packages
+opkg update
+opkg install kmod-nf-nathelper-extra
+
+# Configure kernel parameters
+cat << EOF >> /etc/sysctl.conf
+net.netfilter.nf_conntrack_helper=1
+EOF
+/etc/init.d/sysctl restart
+</code>
+
+==== Multi-client ====
+Set up multi-client VPN server using unique credentials.
+
+<code bash>
+# Configure VPN service
+uci -q delete pptpd.login1
+uci set pptpd.login1="login"
+uci set pptpd.login1.username="PPTP_USERNAME1"
+uci set pptpd.login1.password="PPTP_PASSWORD1"
+uci commit pptpd
+/etc/init.d/pptpd restart
+</code>
+
+==== Static addresses ====
+Provide static IP address allocation on VPN server.
+
+<code bash>
+# Configure VPN service
+rm -f /tmp/etc/chap-secrets
+uci set pptpd.login.remoteip="192.168.7.2"
+uci commit pptpd
+/etc/init.d/pptpd restart
+</code>
+
+==== DNS over VPN ====
+{{section>docs:guide-user:services:vpn:wireguard:extras#dns_over_vpn&noheader&nofooter&noeditbutton}}
+
+==== Kill switch ====
+{{section>docs:guide-user:services:vpn:wireguard:extras#kill_switch&noheader&nofooter&noeditbutton}}

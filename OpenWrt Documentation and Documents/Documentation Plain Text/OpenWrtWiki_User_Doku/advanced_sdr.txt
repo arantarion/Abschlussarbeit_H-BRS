@@ -1,0 +1,44 @@
+====== SDR ======
+
+  * [[wp>Software-defined radio]]
+  * [[https://www.rtl-sdr.com/about-rtl-sdr/]]
+
+  * [[https://forum.lede-project.org/t/software-defined-radio-on-lede/13292]]
+
+===== What can you do with SDR? =====
+With SDR you can **receive**
+
+  * 433 MHz / 868 MHz weather sensors (temperature, humidity, a few sensors send also pressure)
+  * [[wp>AIS]]
+  * [[wp>ACARS]]
+  * [[wp>POCSAG]]
+  * [[wp>LTE]]
+  * [[wp>Amateur radio]]
+  * [[wp>Radio broadcasting]]
+
+
+===== rtl-sdr =====
+  * [[http://osmocom.org/projects/sdr/wiki/rtl-sdr]]
+  * [[packages:pkgdata_lede17_1:rtl-sdr|OpenWrt package: rtl-sdr]]
+
+===== rtl_433 =====
+rtl_433 - Program to decode traffic from devices that are broadcasting on 433.9 MHz like temperature sensors
+
+  * [[https://github.com/merbanan/rtl_433]]
+  * [[https://forum.lede-project.org/t/software-defined-radio-on-lede/13292/14|Compile rtl_433 for OpenWrt]]
+
+
+===== rtl_868 =====
+rtl_868 - Receiver software for FM modulated temperature stations.
+
+  * [[https://github.com/sum-sum/rtl_868]]
+  * FIXME //Please add compilation / installation instructions here//
+
+===== rtl-ais =====
+  * [[packages:pkgdata_lede17_1:rtl-ais|OpenWrt package: rtl-ais]]
+
+===== tfrec =====
+tfrec - SDR tool for receiving wireless sensor data (TFA IT+ KlimaLogg Pro)
+
+  * [[https://github.com/baycom/tfrec]]
+  * FIXME //Please add compilation / installation instructions here//

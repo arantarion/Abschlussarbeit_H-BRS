@@ -1,0 +1,31 @@
+====== Turning USB power on and off ======
+
+On some routers, it is possible to turn USB power on and off using [[docs:techref:hardware:port.gpio|GPIO]], like this:
+
+On:
+<code bash>echo 1 > /sys/class/gpio/gpioN/value</code>
+
+Off:
+<code bash>echo 0 > /sys/class/gpio/gpioN/value</code>
+
+Get current state:
+<code bash>cat /sys/class/gpio/gpioN/value</code>
+
+Here, ''N'' should be replaced with pin number, which depends on router model. Here are some known pin numbers:
+
+^ Model                                                       ^ Pin number(s)       ^
+| [[toh:tp-link:tl-wr703n|TP-Link TL-WR703N]]                 | 8                   |
+| [[toh:tp-link:tl-wr842nd|TP-Link TL-WR842ND]]               | 6 (v1), 4 (v2)      |
+| [[toh:tp-link:tl-wdr3600|TP-Link TL-WDR3600]]               | 21, 22              |
+| [[toh:tp-link:tl-wdr4300|TP-Link TL-WDR4300]]               | 21, 22              |
+| [[toh:tp-link:tl-wr1043nd|TP-Link TL-WR1043ND]]             | 21 (v2), 8 (v3, v4) |
+| [[toh:astoria:arv7510pw22|Astoria networks ARV7510PW22]]    | 8                   |
+
+If your model is not listed, you may try to find ''N'' by trial and error. For some ''N'', the directory ''/sys/class/gpio/gpioN'' might not exist, in this case it can be created like this:
+<code bash>echo N > /sys/class/gpio/export</code>
+
+You may also look at [[https://forum.openwrt.org/viewtopic.php?id=44909|this forum thread]].
+
+:!: Some routers might have difficulties providing full USB power output. 
+
+:!: On a TP-Link Archer A7 v5 running OpenWRT 19.07, the USB power can be switched by echoing 1 or 0 to ''/sys/class/gpio/tp-link\:power\:usb/value''. This may be true of other models as well. Run ''ls -al  /sys/class/gpio/'' to check for the existence of a similar predefined symbolic link on your router.

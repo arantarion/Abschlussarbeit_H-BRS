@@ -1,0 +1,387 @@
+====== OpenWrt in QEMU ======
+
+QEMU is an an open source processor emulator (and virtualizer).
+This document describes how to run OpenWrt in QEMU. If you are looking to use OpenWrt as a QEMU host, see [[docs:guide-user:virtualization:qemu_host|Running QEMU guests on OpenWrt]]. 
+
+It is mixed descriptions from Windows and Linux, so please read through all of it before starting.
+
+:!: Choosing different emulation settings can affect performance greatly.
+
+Example: 30s iperf-s@openwrt (QEMU running on host) to host
+
+<code>
+ne2k_pci:0.0-31.3 sec  14.6 MBytes  3.92 Mbits/sec
+pcnet: 0.0-30.0 sec  2.38 GBytes   682 Mbits/sec
+e1000: 0.0-30.0 sec  6.23 GBytes  1.79 Gbits/sec
+vmxnet3: 0.0-30.0 sec  8.67 GBytes  2.48 Gbits/sec
+virtio-net-pci:  0.0-30.0 sec  44.6 GBytes  12.8 Gbits/sec
+</code>
+
+  * FIXME Trunk: test kernel image with rootfs
+  * FIXME Trunk: use SD card with rootfs, NFS rootfs, NBD rootfs
+  * FIXME Trunk: no sound, pcibus, USB emulation in QEMU possible?
+===== Getting QEMU =====
+
+QEMU runs on many different systems.
+
+==== Ubuntu Linux ====
+
+Many Linux Distributions like Debian, Ubuntu, SUSE, and Fedora provide a QEMU package in their package repositories.
+
+Example for Debian 9 (Stretch):
+<code>
+sudo apt-get install qemu
+</code>
+
+:!: QEMU is rapidly developing so features and syntax might change between versions.
+
+==== Windows version ====
+The [[http://wiki.qemu.org/Links|QEMU Wiki Links]] page provides you with several unofficial download links of Windows builds.
+
+
+===== OpenWrt in QEMU arm ======
+The current platform meant for use with QEMU for emulating an ARM system is **armvirt**. The platform is available in the [[https://downloads.openwrt.org/snapshots/targets/armvirt/|downloads]].
+
+
+==== Boot with initramfs ====
+This is the simplest method that can be used to test an image. However, it runs entirely in RAM: any modification made is lost upon reboot.
+
+To use this boot method, here with 64 MB of RAM, run:
+
+	qemu-system-arm -nographic -M virt -m 64 -kernel openwrt-armvirt-zImage-initramfs
+
+===== OpenWrt in QEMU aarch64 ======
+
+aarch64 is used by many modern Arm CPUs. The instruction set is called armv8. The target is [[https://downloads.openwrt.org/releases/19.07.3/targets/armvirt/64/|armvirt 64 variant]].
+
+       qemu-system-aarch64 -m 1024 -smp 2 -cpu cortex-a57 -M virt -nographic \
+       -kernel openwrt-19.07.3-armvirt-64-Image-initramfs \
+       -drive if=none,file=disk.img,id=hd0 -device virtio-blk-device,drive=hd0
+
+===== OpenWrt in QEMU MIPS ======
+:!: Use QEMU >= 2.2 (earlier versions can have bugs with MIPS16) [[https://dev.openwrt.org/ticket/16881|ticket 16881]]
+- Ubuntu 14.03.x LTS uses QEMU 2.0 which is has this bug.
+
+The "[[:docs:techref:targets:malta]]" platform is meant for use with QEMU for emulating a MIPS system.
+
+The ''malta'' target supports both big and little-endian variants, pick the matching files and qemu version (''qemu-system-mips'', or ''qemu-system-mipsel'').
+
+<code>
+qemu-system-mipsel -kernel openwrt-malta-le-vmlinux-initramfs.elf -nographic -m 256
+</code>
+
+In recent enough versions one can enable ext4 root filesystem image building, and since [[https://dev.openwrt.org/changeset/46269|r46269]] (:!: only in trunk, it's not part of the 15.05 CC release) it's possible to boot straight from that image (without an initramfs):
+
+<code>
+qemu-system-mipsel -M malta \
+-hda openwrt-malta-le-root.ext4 \
+-kernel openwrt-malta-le-vmlinux.elf \
+-nographic -append "root=/dev/sda console=ttyS0"
+</code>
+
+===== OpenWrt in QEMU RISC-V ======
+
+Use the build documentation found on the HiFive Unleashed page. The process described there will generate the bbl.qemu (BBL+vmlinux) image required to boot with QEMU. For reference, use https://git.openwrt.org/?p=openwrt/staging/wigyori.git;a=shortlog;h=refs/heads/riscv-201810
+
+Until 4.19 support is merged into openwrt/trunk, the port itself cannot be merged into trunk, and manual builds are required.
+
+RISC-V support is in mainline qemu, refer to https://wiki.qemu.org/Documentation/Platforms/RISCV
+
+The suggested QEMU startup is:
+
+<code>
+$ qemu-system-riscv64 -nographic -machine virt \
+  -kernel bbl.qemu -append "root=/dev/vda2 ro console=ttyS0" \
+  -drive file=sdcard.img,format=raw,id=hd0 \
+  -device virtio-blk-device,drive=hd0 \
+  -device virtio-net-device,netdev=net0 -netdev user,id=net0 \
+  -smp 2
+</code>
+
+===== OpenWrt in QEMU X86-64 =====
+The x86-64 target has support for ESXi images by default.
+Booting the VMDK / VDI images might not work with newer QEMU versions.
+
+:!: IMG/VDI/VMDK with "-hda" switch do not work with QEMU 2.x .
+
+pc-q35-2.0 / q35 emulates a different machine. 
+With new syntax (no -hda , -net) the IMG / VDI / VMDK works here.
+
+Features:
+
+  * 2 HDDs (1 OpenWrt image, 1 data)
+  * 1 drive per bus, 6 bus available (until ide.5)
+  * 2 Network cards : 1 bridged to host (need higher permission) and 1 "user" (default, NAT 10.x.x.x)
+
+Some emulated network cards might have performance issues.
+
+<code>
+qemu-system-x86_64 \
+-enable-kvm \
+-M pc-q35-2.0 \
+-drive file=openwrt-x86_64-combined-ext4.vdi,id=d0,if=none \
+-device ide-hd,drive=d0,bus=ide.0 \
+-drive file=data.qcow2,id=d1,if=none \
+-device ide-hd,drive=d1,bus=ide.1 \
+-soundhw ac97 \
+-netdev bridge,br=virbr0,id=hn0 \
+-device e1000,netdev=hn0,id=nic1 \
+-netdev user,id=hn1 \
+-device e1000,netdev=hn1,id=nic2
+
+qemu-system-x86_64 -M q35 -drive file=openwrt-x86_64-combined-ext4.img,id=d0,if=none,bus=0,unit=0 -device ide-hd,drive=d0,bus=ide.0
+</code>
+
+
+===== Network configuration =====
+QEMU has several options to provide network connectivity to emulated images, see all ''-net'' options in qemu(1). Although this option is considered obsolete since QEMU 0.12, it continues to work although it is. The new syntax uses either ''-nic'' for emulating a particular embedded board, or it uses the two options ''-netdev'' and ''-device'', see the [[https://wiki.qemu.org/Documentation/Networking|official documentation]].
+
+==== Provide Internet access to OpenWrt ====
+The default networking mode for QEMU is "user mode network stack".
+
+In this mode, ''qemu'' acts as a proxy for outbound TCP/UDP connections.  It also provides DHCP and DNS service to the emulated system.
+
+To provide Internet access to the emulated OpenWrt system, use (the example uses an armvirt system, adjust for your setup):
+
+    qemu-system-arm -net nic,vlan=0 -net nic,vlan=1 -net user,vlan=1 \
+      -nographic -M virt -m 64 -kernel lede-17.01.0-r3205-59508e3-armvirt-zImage-initramfs
+
+Here, we set up two network cards inside the emulated OpenWrt system:
+
+  * ''eth0'', used as LAN in OpenWrt (not connected to anything here)
+  * ''eth1'', used as WAN in OpenWrt, and connected to qemu that will proxy all TCP/UDP connections towards the Internet
+
+The OpenWrt system should get both an IPv4 and an IPv6 on ''eth1'' (via DHCP/DHCPv6).  The ranges will be 10.0.2.0/24 and fec0::/64 (qemu defaults, see qemu(1) to configure other ranges).
+1).
+
+==== Provide access to LUCI inside OpenWrt ====
+LUCI is the web UI used by OpenWrt. If you want to check how LUCI works or to poke around with LUCI-apps this setup is for you. (the example uses an armvirt system, adjust for your setup)
+
+**Note**: This setup requires some privileges (''CAP_NET_ADMIN'' and ''CAP_MKNOD'' under Linux) so it's easier to run it under ''sudo'' 
+
+Save the script and edit ''IMAGE'' variable to reflect your OpenWrt version, then run it under ''sudo''
+  
+	#!/bin/sh
+	IMAGE=lede-17.01.0-r3205-59508e3-armvirt-zImage-initramfs                                 
+	LAN=ledetap0
+	# create tap interface which will be connected to OpenWrt LAN NIC
+	ip tuntap add mode tap $LAN
+	ip link set dev $LAN up
+	# configure interface with static ip to avoid overlapping routes                         
+	ip addr add 192.168.1.101/24 dev $LAN
+	qemu-system-arm \
+	    -device virtio-net-pci,netdev=lan \
+	    -netdev tap,id=lan,ifname=$LAN,script=no,downscript=no \
+	    -device virtio-net-pci,netdev=wan \
+	    -netdev user,id=wan \
+	    -M virt -nographic -m 64 -kernel $IMAGE
+	# cleanup. delete tap interface created earlier
+	ip addr flush dev $LAN
+	ip link set dev $LAN down
+	ip tuntap del mode tap dev $LAN
+
+How networking works:
+
+  * ''eth0'', used as LAN in OpenWrt, and connected to ''ledetap0'' in host system(static address ''192.168.1.101/24''), providing access to LUCI at ''http://192.168.1.1'' 
+  * ''eth1'', used as WAN in OpenWrt, and connected to qemu that will proxy all TCP/UDP connections towards the Internet
+
+
+==== Forward ports of the host ====
+
+If you configure NICs on embedded systems, which cannot be used via ''-device'', you can access them from the host by forwarding a (high) port in the ''-nic'' option using ''hostfwd=hostip:hostport-guestip:guestport''. 
+
+For example, to [[https://wiki.qemu.org/Documentation/Networking#How_to_get_SSH_access_to_a_guest|access SSH]] by ''ssh root@127.1 -p 1122'' from the host on the guest system ''malta-be'', you can use:
+<code>
+qemu-system-mips -M malta -nographic -hda openwrt-malta-be-rootfs-ext4.img \
+    -kernel openwrt-malta-be-vmlinux.elf -append 'root=/dev/sda console=ttyS0' \
+    -nic hostfwd=tcp::1122-:22
+</code>
+If the network adapter is a WAN interface, you have to add firewall rules in the guest, too, e.g. by:
+<code>
+uci add firewall rule &&
+uci set firewall.@rule[-1].src='wan' &&
+uci set firewall.@rule[-1].target='ACCEPT' &&
+uci set firewall.@rule[-1].proto='tcp' &&
+uci set firewall.@rule[-1].dest_port='22' &&
+uci commit firewall && 
+/etc/init.d/firewall restart
+</code>
+
+==== Use KVM igb network interfaces ====
+(taken from mailing list post by Philip Prindeville)
+
+On my Centos 7.4 KVM host, I did:
+
+To provision 10 VFs per NIC:
+
+<code>
+cat <<__EOF__ > /etc/modprobe.d/sr-iov.conf
+# for SR-IOV support
+options igb max_vfs=10
+__EOF__
+# 
+</code>
+
+This will take effect after the next reboot. Alternatively by unloading and reloading the IGB module.
+
+Create XML files for each NIC you want to support virtualization on:
+
+<code>
+# cat <<__EOF__ > /tmp/hostdev-net0.xml
+<network>
+  <name>hostdev-net0</name>
+  <uuid>$(uuidgen)</uuid>
+  <forward mode='hostdev' managed='yes'>
+    <pf dev='eno1'/>
+  </forward>
+</network>
+__EOF__
+# 
+# cat <<__EOF__ > /tmp/hostdev-net1.xml
+<network>
+  <name>hostdev-net1</name>
+  <uuid>$(uuidgen)</uuid>
+  <forward mode='hostdev' managed='yes'>
+    <pf dev='eno2'/>
+  </forward>
+</network>
+__EOF__
+# ...
+# 
+</code>
+
+Make QEMU aware of them:
+
+<code>
+# virsh net-destroy default
+
+# virsh net-define /tmp/hostdev-net0.xml
+# virsh net-autostart hostdev-net0
+
+# virsh net-define /tmp/hostdev-net1.xml
+# virsh net-autostart hostdev-net1
+# …
+</code>
+
+To create the pool of VF interfaces.
+
+Then to add interfaces to VMs, I did:
+
+<code>
+# cat <<__EOF__ > /tmp/new-interface-0.1.xml
+<interface type='network'>
+  <mac address='52:54:00:0d:84:f4'/>
+  <source network='hostdev-net0'/>
+  <address type='pci' domain='0x0000' bus='0x07' slot='0x10' function='0x0'/>
+</interface>
+__EOF__
+# 
+</code>
+
+Where the ‘0d:84:f4’ is 3 unique bytes. I got them from:
+<code>
+dd status=none bs=1 count=3 if=/dev/urandom | hexdump -e ‘/1 “%x”\n"
+</code>
+I think.
+
+Then to bind an interface to a VM, I did:
+<code>
+# virsh attach-device my-machine-1 /tmp/new-interface-0.1.xml
+</code>
+
+===== Advanced boot methods =====
+
+==== Use KVM acceleration ====
+This will be much faster, but will only work if the architecture of your CPU is the same as the target image (here, ARM cortex-a15).
+
+	qemu-system-arm -nographic -M virt,accel=kvm -cpu host -m 64 -kernel openwrt-armvirt-zImage-initramfs
+
+==== Boot with a separate rootfs ====
+
+	qemu-system-arm -nographic -M virt -m 64 -kernel openwrt-armvirt-zImage \
+	  -drive file=openwrt-armvirt-root.ext4,format=raw,if=virtio -append 'root=/dev/vda rootwait'
+
+==== Boot with local directory as rootfs ====
+
+	qemu-system-arm -nographic -M virt -m 64 -kernel openwrt-armvirt-zImage \
+	  -fsdev local,id=rootdev,path=root-armvirt/,security_model=none \
+	  -device virtio-9p-pci,fsdev=rootdev,mount_tag=/dev/root \
+	  -append 'rootflags=trans=virtio,version=9p2000.L,cache=loose rootfstype=9p'
+
+==== Run with kvmtool ====
+
+	# start a named machine
+	lkvm run -k openwrt-armvirt-zImage -i openwrt-armvirt-rootfs.cpio --name armvirt0
+
+	# start with virtio-9p rootfs
+	lkvm run -k openwrt-armvirt-zImage -d root-armvirt/
+
+	# stop "armvirt0"
+	lkvm stop --name armvirt0
+
+	# stop all
+	lkvm stop --all
+
+===== A Practical Example ======
+This example uses OpenWrt virtualized using Debian, QEMU with KVM and a Lex twitter system with Intel Atom D525 and ICH8M chipset. Normally OpenWrt works on most of the hardware mentioned in the table of hardware (search in this wiki), and also on most of the hardware that support **Intel x86 ISA** or ''x86'' in the address bar.
+
+Anyway some embedded x86 board have particular hardware that is not always well supported by the OpenWrt platform, even if all the ''kmod'' packages are included in the basic image. One of this x86 compatible hardware family are systems based on Intel Atom and ICH8M chipset (maybe also others), like the Lex twitter system 3I525U.
+
+OpenWrt is able to run on that system, but for example, is not able to manage the possibility of having two WAN connections with different metric. The request will be always routed to the interface with higher metric also using ''ping -I <wan2_interface> 8.8.8.8''. Moreover software like ''Nmap'' will fail to be bind to certain interfaces. Someone with more knowledge could explain why this happens but as workaround one can use a more complete linux system (for example Debian) as base and then virtualize (''virtualization OR qemu OR kvm OR hypervisor'' in the address bar) openwrt, that in the end requires really a little resources most of the time, or one can assign plenty of resources because at the end the base system is quite powerful. 
+
+==== Prepare debian (7.1 in the test) for virtualization ====
+Debian was installed on a 2 GB CF card through a USB stick and netinstaller, having only the basic system utilities and ssh utilities. 1.1 GB of space were used, 600 MB free and the rest swap.
+
+Install the following packages: ''apt-get install qemu-kvm bridge-utils libvirt-bin virtinst''
+  * Qemu-kvm for QEMU and KVM additional software components.
+  * bridge-utils for managing bridges in debian
+  * libvirt-bin for additional virtualization packages
+  * virtinst for handy virtualization management
+  
+If you don't want to use any user but just work with root (the
+objective is to let OpenWrt run on the twitter system, not having a well
+set up Debian system):
+  * Change /etc/libvirt/qemu.conf uncommenting user/group to work as root.
+  * restart /etc/init.d/libvirt* entries.
+  
+Then we have to prepare the network. Modify ''/etc/network/interfaces'' a follows (adapt according to your needs)
+<file>
+auto br0 br1 br2 br3
+
+iface br0 inet dhcp
+  bridge_ports eth0
+  
+iface br1 inet dhcp
+  bridge_ports eth1
+  
+iface br2 inet dhcp
+  bridge_ports eth2
+  
+iface br3 inet dhcp
+  bridge_ports eth3
+</file>
+
+The bridges ( https://wiki.debian.org/BridgeNetworkConnections ) are helpful because they allows different network adapters, real or virtual ( [[docs:guide-developer:networking:network.interfaces]] to exchange data (as the word 'bridge' suggests) and not only, because the bridge will have a certain mac address but also the virtual interfaces attached to it can have different mac addresses. Here the marvels of the linux networking system have to be explained by someone with more knowledge.
+
+==== Virtualization proper ====
+
+Then we need to create our virtual machine. The additional packages, apart from QEMU, will help here. We can issue the following command, using the x86 generic image
+placed in the folder ''/root/openwrt_kvm/'':
+<file>
+virt-install --name=openwrt --ram=256 --vcpus=1 --os-type=linux --disk path=/root/openwrt_kvm/openwrt-x86-generic-combined-ext4.img,bus=ide --network bridge=br0,model=e1000 --import
+# be careful to the model, e1000 let's openwrt recognize the interface.
+# http://manpages.ubuntu.com/manpages/lucid/man1/virt-install.1.html
+</file>
+
+If you want to interact with the system from command line, use ''virsh''.
+For example to force the shutdown of a virtual machine ''virsh destroy openwrt''
+or to delete the virtual machine (but not the disk file) ''virsh undefine openwrt''.
+
+For having multiple interfaces
+<file>
+virt-install --name=openwrt --ram=256 --vcpus=1 --os-type=linux --disk path=/root/openwrt_kvm/openwrt-x86-generic-combined-ext4.img,bus=ide \
+   --network bridge=br0,model=e1000 --network bridge=br3,model=e1000 --import
+</file>
+Remember that the console requires ''ctrl+5'' to exit.
+
+To mark a virtual machine for the autostart, type: ''virsh autostart openwrt''.

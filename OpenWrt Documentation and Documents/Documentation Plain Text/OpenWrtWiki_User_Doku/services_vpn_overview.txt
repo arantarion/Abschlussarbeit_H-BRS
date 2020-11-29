@@ -1,0 +1,90 @@
+FIXME **This page is not fully translated, yet. Please help completing the translation.**\\ //(remove this paragraph once the translation is finished)//
+
+====== VPN 概览 ======
+就像 [[docs:guide-user:firewall:fw3_configurations:fw3_dmz|DMZ]]一样， [[wp>Virtual private network|VPN]]是一个security相关的概念, 它并不是一个协议（比如ssh），也不是一个特定的软件包,
+在两个或者多个主机间设置VPN，可以使用的软件包有很多种。它们都使用[[wp>Client–server model|Client-Server concept]]，并且互相之间通常**不**兼容.
+查看下 [[wp>OSI model]]，你可以意识到加解密可以在通信协议栈的不同layer上进行.
+
+如果你的硬件支持 [[docs:techref:hardware:cryptographic.hardware.accelerators|Cryptographic Hardware Acceleration]]，你需要确保它被你的OpenWrt版本支持，并且被使能了.
+
+===== IPsec =====
+  * Protocol: [[wp>IPsec]]
+  * Free software: [[wp>strongSwan]], [[wp>Openswan]], [[wp>Racoon (KAME)|Racoon]]
+
+strongSwan is a recommended IPsec implementation, though some of this documentation may be relevant for other configurations.
+
+==== strongSwan ====
+  * [[docs:guide-user:services:vpn:strongswan:basics]] Some basics, considerations and prerequisites for IPsec VPN
+  * [[docs:guide-user:services:vpn:strongswan:roadwarrior]] OpenWrt as IPsec gateway for road warriors
+  * [[docs:guide-user:services:vpn:strongswan:firewall]] Firewall and zones in IPsec VPN
+  * [[docs:guide-user:services:vpn:strongswan:site2site]] Setup a site to site IPsec VPN
+  * [[docs:guide-user:services:vpn:strongswan:overlappingsubnets]] IPsec VPN with overlapping subnets 
+  * [[docs:guide-user:services:vpn:strongswan:performance]] Get the most out of your IPsec connections
+  * [[docs:guide-user:services:vpn:strongswan:howto]] Install/configure strongSwan for IPhone/IPad
+  * [[http://wiki.strongswan.org/projects/strongswan/wiki/IpsecUci|configure strongSwan with UCI]]
+
+==== Racoon ====
+  * [[docs:guide-user:services:vpn:ipsec:racoon:basics]] Some basics, considerations and prerequisites for IPsec VPN
+  * [[docs:guide-user:services:vpn:ipsec:racoon:firewall]] Firewall and zones in IPsec VPN
+  * [[docs:guide-user:services:vpn:ipsec:racoon:site2site]] Setup a site to site IPsec VPN
+  * [[docs:guide-user:services:vpn:ipsec:racoon:certificates]] IPsec VPN with certificates 
+  * [[docs:guide-user:services:vpn:ipsec:racoon:overlappingsubnets]] IPsec VPN with overlapping subnets 
+  * [[docs:guide-user:services:vpn:ipsec:racoon:roadwarrior]] OpenWrt as IPsec VPN gateway for road warriors
+  * [[docs:guide-user:services:vpn:ipsec:racoon:roadwarriorcertificates]] Road warrior setup with certificates
+
+==== Openswan ====
+  * [[docs:guide-user:services:vpn:libreswan:site2site]] Setup a site to site IPsec VPN Using Openswan
+  * [[docs:guide-user:services:vpn:libreswan:openswanxl2tpvpn]] OpenWrt as IPsec VPN server using xl2tpd
+
+===== OpenVPN =====
+  * Free software: [[wp>OpenVPN]]
+
+{{pagequery>@docs:guide-user:services:vpn:openvpn *;sort=ns,title;hidestart;hidejump;display=title;bullet=square}}
+
+===== OpenConnect =====
+You may setup OpenWrt as an [[http://www.infradead.org/openconnect/|OpenConnect]] VPN client or server.
+This is a protocol based on SSL/TLS and datagram TLS and is compatible with CISCO's AnyConnect SSL VPN.
+
+  * Client side requirements:
+    * [[https://github.com/openwrt/packages/tree/master/net/openconnect|openconnect]]: Follow for instructions to configure without luci interface
+    * [[https://github.com/openwrt/luci/tree/master/protocols/luci-proto-openconnect|luci-proto-openconnect]]
+
+  * Server side requirements:
+    * [[https://github.com/openwrt/packages/tree/master/net/ocserv|ocserv]]
+    * [[https://github.com/openwrt/luci/tree/master/applications/luci-ocserv|luci-app-ocserv]]
+    * [[docs:guide-user:services:vpn:openconnect:server|A How-To for the server setup.]] Note: the instructions include comments on the Github advice which might not work for some. In addition, the instructions are for a FULL tunnel setup.
+
+There are various [[https://en.wikipedia.org/wiki/OpenConnect#Platforms|openconnect clients]], including in GNOME NetworkManager, [[https://github.com/nmav/openconnect-gui/releases|Windows]], and [[https://play.google.com/store/apps/details?id=app.openconnect|Android]].
+
+===== PPTP =====
+:!: Not secure!
+PPTP is broken since 1997.
+See [[http://poptop.sourceforge.net/dox/protocol-security.phtml|poptop security message]].
+
+  * Protocol: [[wp>Point-to-Point Tunneling Protocol|PPTP (Point-to-Point Tunneling Protocol)]]
+
+  * [[docs:guide-user:services:vpn:pptp:server]] describes a PPTP solution with ''pptpd''
+  * [[docs:guide-user:services:vpn:pptp:client]] Howto install and setup a VPN client compatible with PPTP servers
+  * [[docs:guide-user:services:vpn:pptp:nat_traversal]] VPN [[wp>NAT traversal]] (VPN Pass Through) for single/multiple LAN client(s) connecting to PPTP Servers on the WAN
+
+===== Other VPN solutions =====
+  * [[docs:guide-user:services:vpn:vpnc-client]] - VPN client ''vpnc'' compatible with Cisco's EasyVPN equipment
+  * [[docs:guide-user:network:wan:connect_by_l2tp]],  see [[wp>Layer 2 Tunneling Protocol]] and [[wp>Template:VPN]]
+  * [[docs:guide-user:services:vpn:pseudowire]]
+  * [[docs:guide-user:services:vpn:wireguard:start]], see also [[https://danrl.com/blog/2017/luci-proto-wireguard/|How to configure WireGuard on OpenWrt/LEDE using LuCi]]
+
+===== VPN and mesh =====
+  * [[http://www.tinc-vpn.org/]]
+  * [[http://www.ntop.org/n2n/]]
+  * [[docs:guide-user:network:wifi:mesh:olsr|OLSR]]
+  * [[docs:guide-user:network:wifi:mesh:batman|B.A.T.M.A.N.]]
+
+===== External Documentation =====
+  * See our forum: [[https://forum.openwrt.org/viewtopic.php?id=28776|Howto: IPsec and OpenVPN]]
+  * A whole load of OpenVPN-related articles can be found on the Project Homepage of OpenVPN:
+    * http://openvpn.net/index.php/open-source/faq.html#bridge2
+    * http://www.openvpn.net/index.php/component/content/article/60-faq/84-faq.html
+    * http://www.openvpn.net/index.php/component/content/article/65-general/89-2xhowto.html
+    * http://www.openvpn.net/index.php/open-source/documentation/miscellaneous/1xhowto.html
+    * You can always read: http://www.openvpn.net/index.php/open-source/documentation/manuals.html or search: http://www.google.com/search?q=vpn&hl=en
+  * You do not need to read all of them, to get a VPN solution going. But for security reasons sooner or later you should make sure that all participant comprehend how your VPN works.

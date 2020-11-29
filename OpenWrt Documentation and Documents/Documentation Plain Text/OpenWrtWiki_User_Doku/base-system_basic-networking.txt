@@ -1,0 +1,315 @@
+====== Network basics /etc/config/network ======
+  * This is a default OpenWrt network stack of a typical home router
+  * your device may vary slightly in features or numbering scheme
+  * Pay attention, that the labels "WAN" and "LAN" can mean different things, depending on their context
+
+^  LuCi web GUI  ^  Comment  ^ ^^^^^^^^
+| "Firewall" | Rules for traffic between zones |  Forwarding Rules, Traffic Rules, Custom Rules  ||||||||
+| "Firewall", "Interfaces" | Network zone configuration |  WAN (Zone)  ||  LAN (Zone)  ||||||
+| "Interfaces" | TCP config & Bridge configuration |  WAN  |  WAN6  |  LAN (TCP and Bridge config)  ||||||
+| "Switch", "Wireless" | VLANs and wireless SSIDs |  VLAN 1 (eth 0.2)  ||  VLAN 2 (eth 0.1)  ||||   LEDE 5  |  LEDE 2.4  |
+| "Switch", "Wireless" | Internal jack labels and radio labels|  WAN (Interface)  ||  LAN 1  |  LAN 2  |  LAN 3  |  LAN 4  |  radio0  |  radio1  |
+| - | Common vendor labels on backside of a device |  "Internet"  ||  "1"  |  "2"  |  "3"  |  "4"  |  "n/ac"  |  "b/g/n"  |
+
+===== Network configuration =====
+The central network configuration is handled by the uci **network** subsystem, and stored in the file ''/etc/config/network''.
+This uci susbsystem is responsible for defining //switch VLANs//, //interface configurations// and //network routes//.
+
+After any network configuration change (through uci or otherwise) you need to reload the network configuration in the netifd daemon by writing:
+
+<code bash>
+service network reload
+</code> 
+
+If your install does not supply the ''service'' command, a reload can be accomplished with:
+
+<code bash>
+/etc/init.d/network reload
+</code>
+
+Thanks to [[docs:guide-developer:netifid|netifd]] (Network Interface Daemon), the changed interfaces will be restarted automatically to apply the changes live.
+Rebooting the router is not necessary, but is also another way that will force a configuration reload.
+
+Here an example network uci subsystem with default settings for a TL-WR1043ND
+
+<code bash># uci show network
+network.loopback=interface
+network.loopback.ifname='lo'
+network.loopback.proto='static'
+network.loopback.ipaddr='127.0.0.1'
+network.loopback.netmask='255.0.0.0'
+network.globals=globals
+network.globals.ula_prefix='fd27:70fa:5c1d::/48'
+network.lan=interface
+network.lan.type='bridge'
+network.lan.ifname='eth0.1'
+network.lan.proto='static'
+network.lan.netmask='255.255.255.0'
+network.lan.ip6assign='60'
+network.lan.ipaddr='192.168.1.1'
+network.wan=interface
+network.wan.ifname='eth0.2'
+network.wan.proto='dhcp'
+network.wan6=interface
+network.wan6.ifname='eth0.2'
+network.wan6.proto='dhcpv6'
+network.@switch[0]=switch
+network.@switch[0].name='switch0'
+network.@switch[0].reset='1'
+network.@switch[0].enable_vlan='1'
+network.@switch_vlan[0]=switch_vlan
+network.@switch_vlan[0].device='switch0'
+network.@switch_vlan[0].vlan='1'
+network.@switch_vlan[0].ports='1 2 3 4 5t'
+network.@switch_vlan[1]=switch_vlan
+network.@switch_vlan[1].device='switch0'
+network.@switch_vlan[1].vlan='2'
+network.@switch_vlan[1].ports='0 5t'
+</code>
+
+and here the same settings as written in ''/etc/config/network''
+
+<code bash># cat /etc/config/network
+
+config interface 'loopback'
+        option ifname 'lo'
+        option proto 'static'
+        option ipaddr '127.0.0.1'
+        option netmask '255.0.0.0'
+
+config globals 'globals'
+        option ula_prefix 'fd27:70fa:5c1d::/48'
+
+config interface 'lan'
+        option type 'bridge'
+        option ifname 'eth0.1'
+        option proto 'static'
+        option netmask '255.255.255.0'
+        option ip6assign '60'
+        option ipaddr '192.168.1.1'
+
+config interface 'wan'
+        option ifname 'eth0.2'
+        option proto 'dhcp'
+
+config interface 'wan6'
+        option ifname 'eth0.2'
+        option proto 'dhcpv6'
+
+config switch
+        option name 'switch0'
+        option reset '1'
+        option enable_vlan '1'
+
+config switch_vlan
+        option device 'switch0'
+        option vlan '1'
+        option ports '1 2 3 4 5t'
+
+config switch_vlan
+        option device 'switch0'
+        option vlan '2'
+        option ports '0 5t'
+</code>
+
+To see a list of interfaces write the following:
+
+<code bash>
+ubus list network.interface.*
+</code>
+ 
+To view all info about a particular interface (the UCI name not the physical interface), write:
+
+<code bash>
+ifstatus lan
+</code>
+
+===== Sections =====
+A minimal network configuration for a router usually consists of at least two //interfaces// (''lan'' and ''wan'') and a //switch// section if applicable.
+
+===== Globals =====
+The ''globals'' section contains interface-independent options affecting the network configuration in general.
+
+^ Name ^ Type ^ Required ^ Default ^ Description ^
+| ''ula_prefix'' | IPv6-prefix | no | //(none)// | IPv6 [[wp>Unique local address|ULA]]-Prefix for this device |
+| ''packet_steering'' | Packet-Steering | no | //(none)// | Use every cpu to handle packet traffic |
+===== Interfaces =====
+Sections of the type ''interface'' declare logical networks serving as containers for IP address settings, [[docs:guide-user:network:network_interface_alias|aliases]], [[docs:guide-user:network:routes_configuration|routes]], physical interface names and [[docs:guide-user:firewall:startfirewall_rules]] - they play a central role within the LEDE configuration concept.
+
+A minimal interface declaration consists of the following lines:
+
+**uci:** 
+
+<code bash>
+network.wan=interface
+network.wan.ifname='eth0.2'
+network.wan.proto='dhcp'
+</code>
+
+**config file:**
+
+<code bash>
+config 'interface' 'wan'
+        option 'proto' 'dhcp'
+        option 'ifname' 'eth0.2'
+</code>
+
+  * ''wan'' is a unique //logical interface name//
+  * ''dhcp'' specifies the //interface protocol//, DHCP in this example
+  * ''eth0.2'' is the //physical interface// associated with this section
+
+<WRAP center round important 60%>
+The Linux kernel limits the //physical interface name// length to 15 characters including the automatically added prefix that is added for some protocols (e.g.''6in4'', ''pppoa-'', ''pppoe-'', ''gre4t-'') or with bridges (''br-'').
+
+Depending on the protocol type, the //logical interface name// may thus be limited to only 9 characters.
+E.g. 'abcde67890' is a valid interface name for a normal interface using dhcp, but not for a pppoe interface where the final name would be 'pppoe-abcde67890', which is >15 chars.
+
+If using .VLAN notation, an additional 5 characters may be needed, limiting the "parent" interface name to 4 characters for protocols such as GRE.
+''abcd.NNNN'' => ''gre4t-abcd.NNNN'' for 15 characters.
+
+Using a too long name will lead to silent errors, with interface creation or modification not being sucessful.
+</WRAP>
+
+The //interface protocol// may be one of the following:
+
+^ Protocol ^ Description ^ Program ^
+| ''static'' | Static configuration with fixed address and netmask |  ''ip''/''ifconfig''  |
+| ''dhcp'' | Address and netmask are assigned by DHCP |  ''udhcpc'' (Busybox)  |
+| ''dhcpv6'' | Address and netmask are assigned by DHCPv6 |  ''odhcpc6c''  |
+| ''ppp'' | PPP protocol - dialup modem connections |  ''pppd''  |
+| ''pppoe'' | PPP over Ethernet - DSL broadband connection |  ''pppd'' + ''plugin rp-pppoe.so''  |
+| ''pppoa'' | PPP over ATM - DSL connection using a builtin modem |  ''pppd'' + plugin ...  |
+| ''3g'' | CDMA, UMTS or GPRS connection using an AT-style 3G modem |  ''comgt''  |
+| ''qmi'' | USB modems using QMI protocol |  ''uqmi''  |
+| ''ncm'' | USB modems using NCM protocol |  ''comgt-ncm'' + ?  |
+| ''wwan'' | USB modems with protocol autodetection |  ''wwan''  |
+| ''hnet'' | Self-managing home network (HNCP) |  ''hnet-full''  |
+| ''pptp'' | Connection via PPtP VPN |  ?  |
+| ''6in4'' | IPv6-in-IPv4 tunnel for use with Tunnel Brokers like HE.net |  ?  |
+| ''aiccu'' | Anything-in-anything tunnel  |  ''aiccu''  |
+| ''6to4'' | Stateless IPv6 over IPv4 transport |  ?  |
+| ''6rd'' | IPv6 rapid deployment |  ''6rd''  |
+| ''dslite'' | Dual-Stack Lite |  ''ds-lite''  |
+| ''l2tp'' | PPP over L2TP Pseudowire Tunnel |  ''xl2tpd''  |
+| ''relay'' | relayd pseudo-bridge |  ''relayd''  |
+| ''gre'', ''gretap'' | GRE over IPv4 |  ''gre'' + ''kmod-gre''  |
+| ''grev6'', ''grev6tap'' | GRE over IPv6 |  ''gre'' + ''kmod-gre6''  |
+| ''vti'' | VTI over IPv4 |  ''vti'' + ''kmod-ip_vti''  |
+| ''vtiv6'' | VTI over IPv6 |  ''vti'' + ''kmod-ip6_vti''  |
+| ''vxlan'' | VXLAN protocol for layer 2 virtualization, see [[docs:guide-user:network:tunneling_interface_protocols|here]] for further information and a configuration example | ''vxlan'' + ''kmod-vxlan'' + ''ip-full'' |
+| ''none'' | Unspecified protocol, therefore all the other interface settings will be ignored (like disabling the configuration) |  -  |
+
+Depending on the used //interface protocol// several other options may be required for a complete interface declaration.
+The corresponding options for each protocol are listed below.
+Options marked as "yes" in the "Required" column //must// be defined in the interface section if the corresponding protocol is used, options marked as "no" //may// be defined but can be omitted as well.
+
+:!: If an interface section has no protocol defined (not even ''none'' ), the other settings are completely ignored.
+The result is that, if the interface section is mentioning a physical network interface (i.e. eth0), this will be down even if a cable is connected (with proto 'none' the interface is up).
+
+==== Options valid for all protocol types ====
+^ Name ^ Type ^ Required ^ Default ^ Description ^
+| ''ifname'' | interface name(s) | yes(*) | //(none)// | Physical interface name such as ''eth0.1'', ''eth2'', or ''tun0'' to assign to this section, list of interfaces if type bridge is set.\\ //(*) This option may be empty or missing if only a wireless interface references this network or if the protocol type is ''pptp'', ''pppoa'' or ''6in4''// \\ As WLAN interface names may be dynamic or unpredictable, it is [[https://forum.openwrt.org/viewtopic.php?pid=203784#p203784|strongly recommended]] that they be assigned to bridges using the ''network'' option in [[docs:guide-user:network:wifi:basic|UCI wireless configuration]] |
+| ''type'' | string | no | //(none)// | If set to "bridge", a bridge containing the given //ifnames//, and any wireless networks assigned using the ''network'' option in [[docs:guide-user:network:wifi:basic|UCI wireless configuration]], is created |
+| ''stp'' | boolean | no | ''0'' | Only valid for type "bridge", enables the Spanning Tree Protocol |
+| ''bridge_empty'' | boolean | no | ''0'' | Only valid for type "bridge", enables creating empty bridges |
+| ''igmp_snooping'' | boolean | no | ''0'' | Only valid for type "bridge", sets the multicast_snooping kernel setting for a bridge |
+| ''multicast_querier'' | boolean | no | (takes over the value of igmp_snooping) | Only valid for type "bridge", sets the multicast_querier kernel setting for a bridge |
+| ''macaddr'' | mac address | no | //(none)// | Override MAC address of this interface. Example: 62:11:22:aa:bb:cc |
+| ''mtu'' | number | no | //(none)// | Override the default MTU on this interface |
+| ''auto'' | boolean | no | ''0'' for proto ''none'', else ''1'' | Specifies whether to bring up interface on boot |
+| ''ipv6'' | boolean | no | ''1'' | Specifies whether to enable (1) or disable (0) IPv6 on this interface (Barrier Breaker and later only) |
+| <del>''accept_ra''</del> | <del>boolean</del> | <del>no</del> | <del>''1'' for protocol ''dhcp'', else ''0''</del> | <del>Specifies whether to accept IPv6 Router Advertisements on this interface</del> **deprecated:** |
+| <del>''send_rs''</del> | <del>boolean</del> | <del>no</del> | <del>''1'' for protocol ''static'', else ''0''</del> | <del>Specifies whether to send Router Solicitations on this interface</del> **deprecated:** |
+| ''force_link'' | boolean | no | ''1'' for protocol ''static'', else ''0'' | Specifies whether ip address, route, and optionally gateway are assigned to the interface regardless of the link being active ('1') or only after the link has become active ('0'); when set to '1', carrier sense events do not invoke hotplug handlers |
+| ''disabled'' | boolean | no | ''0'' | enable or disable the interface section |
+| ''ip4table'' | string | no | //(none)// | IPv4 routing table for routes of this interface. E.g., when proto = dhcp, the dhcp client will add routes to that table |
+| ''ip6table'' | string | no | //(none)// | IPv6 routing table for routes of this interface. E.g., when proto = dhcp6, the dhcp6 client will add routes to that table |
+
+See [[docs:guide-user:network:wan:wan_interface_protocols]] for documentation on the protocol-specific options available for each WAN protocol.
+
+The options ''_orig_ifname'' and ''_orig_bridge'' may be seen in ''/etc/config/network'' when managed by LuCI and were used to keep previous information across edits.
+They were [[https://github.com/openwrt/luci/commit/852ec6e28bf90d67882cf909b15a91ecc4501b55|moved out of ''/etc/config/network'']] in March, 2018.
+
+===== Switch Configuration =====
+For many users, the default switch configuration is sufficient.
+Should the user need to configure the switch differently, LuCI, UCI, or direct editing of ''/etc/config/network'' may be used to achieve different configurations.
+Prior to any reconfiguration of the switch, an understanding of the default configuration is important.
+As an example, some devices have a single switch-connected interface, and other have two or more.
+
+See also: 
+  * [[docs:techref:swconfig|swconfig]]
+  * [[docs:guide-user:network:vlan:switch_configuration|VLAN]]
+  * [[docs:guide-user:network:vlan:switch|Switch Documentation]] (Older content, but does give discuss single-interface configuration)
+
+The identifier for the switch(es) may be obtained using
+
+<code bash>
+# swconfig list
+Found: switch0 - ag71xx-mdio.0
+</code>
+
+With the identifier known, the configuration can be viewed
+
+<code bash>
+# swconfig dev switch0 show
+Global attributes:
+	enable_vlan: 1
+	enable_mirror_rx: 0
+	enable_mirror_tx: 0
+	mirror_monitor_port: 0
+	mirror_source_port: 0
+	arl_age_time: 300
+	arl_table: address resolution table
+[...]
+</code>
+
+There are three types of switch-related configuration stanzas, ''switch'', ''switch_vlan'', and ''switch_port''.
+
+Not all options are available on all hardware.
+Some limitations may be found with ''swconfig dev <dev> help''.
+After making changes, check the output of ''swconfig'' to determine if the configuration was accepted by the switch hardware.
+
+FIXME: The list of options may be incomplete.
+The details of each option need additional discovery and documentation, including checking of the underlying code.
+The source of restrictions on value ranges has yet to be identified.
+Valid values should be confirmed in the code.
+
+==== config switch ====
+^ Option Name ^ Type ^ Required ^ Default ^ Impact ^ Notes ^
+| ''name'' | string | yes | (none) | defines which switch to configure | |
+| ''reset'' | ''0|1'' | | | | |
+| ''enable_vlan'' | ''0|1'' | | | | |
+| ''enable_mirror_rx'' | ''0|1'' | no | 0 | Mirror received packets from the ''mirror_source_port'' to the ''mirror_monitor_port'' | |
+| ''enable_mirror_tx'' | ''0|1'' | no | 0 | Mirror transmitted packets from the ''mirror_source_port'' to the ''mirror_monitor_port'' | |
+| ''mirror_monitor_port'' | integer | no | 0 | Switch port to which packets are mirrored | |
+| ''mirror_source_port'' | integer | no | 0 | Switch port from which packets are mirrored | |
+| ''arl_age_time'' | integer | no | 300 | Adjust the address-resolution (MAC) table's aging time (seconds)| Default may differ by hardware |
+| ''igmp_snooping'' | ''0|1'' | no | 0 | Enable IGMP snooping | Unconfirmed if can be set. Unknown how it interacts with interface- or port-level IGMP snooping. |
+| ''igmp_v3'' | ''0|1'' | no | 0 | | Unconfirmed if can be set. Unknown how it interacts with interface- or port-level IGMP snooping. |
+
+==== config switch_vlan ====
+^ Option Name ^ Type ^ Required ^ Default ^ Impact ^ Notes ^
+| ''device'' | string | yes | (none) | defines which switch to configure | |
+| ''vlan'' | integer | yes | (none) | The vlan "table index" to configure | May be limited to 127 or another number. See the output of ''swconfig dev <dev> help'' for limit. Sets defaults for VLAN tag and PVID. |
+| ''vid'' | integer | no | ''vlan'' | The VLAN tag number to use | See the output of ''swconfig dev <dev> help'' for limit. VLANs 0 and 4095 are often considered "special use". |
+| ''ports'' | string | yes | (none) | A string of space-separated port indicies that should be associated with the VLAN. Adding the suffix ''t'' to a port indicates that egress packets should be tagged, for example '''0 1 3t 5t''' | The suffixes ''*'' and ''u'' are referred to in [[docs:guide-user:network:vlan:switch|docs:guide-user:network:switch]] with reference to certain Broadcom switches in the context of older releases. |
+
+==== config switch_port ====
+^ Option Name ^ Type ^ Required ^ Default ^ Impact ^ Notes ^
+| ''device'' | string | yes | (none) | defines which switch to configure | |
+| ''port'' | integer | yes | (none) | The port index to configure | |
+| ''pvid'' | integer | no | † | Port PVID; the VLAN tag†† to assign to untagged ingress packets | †Typically defaults one of the VLAN tags associated with the port. Logic not clear when there are multiple VLANs on the port. '0' can occur. Certain values have been rejected; logic not clear on limitations. ††//May// refer to the VLAN "index" rather than the VLAN tag itself (unconfirmed).|
+| ''enable_eee'' | ''0|1'' | no | 0 | Enable "energy saving" features | |
+| ''igmp_snooping'' | ''0|1'' | no | 0 | Enable IGMP snooping | Unconfirmed if can be set. Unknown how it interacts with interface- or switch-level IGMP snooping. |
+| ''igmp_v3'' | ''0|1'' | no | 0 | | Unconfirmed if can be set. Unknown how it interacts with interface- or switch-level IGMP snooping. |
+ 
+===== Network management =====
+Network configuration can be re-applied by running ''/etc/init.d/network restart''.
+
+Individual interfaces can be brought up with ''ifup //name//'' or down with ''ifdown //name//'' where //name// corresponds to the //logical interface name// of the corresponding ''config interface'' section.
+An ''ifup'' implies a prior ''ifdown'' so there is no need to invoke both when reloading an interface.
+
+Note that wireless interfaces are managed externally and ''ifup'' may break the relation to existing bridges.
+In such a case it is required to run ''wifi up'' after ''ifup'' in order to re-establish the bridge connection.
+
+See also: [[docs:guide-user:base-system:uci#get_wan_interface|Scripting interface]]

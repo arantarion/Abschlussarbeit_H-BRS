@@ -1,0 +1,48 @@
+====== Installation methods ======
+//Landing page for Installation method links from ToH.//
+
+To install OpenWrt on your device, you need to know two things:
+
+  - Where do I get an OpenWrt firmware image for my device? -> [[toh:views:toh_fwdownload|ToH firmware download]]
+  - How do I install OpenWrt on my device?
+    * Generic installation instructions -> [[docs:guide-user:installation:start|OpenWrt user guide: Installation]]
+    * Specific installation procedures -> [[#find_the_installation_method_for_your_device|See table below]], search for your device and check out the devicepage (if available) for specific installation instructions
+
+===== Installation methods =====
+
+
+==== All installation methods ====
+
+{{pagequery>* @docs:guide-user:installation:installation_methods;cols=2;hidejump;hidestart;display={title};sort=title;bullet=disc;underline;border=both;}}
+
+==== Easy installation methods ====
+
+/* Set the pagequery filters for inclusion / exclusion according to the definition of easy installation */
+
+{{pagequery>* @docs:guide-user:installation:installation_methods;filter=!title:serial;filter=title:(TFTP|web|GUI|SD|Sysupgrade);cols=2;hidejump;hidestart;display={title};sort=title;bullet=disc;underline;border=both;}}
+
+==== Find the installation method for your device ====
+
+  * Enter your Model in the white field below.
+  * Check the devicepage (if available) of your device for specific installation instructions
+
+++++Filter: Installation method|
+---- datacloud ----
+col        : installation method(s)
+summarize  : 1
+----
+++++
+
+
+---- datatable ----
+cols       : Brand, Model, Versions, Supported Current Rel_releasecurrent, Unsupported Functions_unsupporteds, Device Page_page, Device Techdata_pageid, Installation method(s)_method-installations, Comment installation, Recovery method(s)_method-recoverys, Comment recovery
+dynfilters : 1
+rownumbers : 1
+filter     : Model!=@@Model@@
+sort       : Brand
+limit      : 25
+----
+
+===== See also =====
+
+[[docs:guide-user:installation:recovery_methods:start|Recovery methods]]

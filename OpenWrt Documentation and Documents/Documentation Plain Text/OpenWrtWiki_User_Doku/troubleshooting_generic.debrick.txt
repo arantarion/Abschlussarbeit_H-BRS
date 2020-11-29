@@ -1,0 +1,15 @@
+====== Debricking OpenWrt (generic) ======
+Wenn beim Installieren oder beim Einstellen etwas schief geht, führt das in der Regel dazu, dass das Gerät nicht mehr erwartungsgemäß funktioniert. Umgangssprachlich sagt man dann, man habe das Gerät ge-bricked, es also in einen "Backstein" oder "Briefbeschwerer" verwandelt, denn bis zur Behebung des Problems, kann man es eigentlich nur dazu verwenden. Die Ursachen sind mannigfaltig und es gib mehrere Möglichkeiten den Fehler zu beheben.
+
+Wenn man es (mal wieder) geschafft hat, sein Gerät zu "bricken", sollte man sich beruhigen, entspannen und erst einmal folgende Seiten lesen: [[docs:techref:flash.layout]], [[docs:techref:filesystems#implementation.in.openwrt|Dateisysteme in OpenWrt]] und [[docs:techref:bootloader#Additional Functions|bootloader CLI]]. Je nachdem was genau kaputt ist, haben Sie mehrere Möglichkeiten:
+
+  - wenn lediglich etwas auf der **[[docs:techref:filesystems#JFFS2]]**-Partition kaputt oder fehlkonfiguriert ist, kann man -> **[[docs:guide-user:troubleshooting:failsafe_and_factory_reset|in den Failsafe-Modus booten]]**
+  - wenn etwas auf der **[[docs:techref:filesystems#SquashFS]]**-Partition oder der **Kernel** kaputt ist, ist es nicht länger möglich ins Failsafe zu booten! Aber man hat immer noch einen funktionierenden Urlader, den man nun wie bereits bei der -> **[[de:docs:guide-user:installation:generic.flashing##mittels.urlader.ueber.ethernet.port|Installation von OpenWrt]]** benutzen kann.
+  - wenn der **[[docs:techref:bootloader|Urlader]] kaputt** ist, verbleiben zwei Optionen:
+    - man verbindet sich über den -> **[[docs:techref:hardware:port.jtag|JTAG Port]]** und schreibt den Urlader erneut auf den Flash
+    - man entlötet den Flash-Chip, baut ihn in ein Gerät ein, welches Schreibzugriff erlaubt und schreibt den Urlader erneut auf den Flash. Wer frühzeitig [[docs:guide-user:installation:generic.backup]] befolgt hat, muss nun nicht im Forum betteln.
+
+Wenn man löten muss, findet man Hilfe hier:
+  * -> **[[docs:techref:hardware:soldering]]**, [[docs:techref:hardware:port.serial|Serial Port]], [[docs:techref:hardware:port.jtag|JTAG Port]]
+
+----

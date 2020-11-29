@@ -1,0 +1,30 @@
+====== External Toolchain ======
+
+===== Use OpenWrt as External Toolchain =====
+
+Goal: Reduce build time when starting with a cleaned-up source tree. Useful when using an automated build system like Hudson/Tinderbox. \\
+Requirements:
+  * based on Subversion revision 27109
+  * two OpenWrt build directories - one which represents the toolchain and another one to build the firmware
+
+==== Step 1: Build Toolchain ====
+
+Just do the same as everytime you (re)compile OpenWrt. Checkout svn/git, set your options in .config and build the whole thing. Only difference this time: you call the directory **toolchain**.
+
+==== Step 2: Build Firmware ====
+
+We start at the same point as the toolchain. Checkout OpenWrt into directory **openwrt** (or anything else than **toolchain**). Now we need some patching, because at the moment (rev 27109) it is not possible to use OpenWrt for both.
+
+Apply these patches in the order listet here:
+  * 1. [[https://lists.openwrt.org/pipermail/openwrt-devel/2011-June/011142.html|[PATCH] Resend: base-files: copy uClibc files from ext. toolchain]] ([[http://mcbachmann.de/openwrt/0001-base-files-copy-uClibc-files-from-ext.-toolchain.patch|Direct-Download from mcbachmann.de]], [[https://dev.openwrt.org/ticket/9157|Ticket #9157]])
+  * 2. [[https://dev.openwrt.org/ticket/8786|Ticket #8786 - Zlib 1.2.5 compilation is failing]] ([[http://mcbachmann.de/openwrt/0001-rules.mk-always-enable-fhonour-copts.patch|Direct-Download from mcbachmann.de]]) (Patch maybe not compatible with non-OpenWrt-Toolchains as **xMff** pointed out in IRC) 
+
+After this, copy the .config-file from the toolchain directory into this build directory and do a **make menuconfig**.
+
+  * [*] **Advanced configuration options (for developers)**
+    * [*] **Use external toolchain**
+      * Target name: arm-openwrt-linux-uclibcgnueabi (in my case, yours may vary)
+      * Toolchain prefix: arm-openwrt-linux-uclibcgnueabi- (mind the dash at the end)
+      * Toolchain root: /path/to/toolchain/staging_dir/toolchain-arm_v5te_gcc-linaro_uClibc-0.9.32_eabi
+
+Save and compile. For my case, the full toolchain build now needs about 1 1/2 hour and the normal firmware takes only 1 hour.

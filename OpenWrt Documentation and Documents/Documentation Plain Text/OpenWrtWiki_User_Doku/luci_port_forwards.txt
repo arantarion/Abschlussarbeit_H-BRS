@@ -1,0 +1,14 @@
+====== Port Forwards ======
+This page is a lite version of Port Forwards comparing with that in the usual LuCI interface (Network -> Firewall -> Port Forwards).\\
+
+Port forwarding allows remote computers on the Internet to connect to a specific computer or service within the private LAN.\\
+
+**Attention: **It is not available yet with LuCI interface.\\
+
+This version deletes Source Zone and Destination Zone, on the other hand, a default value was set to them.\\
+Source Zone : wan.\\
+Destination Zone : lan.
+
+Furthermore, the users don't have to enter a new window to modify a server, that means, they can manipulate on the showing page, which simplifies the use of the interface.\\
+{{:media:port_forwards.png|}}
+

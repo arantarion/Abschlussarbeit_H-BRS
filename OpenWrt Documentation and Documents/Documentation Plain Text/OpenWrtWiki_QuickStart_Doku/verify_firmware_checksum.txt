@@ -1,0 +1,53 @@
+====== Verifying OpenWrt firmware binary ======
+This step is to verify a downloaded firmware binary against a reference checksum to avoid download errors.
+
+Below you will find instructions on 
+   - How to retrieve the reference checksum
+   - How to calculate a checksum of the downloaded file
+
+If those strings are not the same, the firmware file was not properly downloaded and if you proceed flashing such a file, you will probably brick the device permanently or requiring annoying procedures to recover.
+
+If checksum mismatches, download the firmware file again and compare it again.
+If the checksum is still wrong in repeated attempts, ask the OpenWrt forums for help.
+
+===== 1. Retrieving the reference checksum =====
+Checksums are stored in the folder view of the download server's webpage. Obtain it by following those steps:
+
+  - Recall the URL used to download the firmware image. E.g. ''https://downloads.openwrt.org/releases/18.06.1/targets/ar71xx/generic/openwrt-18.06.1-ar71xx-generic-archer-c7-v2-squashfs-factory.bin''
+  - Strip of everything behind the last ''/'' and open the URL in your browser. E.g. ''https://downloads.openwrt.org/releases/18.06.1/targets/ar71xx/generic/''
+  - Find the file you downloaded. The string in the column ''sha256sum'' is the checksum. E.g. ''4686a0254fbd44b3d0e8ffd66ac7aba5836fe7f0847bdf7c1bf82281f95f08fb''
+
+===== 2. Calculating the checksum of the downloaded firmware =====
+==== Windows ====
+  * Newer Windows has a built-in tool to calculate sha256sums called ''certutil'', but it has no graphical user interface so we will have to use the command line to interact with it.
+  * Older Windows version need to download a sha256 tool, for example [[https://raylin.wordpress.com/downloads/md5-sha-1-checksum-utility/|MD5 & SHA Checksum Utility]] (the free version).
+
+To use the built-in ''certutil'':
+  - Click the Windows icon, type "cmd" and hit enter.
+  - Execute (assuming you downloaded the file to your Downloads folder): <code>certutil -hashfile "%USERPROFILE%\Downloads\openwrt-file-name-here" sha256</code>
+  - This will print a checksum like this (file name followed by string with letters and numbers), <code>SHA256-Hash of file C:\Users\USERNAME\Downloads\openwrt-18.06.1-...-factory.bin:
+79 f9 4e fa d3 2c 14 8f f1 95 3f 09 6d 98 c7 41 c0 ff 8f 7e b4 68 8c 9d 5b f9 fb 01 c0 90 fb ab</code> 
+  - Remove spaces from this checksum output (e.g. using replace function in notepad):<code>79f94efad32c148ff1953f096d98c741c0ff8f7eb4688c9d5bf9fb01c090fbab</code> 
+  -  Check that the checksum string without blanks matches the one you can find in the **sha256sums** field on the download page you retrieved by following the instructions above.
+
+==== Mac ====
+Mac has an integrated tool to check sha256sums, but it has no graphical user interface so we will have to use the Terminal to interact with it.
+  - Click the Finder icon in the Dock. 
+  - Click Applications in the Favorites list.
+  - Find the Utilities folder and click to open it.
+  - Locate Terminal and double-click the icon to open the program.
+  - Open a terminal window, and execute (assuming you downloaded the file on the desktop): <code>shasum -a 256 ./Desktop/file-name-here</code>
+  - it will print something like this (string with letters and numbers followed by file name),<code>1a7c8bba93584fc44045629888e6b147851917cd0c83fcc91a7e6dbe90bdce76 
+openwrt-18.06.1-...-sysupgrade.bin</code>
+  - Check that the checksum string matches the one you can find in the **sha256sums** field on the download page you retrieved by following the instructions above.
+
+==== Linux ====
+=== GUI ===
+Some file managers (dolphin and other more powerful ones used in KDE user interface) offer this functionality in the file property window (right-click on the file, select Properties, click on "Checksums" tab, that tab appears only for binary files, like firmware images).
+It will offer buttons to calculate the sha256sum and a field where you can paste the SHA256 string from sha256sums file to verify that it is correct.
+
+=== Command Line Interface (CLI) ===
+  - On the terminal window, execute <code>sha256sum ./Desktop/file-name-here</code>
+  - This will print something like this: <code>1a7c8bba93584fc44045629888e6b147851917cd0c83fcc91a7e6dbe90bdce76
+openwrt-18.06.1-...-sysupgrade.bin</code>
+  - Check that the checksum string matches as the one you can find in the **sha256sums** field on the download page you retrieved by following the instructions above.

@@ -1,0 +1,15 @@
+====== GUI OEM ======
+
+Installation is done via the OEM’s GUI. See the user manual of your device to learn how to log in and navigate to the firmware update page of your device.
+
+-> [[docs:guide-user:installation:generic.flashing#method_1via_oem_firmware|Generic flashing via OEM firmware]]
+
+===== Devices with this installation method =====
+---- datatable ----
+cols       : Brand, Model, Versions, Supported Current Rel_releasecurrent, Installation method(s)_method-installations, Comment installation, OEM device homepage URL_url, Device Page_page, Device Techdata_pageid
+dynfilters : 1
+filter     : Model!=@@Model@@
+filter     : installation method(s)=GUI OEM
+sort       : Brand
+limit      : 25
+----

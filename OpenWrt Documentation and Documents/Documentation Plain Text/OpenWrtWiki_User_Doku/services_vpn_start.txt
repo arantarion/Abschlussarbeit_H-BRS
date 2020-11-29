@@ -1,0 +1,9 @@
+====== VPN (aka Virtual Private Network) ======
+Like a [[docs:guide-user:firewall:fw3_configurations:fw3_dmz|DMZ]] a [[wp>Virtual private network|VPN]] is a security concept, it is not a protocol (like SSH) nor a certain software package.
+There are multiple software packages available to set up a VPN between two or more hosts.
+They all use the [[wp>Client–server model|client-server]] model and usually are **incompatible** with one another.
+Have look at the [[wp>OSI model]] and make yourself aware that the encryption can be applied at different layers of the communications stack.
+VPN generally relies on cryptography, thus you may be interested in [[docs:techref:hardware:cryptographic.hardware.accelerators|Cryptographic hardware acceleration]] and setting up [[docs:guide-user:services:rng|Random generator]].
+
+===== All articles =====
+{{pagequery>@:docs:guide-user:services:vpn *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

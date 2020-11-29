@@ -1,0 +1,125 @@
+====== Tor client ======
+{{section>meta:infobox:howto_links#cli_skills&noheader&nofooter&noeditbutton}}
+
+===== Introduction =====
+  * This how-to describes the method for setting up [[wp>Tor_(anonymity_network)|Tor]] client on OpenWrt.
+  * It makes your router provide access to the dark net for LAN clients.
+  * Tor is limited to DNS and TCP traffic, use [[docs:guide-user:services:vpn:start|VPN]] to protect all traffic.
+  * Follow [[docs:guide-user:services:tor:extras|Tor extras]] for additional tuning.
+  * Follow [[docs:guide-user:services:rng|Random generator]] to overcome low entropy issues.
+
+===== Goals =====
+  * Provide anonymous communication with onion routing.
+    * Access the dark net and Tor hidden services.
+  * Encrypt your internet connection to enforce security and privacy.
+    * Prevent data leak and traffic spoofing on the client side.
+  * Bypass regional restrictions using public relay providers.
+    * Escape client side content filters and internet censorship.
+
+===== Instructions =====
+==== 1. Tor client ====
+Install and configure Tor client.
+
+<code bash>
+# Install packages
+opkg update
+opkg install tor
+
+# Configure Tor client
+cat << EOF > /etc/tor/main
+AutomapHostsOnResolve 1
+VirtualAddrNetworkIPv4 172.16.0.0/12
+VirtualAddrNetworkIPv6 fc00::/7
+DNSPort 0.0.0.0:9053
+DNSPort [::]:9053
+TransPort 0.0.0.0:9040
+TransPort [::]:9040
+EOF
+uci del_list tor.conf.tail_include="/etc/tor/main"
+uci add_list tor.conf.tail_include="/etc/tor/main"
+uci commit tor
+/etc/init.d/tor restart
+</code>
+
+==== 2. Firewall ====
+Set up uHTTPd to listen on [[docs:guide-user:luci:luci.essentials#alternative_ports|alternative ports]] if required.
+Configure firewall to intercept LAN traffic.
+Disable LAN to WAN forwarding to avoid traffic leak.
+
+<code bash>
+# Intercept SSH, HTTP and HTTPS traffic
+uci -q delete firewall.ssh_int
+uci set firewall.ssh_int="redirect"
+uci set firewall.ssh_int.name="Intercept-SSH"
+uci set firewall.ssh_int.src="lan"
+uci set firewall.ssh_int.src_dport="22"
+uci set firewall.ssh_int.proto="tcp"
+uci set firewall.ssh_int.target="DNAT"
+uci -q delete firewall.http_int
+uci set firewall.http_int="redirect"
+uci set firewall.http_int.name="Intercept-HTTP"
+uci set firewall.http_int.src="lan"
+uci set firewall.http_int.src_dport="8080"
+uci set firewall.http_int.proto="tcp"
+uci set firewall.http_int.target="DNAT"
+uci -q delete firewall.https_int
+uci set firewall.https_int="redirect"
+uci set firewall.https_int.name="Intercept-HTTPS"
+uci set firewall.https_int.src="lan"
+uci set firewall.https_int.src_dport="8443"
+uci set firewall.https_int.proto="tcp"
+uci set firewall.https_int.target="DNAT"
+
+# Intercept DNS and TCP traffic
+uci -q delete firewall.dns_int
+uci set firewall.dns_int="redirect"
+uci set firewall.dns_int.name="Intercept-DNS"
+uci set firewall.dns_int.src="lan"
+uci set firewall.dns_int.src_dport="53"
+uci set firewall.dns_int.dest_port="9053"
+uci set firewall.dns_int.proto="udp"
+uci set firewall.dns_int.target="DNAT"
+uci -q delete firewall.tcp_int
+uci set firewall.tcp_int="redirect"
+uci set firewall.tcp_int.name="Intercept-TCP"
+uci set firewall.tcp_int.src="lan"
+uci set firewall.tcp_int.dest_port="9040"
+uci set firewall.tcp_int.proto="tcp"
+uci set firewall.tcp_int.extra="--syn"
+uci set firewall.tcp_int.target="DNAT"
+
+# Disable LAN to WAN forwarding
+uci rename firewall.@forwarding[0]="lan_wan"
+uci set firewall.lan_wan.enabled="0"
+uci commit firewall
+/etc/init.d/firewall restart
+</code>
+
+==== 3. NAT6 ====
+{{section>docs:guide-user:firewall:fw3_configurations:intercept_dns#nat6&noheader&nofooter&noeditbutton}}
+
+===== Testing =====
+Verify that you are using Tor.
+  * [[https://check.torproject.org/]]
+Check your client public IP addresses.
+  * [[https://ipleak.net/]]
+Make sure there is no DNS leak on the client side.
+  * [[https://dnsleaktest.com/]]
+
+===== Troubleshooting =====
+Collect and analyze the following information.
+
+<code bash>
+# Restart services
+/etc/init.d/log restart; /etc/init.d/firewall restart; /etc/init.d/tor restart
+
+# Log and status
+logread -e Tor; netstat -l -n -p | grep -e tor
+
+# Runtime configuration
+pgrep -f -a tor
+iptables-save; ip6tables-save
+
+# Persistent configuration
+uci show firewall; uci show tor; grep -v -e "^#" -e "^$" /etc/tor
+</code>

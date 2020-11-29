@@ -1,0 +1,17 @@
+====== 快速入门 ======
+看来您真的想在设备上安装OpenWrt/LEDE。
+
+在您刷入OpenWrt/LEDE固件前，建议进行以下准备工作:
+  * 不要急于刷入，耐心准备。安装期间如有异常，请在弄清楚后继续。
+  * 知道准确的设备型号，以便选择合适的OpenWrt/LEDE固件。
+  * 请查阅设备手册以便知道如何刷入新固件。
+  * 当您在路由上安装或配置OpenWrt/LEDE期间, 您的网络连接显然会断开几分钟。请确保您已将所有必需的信息脱机或有其他备用网络连接。
+
+如果仍有疑问，您可以：
+  * 浏览本网站，特别是 [[zh:docs:guide-user:|用户手册]] 相关章节。
+  * 在 [[https://forum.openwrt.org|OpenWrt论坛]] 自由提问。
+  * 您也可以访问 [[https://wiki.openwrt.org|旧的OpenWrt维基]] 来查找遗存的信息。
+  * **已迫不及待？那就从 [[zh:docs:guide-quick-start:factory_installation|如何在原厂固件上安装OpenWrt]] 开始吧！**
+====快速入门文章列表====
+
+{{pagequery>@zh::docs:guide-quick-start: *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

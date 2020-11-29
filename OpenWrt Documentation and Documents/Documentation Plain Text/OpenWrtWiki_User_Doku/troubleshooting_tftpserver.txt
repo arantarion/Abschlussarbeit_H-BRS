@@ -1,0 +1,136 @@
+====== Setting up a TFTP server for TFTP Recovery/Install ======
+
+===== What is TFTP Recovery over Ethernet? =====
+
+On most devices, the vendor provided boot loader is a partition separated from the actual firmware. In case of a failed flash process or in case of a misconfiguration, the device's boot loader usually is still untouched and fully working. It the boot loader has a built-in "TFTP recovery mode", it enables to regain control of a device with a broken firmware partition, by allowing a recovery flash process (which will also reset your configuration to the device defaults). 
+
+For many routers the recovery works by starting a TFTP server on your computer. Then device with the broken firmware has to be started up in TFTP recovery mode. Some devices then will pull the network-provided firmware file over TFTP network protocol to the OpenWrt and hopefully recover with a successful emergency flash process.
+
+Some devices do not have automatic pull function and they need manual TFTP copy commands in recovery mode to get firmware from TFTP and firmware install.
+
+NOTE: Some other routers, e.g. many Netgear routers, have TFTP server on themselves, and the PC needs to act as TFTP client. The "TFTP recovery mode" can also mean that, so look carefully at info about your router to find out which method your router possibly supports.
+
+The below article mainly advises on the "TFTP client at router" recovery.
+
+===== Is TFTP recovery over Ethernet Supported by my Device? =====
+
+TFTP recovery over Ethernet is not supported by every router model. TFTP recovery is based on a device- and vendor-specific boot loader that may or may not be present on your device. Check the OpenWrt device page for your precise model to find out, if your device has a boot loader supporting TFTP recovery. If your device supports it, then this recovery function will still be present in your device boot loader, after OpenWrt firmware has been flashed onto the device.
+
+Note:
+  * Your device boot loader could alternatively have implemented TFTP recovery over serial cable, which is not covered on this page.
+  * Your device could also have [[docs:guide-user:troubleshooting:vendor_specific_rescue|other means of recovery]].\\
+
+===== Setting up TFTP Recovery/Install =====
+
+The following procedure only describes how to set up a TFTP server over Ethernet for the TFTP recovery/install preparation process, it does not describe the device-specific flash recovery/install process. For the actual flash process you have to consult the vendor provided documentation, the Internet, the OpenWrt Forum or the OpenWrt device pages.
+
+  - Download the desired OpenWrt (or stock) firmware image to the designated TFTP directory on your computer.
+  - Set the IP address of your computer's Ethernet interface as described in the Device Page for your model.
+  - Start the TFTP server on your computer.
+  - Power up the router and press a device-specific button to start firmware recovery over TFTP,
+  - or access boot loader recovery options and install recovery firmware over TFTP.
+
+===== Setting up TFTP Server =====
+
+==== On Mac OSX ====
+
+macOS provides a native tftpd server that runs the command line. There are also GUI applications that are available for those that prefer them.
+
+=== Command-Line Native tftpd ===
+
+For recent versions of macOS, the system-supplied ''tftpd'' is managed with ''launchctl''. Users should be comfortable with command-line usage and ''sudo'' to take this approach. As confirmed on macOS Sierra 10.12.6 and macOS Mojave 10.14.2, the general steps involved are
+
+  * Configure your network interface for the proper server address for your device. Using System Preferences > Network is perhaps the easiest.
+  * Connect your device to the network interface
+  * Start ''tftpd''
+
+  $ sudo cp path/to/file/to/serve.bin /private/tftpboot/the_name_the_device_is_looking_for.bin
+  $ sudo launchctl load -F /System/Library/LaunchDaemons/tftp.plist
+
+  * Confirm ''tfptd'' is running by looking for the UDP listener on port 69
+
+  $ netstat -an | fgrep \*.69    
+  udp4       0      0  *.69                   *.*                               
+
+
+  * Activate your device's recovery/TFTP mode
+  * When done with ''tftpd'', shut it down with
+
+  $ sudo launchctl unload -F /System/Library/LaunchDaemons/tftp.plist
+
+=== TFTPServer.app ===
+
+As an example of a GUI-driven tftp server, TFTPServer.app from http://ww2.unime.it/flr/tftpserver/ provides a pleasant GUI wrapper around the native command that makes the process less error prone. This procedure was tested with TftpServer.app v 3.4.1 on OSX 10.10.5 in December 2016. 
+
+  - Download and install TftpServer.app from the URL above.
+  - Move the application to a convenient directory.
+  - In the same directory, create another folder named 'tftpfiles'. This is the 'designated TFTP directory'. //TftpServer.app and tftpfiles will be in the same directory.//
+  - Set the OSX IP address as specified in the Device Page's TFTP Recovery section.
+  - Launch TftpServer.app. The window is shown here. //You should confirm that you see the desired file named in the window.// \\ :{{:media:tftpserver-osx.png?200|}} 
+  - Click "Start TFTP" (upper left). //You should see the "Server Status:" change to "Running".//
+  - Start your router and press the button. //The file will transfer.//
+  - //Note:// TftpServer.app may give warnings about file permissions. Use the "Fix" buttons at the bottom of the window to set the permissions properly.
+  - Click "Stop TFTP" or quit the application to stop the TFTP server. 
+
+==== On Windows ====
+
+While there is a command line TFTP server/client feature in windows, it's easier to use a third party one that has a proper graphical interface.
+
+A simple and free TFTP application is **Tftpd32**, available [[http://tftpd32.jounin.net/tftpd32.html|here]] (Tftpd64 is the 64-bit version and will be used in this example).
+
+Download the portable version, and unzip it in a folder. You should see the manual, a license in a PDF file, a configuration file, and the application executable itself.
+
+Place the file you want to send (the firmware file usually) in the same folder where you find the **Tftpd64** program file. The folder exposed through TFTP can be changed by clicking on Browse button, but in most situations you don't need to do that.
+
+Configure your ethernet port according to your device's own recovery method as detailed in [[docs:guide-user:troubleshooting:vendor_specific_rescue|Rescue from failed firmware upgrade]], note that in most cases you can't use that port to connect to the internet until you reconfigure it back like it was before.
+
+Double-click on the **Tftpd64** program file and you should get a Windows Firewall popup asking you to grant access. Check both options, to allow **Tftpd64** to communicate over both home/work and public networks. This is very important, if the Windows Firewall blocks your TFTP server you won't be able to access it from the device you want to recover.
+
+Click on the drop-down menu called **Server Interfaces** and select your PC's ethernet port.
+
+Now the tftp server is online and ready, and the file(s) in it can be accessed as normal.
+
+==== On Linux ====
+Install atftpd from repository on Debian/Ubuntu/Mint
+  # apt install atftpd
+Install atftpd from repository on RedHat/Fedora/Centos
+  # yum install atftpd
+Create directory where you want to put the image file
+  # mkdir /srv/tftp
+Put an image file into your directory - actual name will vary
+  # cp ~/tp_recovery.bin /srv/tftp
+Change the ownership of the folder and the file in it
+  # chown nobody:nogroup -R /srv/tftp
+Run TFTP server
+  # atftpd --daemon /srv/tftp
+Check if your TFTP server is listening
+  # netstat -lunp|grep 69
+//If not set, you should try running TFTP server as superuser.//
+
+**Check that you can in fact pull the file from your tftp server.**
+Preferably from another computer call your tftp server IP: (//or if not possible, in same server call IP 0.0.0.0//)
+  # tftp 192.168.0.66
+  tftp> get tp_recovery.bin
+  Received 8152633 bytes in 0.8 seconds
+  tftp> quit
+If you have received the file, congratulations, it's ready.
+
+==== Troubleshooting ====
+TFTP file transfer doesn't work from local computer
+  * Check if your TFTP server is running and listening
+  * Check if TFTP folder is set up correctly (location, access rights)
+  * Check if firmware file is set up correctly (location, access rights)
+TFTP file transfer works from local computer, but not from another computer:
+  * Check if network cable is connected properly
+  * Check if server IP is set correctly
+TFTP file transfer works from another computer, but not from router:
+  * Check if server IP is set correctly (same as router is searching for)
+  * Try using alternate cable, a crossover cable or alternate switch/speed
+  * Try connecting to an alternate port on the router / routers switch
+  * Pay attention to any output or verbosity from the router console or led activity if available
+  * Verify the arp cache on either host... server side is easier... 
+  * Use arp -s to add a static mapping or arp -d to delete stale entries...
+  * Use a third host to simply ping the router, both with static addresses if possible
+  * Try an alternate server software, client software or tftp transfer mode
+  * If you get some activity, timing can often yield results, power cycle the router and start the transfer earlier or later... 
+

@@ -1,0 +1,142 @@
+====== Bandwidth Monitoring with bwmon ======
+Let's divide all the available bandwidth monitoring tools into two sections:\\
+- Tools for current bandwidth usage\\
+- Tools for historical bandwidth usage
+
+===== View current bandwidth usage =====
+
+Interactive bandwidth measurement and monitoring can be achieved with the two small tools: bmon and iftop. They require less system resources on your OpenWrt system.
+
+==== Using bmon ====
+
+bmon is available as a package for most platforms and has two interfaces: CLI and HTML.\\
+The CLI interface: after being installed (Note: bmon requires some additional packages) you can run bmon just by typing it and on the console based user interface you can see all the network interfaces on your system. Pressing "g" shows a graph with the current bandwidth being used. Pressing "d" shows the details of it.\\
+The HTML interface: you can also configure bmon not just to output in a terminal window but to render HTML. To do that you need to install the uhttp package and do a little bit of configuration. It is not too hard; here are the steps:
+
+|<code>
+opkg install uhttpd bmon
+/etc/init.d/uhttpd start
+mkdir /tmp/bmon
+ln -s /tmp/bmon/ /www/
+bmon -o html:path=/www/bmon/
+</code>|
+
+Also an option to only run to HTML output so you can start on boot (Can add the following to rc.local)
+
+|<code>
+bmon -o null -O html:path=/www/bmon/ 2>&1 >/dev/null &
+</code>|
+
+FIXME there is no HTML output module Chaos Calmer (bmon -o list)
+
+For Chaos Calmer you can use the ncurses output module:
+
+|<code>
+bmon -o curses
+</code>|
+
+==== Using iftop ====
+
+As well as bmon, the package iftop is available for most OpenWrt platforms and allows a deeper insight into the data being transferred and the active connections. You can run iftop for your bridged LAN interface by typing in the following:
+
+|<code>
+opkg install iftop
+iftop -i br-lan
+</code>|
+
+iftop will then show you the connections being established, the data being transferred as well as the bandwidth.
+
+{{media:iftop.png?400|}}
+
+===== View historical bandwidth usage =====
+
+These tools are more feature-rich applications; moreover many of them can collect statistics from multiple sources (eg. CPU, RAM, disk, etc).\\
+Some of them can consume a lot of system resources on your OpenWrt router system. 
+
+Approximate order from most-basic to most-feature-rich:\\
+wrtbwmon < vnstat < YAMon < luci_app_statistics < bandwidthd < ntop\\
+FIXME Please, help ordering each, thanks.
+
+If you are a home (or small business?) user, and you want to get some (reasonable?) level of historical bandwidth monitoring as quickly and easily as possible, consider installing both ''luci-app-vnstat'' and ''luci-app-nlbwmon''.  Both can be installed via LuCI.  Both work without configuration.  Both use minimal CPU.  Both display charts via LuCI (vstat appears in the Status menu).  vnstat monitors traffic at the interface level, and can display usage per hour, per day, and per month.  nlbwmon monitors traffic per MAC address (and maybe also per IP address?), but only displays charts per "accounting period".  The accounting period defaults to monthly, but is reconfigurable.
+
+    * Howto: [[http://usage-monitoring.com|YAMon]]
+    * Howto: [[docs:guide-user:services:network_monitoring:bandwidthd]]
+    * Howto: [[docs:guide-user:services:network_monitoring:vnstat]]
+    * Howto: [[docs:guide-user:services:network_monitoring:wrtbwmon]]
+    * Howto: [[docs:guide-user:luci:luci_app_statistics]]
+
+===== Available tools =====
+^ Home ^ Description ^ opkg ^
+| [[http://freshmeat.net/projects/bmon/|bmon]] | a portable bandwidth monitor and rate estimator | <color green> yes </color> |
+| [[http://www.ex-parrot.com/pdw/iftop/|iftop]] | iftop does for network usage what top(1) does for CPU usage. iftop shows table of highest bandwidth usage paired on IP source and destination pairs. | <color green> yes </color> |
+| [[http://humdi.net/vnstat/|vnstat]] | a console-based network traffic monitor | <color green> yes </color> |
+| luci-app-vnstat | LuCI interface for vnstat | <color green> yes </color> |
+| [[http://collectd.org|collectd]] | a daemon which collects different statistics | <color green> yes </color> |
+| [[docs:guide-user:luci:luci_app_statistics]] | collectd and rrd-tool based general statistics tool | <color green> yes </color> |
+| [[http://www.ntop.org/|ntop]]  | a network traffic probe that shows the network usage | <color red> no </color> |
+| [[http://www.pmacct.net/|pmacct]] | IP usage accounting suite | <color red> no </color> |
+| [[http://fprobe.sourceforge.net/|fprobe]] | Forward aggregated traffic data as NetFlows to tools like ntop or pmacct | <color red> no </color> |
+| [[https://unix4lyfe.org/darkstat/|darkstat]] | Captures network traffic, calculates statistics about usage, and serves reports over HTTP | <color green> yes </color> |
+| [[http://oss.oetiker.ch/mrtg/|MRTG]] | Tobi Oetiker's MRTG - The Multi Router Traffic Grapher | <color red> no </color> |
+| [[http://www.gropp.org/?id=projects&sub=bwm-ng|bwm-ng]] | small and simple console-based live network and disk io bandwidth monitor | <color green> yes </color> |
+| [[https://github.com/iptraf-ng/iptraf-ng/|IPTraf-ng]]  | IPTraf-ng is a console-based network monitoring program for Linux that displays information about IP traffic. | <color green> yes </color> |
+| [[http://bandwidthd.sourceforge.net/|bandwidthd]] | builds HTML files with graphs and charts are built by individual IPs | <color green> yes </color> |
+| [[https://github.com/pyrovski/wrtbwmon|wrtbwmon]] | Per-user bandwidth monitoring tool for Linux-based routers | <color red> no </color> |
+| [[https://github.com/jow-/nlbwmon|nlbwmon]] | LEDE Traffic Usage Monitor; tracks amount of data sent/received per device, per month | <color green> yes </color> |
+| [[http://usage-monitoring.com|YAMon]] | Per-user bandwidth monitoring (and more) with detailed, extensive graphical reporting capabilities | <color red> no </color> |
+| [[https://enterprise.cloudshark.org/blog/2014-06-30-capturing-smartphone-traffic-with-openwrt-and-cloudshark|CloudShark]] | capture filtered traffic, then upload to cloud for analyze | <color green> yes </color> |
+| [[https://www.netify.ai/get-netify/openwrt|Netify]] | DPI engine with cloud-based bandwidth monitoring, device discovery and analysis | <color green> yes </color> |
+
+
+There is a collection of Bandwidth Monitoring Tools For Linux from 2007: [[http://www.ubuntugeek.com/bandwidth-monitoring-tools-for-linux.html|link]] Along with the previous open-source bandwidth monitoring tools, there is an array of free commercial tools that can assist you with the [[https://www.netadmintools.com/bandwidth-monitor/|monitoring of your bandwidth - found here]].
+
+
+===== Measuring maximum bandwidth =====
+
+With higher bandwidths being provided by internet service providers it becomes harder both for the end-user and the service provider to provide these bandwidths. That is also the reason why many websites that offer bandwidth measurement have become quite popular (such as www.speed.io). Some internet providers even provide their own speed tests for their customers. 
+
+Just because you have a 50 Mbit/s internet line (such as with EuroDOCSIS 3.0 or VDSL) does not necessarily mean that each download you do with your internet browser works at 6 Mbytes/s. There are several factors that affect your download and/or upload speed.
+
+The following factors affect your bandwidth and thereby your download/upload speed:
+
+  * The maximum bandwidth the remote server provides you
+  * The bandwidth between your provider and the provider of the remote server
+  * The total bandwidth behind the access multiplexer (DSLAM) of your ADSL modem (if you're using ADSL)
+  * The total bandwidth behind the access multiplexer of your DOCSIS modem (if you're using DOCIS/Cable TV)
+  * The bandwidth being used by other clients connected to your OpenWrt router
+  * The bandwidth your LAN provides (Wi-Fi, Ethernet, Gigabit Ethernet, Fibre)
+
+To measure your maximum bandwidth now, you should start a terminal with iftop and bmon. Next up you should shut down or disconnect all clients except the machine you're connected to the router with.
+
+Now you can start some online speed tests (such as www.speed.io) and check the real bandwidth that is been used by these services. Afterwards you should find at least 3 to 4 fast internet services in your area. You should then open up an additional terminal and start 3 downloads with wget on your OpenWrt router in parallel. Note: you should always tell wget to store large files in "/dev/null", because otherwise it might brick your router by writing into the RAM until it's full.
+
+|<code>
+wget http://speedtest.netcologne.de/test_1gb.bin -O /dev/null &&
+wget http://speedtest.qsc.de/1GB.qsc -O /dev/null &&
+wget ftp://ftp.halifax.rwth-aachen.de/opensuse/distribution/11.3/iso/openSUSE-11.3-DVD-i586.iso
+ -O /dev/null
+</code>|
+
+The best test servers are mostly those from which you normally download. So try to find a fast university server for example that mirrors Unix/Linux distributions and try to download from these servers. Also some ISPs provide test files or downloads. If your ISP provides big downloadable files you should also use them to test your bandwidth, because your ISP should be the one that can provide you the best download speed as there is no other provider in between.
+
+==== Troubleshooting bandwidth problems ====
+
+If you tested your maximum bandwidth and it is either not reaching the maximum contracted with your ISP or only sometimes reaches the maximum there is a short checklist that you should walk through and check.
+
+Sometimes end-user service contracts with ISP state the bandwidth as "up to" which means that they can provide you the maximum bandwidth, but they cannot guarantee that it is available. This is often the case with some ADSL or VDSL providers Germany.
+
+=== Does your local network provide enough bandwidth? ===
+
+You should make sure that when you do have a 50 Mbit/s line that your LAN has at least 100 Mbit/s. A Gigabit LAN would be recommend for bandwidths greater than 40 Mbit/s, because otherwise your LAN bandwidth might be consumed by local file transfers or other LAN services being used by other clients connected to your router. Try not to make internet bandwidth tests from your wireless network and instead test your wireless network separately by transferring data from cable-connected clients (Ethernet or Fibre) to wireless clients.
+
+=== Is your local network traffic clean? ===
+
+Running iftop helps you find all traffic that is currently active in your local network. So if another client transfers gigabytes of data within your local network this can also dramatically slow down your internet transfers. Make sure the only connection that is available in your LAN while testing is the test download traffic. Especially services such as SMB (Samba/Windows Workgroups or Domains) produce lots of overhead and unwanted network traffic. Try to find that unwanted network traffic and eliminate the services on the clients that consume the bandwidth.
+
+=== Is your router hard- and software fast enough? ===
+
+Just make sure that your router has sufficient RAM free and the CPU is not fully used while transferring big amounts of data. Usually this is not a problem, but installing too much software and using your router for other services (which is for some people common with OpenWrt) it can slow down the network management of your router. Also make sure that when you have an internet line that has a bandwidth greater than 70 Mbit/s it is highly recommended to use Gigabit Ethernet.
+
+=== Does your ISP provide the bandwidth promised? ===
+
+Due to some press reports about ISP not providing the proper bandwidth, many people in the first place start to blame the ISP when their bandwidth is not as expected. In fact most ISPs do all they can to provide the proper bandwidth; blaming them for not trying to do so is often wrong. If you did check all points above and direct downloads from the website or a website directly located in the network of your ISP are still not at the speed expected and that happens around the clock (24hrs/day) you should call your ISP to do bandwidth measurement on his side.

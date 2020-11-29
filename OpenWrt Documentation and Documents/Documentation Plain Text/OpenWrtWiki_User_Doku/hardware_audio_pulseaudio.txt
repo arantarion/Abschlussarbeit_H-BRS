@@ -1,0 +1,275 @@
+====== PulseAudio ======
+Read about [[wp>PulseAudio]] and have a look at its operational flow chart: [[wp>File:Pulseaudio-diagram.svg]].
+
+===== Preparations =====
+==== Routing ====
+Routing describes the way which the Audio-Signal take when traversing your OS. Here a couple of routing configurations that make sense: (it is always a good idea to configure the soundsource (e.g. audio player) specifically to use the correct output interface)
+
+The shortest path:
+
+^  Device  ^
+|''Soundsource  ->  ALSA driver  ->  Hardware''|
+
+Many programs can communicate directly with PulseAudio:
+
+^  Device  ^
+|''Soundsource  ->  PulseAudio  ->  ALSA driver  ->  Hardware''|
+
+In case the sound source cannot communicate directly with PA, it takes a detour:
+
+^  Device  ^
+|''Soundsource  ->  ALSA  ->  PulseAudio  ->  ALSA driver  ->  Hardware''|
+
+PulseAudio works over the network:
+
+^  Device 1  ^  ~  ^  Device 2  ^
+|''Soundsource  ->  PulseAudio ->''|  Network  |''-> PulseAudio  ->  ALSA driver  ->  Hardware''|
+
+==== Hardware ====
+  * Device 2 requires a [[wp>Sound card]] (Hardware), Device 1 does not; [[wp>Loudspeaker]]s are connected to the sound card
+
+
+==== Required Packages ====
+^ package ^ size ^ notes
+|pulseaudio-daemon| 886kB | Pulse 6, ar71xx, trunk
+| alsa-lib | 289kB | 1.0.28,ar71xx,trunk
+| libsndfile | 138kB | 1.0.25,ar71xx,trunk
+| Total with all dependencies | 2105kB |
+
+Additional Dependencies: 
+| libltdl | 13kB |
+| libpthread | 31kB |
+| librt | 6kB |
+| libopenssl | 681kB | 1.0.2|
+| libspeexdsp | 35kB |
+| libjson-c | 15kB | 0.12|
+| libwrap | 11kB | 7.6|
+
+<code bash>
+opkg info pulseaudio-daemon | awk '/Depends/ {gsub(/\,/, "");$1="";print}'|tr -d '\n' | awk '{ while(++i<=NF) printf (!a[$i]++) ? $i FS : ""; i=split("",a); print "" }'
+</code>
+
+There is a profiles and a tools package.
+
+==== Official Documentation ====
+
+  * [[http://linux.die.net/man/1/pulseaudio|manpage for PulseAudio]]
+  * [[man>pulseaudio]]
+
+===== Configuration =====
+With PulseAudio it's possible to send audio over the network. There are several ways to achieve that, here's the "tunnel"-approach described. For other solutions see the [[http://pulseaudio.org/wiki/NetworkSetup|PulseAudio wiki]].
+
+==== Server configuration ====
+For sound from the network, something like this is needed:
+
+/etc/pulse/system.pa:
+| ''load-module module-alsa-sink
+load-module module-native-protocol-tcp auth-anonymous=1''|
+
+Most programs do not need the esound module because other ways to connect to pulseaudio server are available.
+(module-native,module-tunnel)
+
+|'' load-module module-esound-protocol-tcp auth-anonymous=1 ''|
+
+**There is an issue ([[https://dev.openwrt.org/ticket/14175|#14175]]) with permissions in system mode with alsa. This is an workaround which does not support hotplug.**
+In system mode pulseaudio runs under user pulse but it does not have the permissions to access alsa. Add this line to /etc/init.d/pulseaudio
+|''chown -R :51 /dev/snd ; chmod -R g+rw /dev/snd''|
+
+==== Client configuration ====
+
+You can enter network-sinks manually (which is described below).
+
+:!: Automatic discovery with [[pulseaudio#avahizeroconf|Avahi/Zeroconf]] is disabled in the build system.
+
+=== Linux ===
+
+Load a new tunnel-sink:
+| ''pacmd load-module module-tunnel-sink server=<IP_OPENWRT>
+''|
+
+Now it can be controlled with eg gnome-volume-control:
+
+{{:doc:howto:gnome-volume-control.png|}}
+
+To play one stream simultaneously to a local and a remote sink create a combined sink: 
+|''pacmd load-module module-combine sink_name=combined slaves="tunnel.<IP_OPENWRT>,alsa_output.usb-0ccd_0077-00-U0xccd0x77.analog-stereo"
+pacmd set-default-sink combined''|
+
+The local sink (in this case alsa_output.usb-0ccd_0077-00-U0xccd0x77.analog-stereo) can be obtained via pacmd:
+|''$ pacmd list-sinks |grep name:
+        name: <alsa_output.pci-0000_00_1b.0.analog-stereo>
+        name: <alsa_output.usb-0ccd_0077-00-U0xccd0x77.analog-stereo>''|
+
+===== Examples =====
+
+===== Notes =====
+==== MPD ====
+
+=== Generalities ===
+0.16.1 of MPD is needed. It needs to be build with support for PulseAudio:
+| ''Index: sound/mpd/Makefile
+===================================================================
+--- sound/mpd/Makefile  (Revision 25082)
++++ sound/mpd/Makefile  (Arbeitskopie)
+@@ -63,7 +63,6 @@
+        --disable-cue \
+        --disable-jack \
+        --disable-modplug \
+-       --disable-pulse \
+        --disable-sidplay \
+        --disable-sqlite \
+        --enable-shout \
+''|
+
+=== Barrier Breaker and Chaos Calmer ===
+More information on [[docs:guide-developer:build.mpd-full.pulse|building MPD-full with PulseAudio]]
+
+
+==== Avahi/ZeroConf ====
+
+:FIXME: :!: Not available in trunk
+
+If you want to automatically discover new Pulseaudio devices on your network, you can install pulseaudio-daemon-avahi. This will pull in dbus and avahi. You are then able to use padevchooser on the client to find and connect to Pulseaudio sinks in the local network.
+
+| ''opkg install pulseaudio-daemon-avahi
+''|
+
+Add module-zeroconf-publish to /etc/pulse/system.pa:
+
+| ''### Publish local soundcards on the network
+load-module module-zeroconf-publish
+''|
+
+Avahi-browse or avahi-discover on the client should list the sinks:
+
+| ''[jan@jan ~]$ avahi-browse -a
++  wlan0 IPv4 root@OpenWrt: Intel 82801DB-ICH4              PulseAudio Sound Sink local
++  wlan0 IPv4 root@OpenWrt                                  PulseAudio Sound Server local
++  wlan0 IPv4 Secure Shell on OpenWrt                       SSH-Fernzugriff      local
++  wlan0 IPv4 Music Player Daemon on OpenWrt                Music Player Daemon  local
+''|
+
+Make sure module-zeroconf-discover is loaded on the client (pacmd load-module module-zeroconf-discover). The new sink should show up in gnome-control-center sound:
+
+{{:doc:howto:gnome-control-center-sound.png|}}
+
+==== Issues ====
+
+Some people experienced issues with fadvise (see [[https://forum.openwrt.org/viewtopic.php?pid=118528#p118528]]). Building PulseAudio with ac_cv_func_posix_fadvise=no seems to help:
+| ''-       --without-caps 
++       --without-caps \ 
++       ac_cv_func_posix_fadvise=no'' |
+
+
+This seems to help on systems with low resources:
+
+/etc/pulse/daemon.conf:
+
+| ''high-priority = yes
+nice-level = -11
+
+realtime-scheduling = yes
+
+resample-method = trivial
+
+default-sample-format = s16le
+default-sample-rate = 48000
+default-sample-channels = 2
+default-channel-map = front-left,front-right'' |
+
+===== Alternative configuration for forwarding sound =====
+The approach taken above might not produce acceptable results depending on the hardware. It can lead to lagging, unpredictable, distorted sound.  Here's a different method, that uses ssh to forward a tcp port from the client to the router and then uses socat to listen to this port on the router and connect it to pulseaudio's native unix socket.
+The idea for this was found on [[http://razor.occams.info/blog/2009/02/11/pulseaudio-sound-forwarding-across-a-network/|Joshua Tauberer’s Blog]].
+
+==== Required Packages ====
+  ***''pulseaudio-daemon''** [[http://linux.die.net/man/1/pulseaudio|manpage for PulseAudio]] (751k on ar71xx)
+    ***''alsa-lib''**  (302k on ar71xx)
+    ***''libsndfile''** (130k on ar71xx)
+    ***''socat''** (82k on ar71xx)
+
+==== Server configuration ====
+For sound from the network, something like this is needed:
+
+/etc/pulse/system.pa:
+|''load-module module-native-protocol-unix auth-anonymous=1''|
+The module will already be in system.pa by default, just make sure that the auth-anonymous=1 option is given, to avoid an access denied error, when you later try to stream sound.
+
+Sometimes it helps to start udevd before pulseaudio to avoid problems. (install the udev package, if you run into problems with pulseaudio)
+|''udevd %%--%%daemon''|
+If you still have problems, you can also try:
+|''chmod 0777 /dev/snd/*''|
+
+Pulseaudio also likes to complain that /var/lib/pulse is missing, so we create it:
+|''mkdir -p /var/lib/pulse''|
+
+Run pulseaudio as follows:
+|''pulseaudio %%--%%system %%--%%disallow-module-loading %%--%%disallow-exit %%--%%no-cpu-limit &''|
+It will complain that pulseaudio shouldn't be run in system mode, but on many routers this is the only mode that will actually work.
+
+Now run socat to listen on the port that will be forwarded to the router and let it redirect to the native unix socket that pulseaudio is using on the router:
+|''socat TCP-LISTEN:4000,fork UNIX-CONNECT:/tmp/run/pulse/native &''|
+You have to keep this running to keep the connection going.
+
+You can put all of these commands in a script:
+|''#!/bin/sh
+udevd %%--%%daemon
+chmod 0777 /dev/snd/*
+mkdir -p /var/lib/pulse
+pulseaudio %%--%%system %%--%%disallow-module-loading %%--%%disallow-exit %%--%%no-cpu-limit &
+socat TCP-LISTEN:4000,fork UNIX-CONNECT:/tmp/run/pulse/native &
+''|
+
+Save the upper script as /root/pulseaudioserver.sh, make sure it is executable and add the following line in /etc/rc.local before the exit statement:
+<code>
+/root/pulseaudioserver.sh
+exit 0
+</code>
+Pulseaudio should now be running after reboot.
+
+==== Client configuration ====
+The first step is to forward a tcp port to the router using ssh. In this example we've decided to use port 4000.
+
+|''ssh -f -N -L4000:localhost:4000 root@openwrt''|
+Option |-f| puts the ssh session the background, because we don't need to actively work with the session anyways. Option |-N| let's ssh know that we don't want the shell to run any programs, since forwarding a port is all we want to do. Enter your root password and the port should be forwarded.
+
+To actually stream sound over the network open a terminal and type
+|''export PULSE_SERVER=localhost:4000''|
+Any pulseaudio application started from that same terminal will automatically stream its sound over the network.
+Note that with this solution you won't see a second audio-output-device in pulseaudio-tools like padevchooser, so you can't move
+streams back and forth between devices.
+
+If you don't want to type as much every time you are going to use the remote pulseaudio, you can add this to your ~/.bashrc:
+<code>
+function P {
+	C=`netstat -ntap 2> /dev/null | grep -c ":4000"`
+	if [ "$C" = "0" ]
+	then
+		ssh -f -N -L4000:localhost:4000 root@openwrt 2> /dev/null
+	fi
+	export PULSE_SERVER=localhost:4000
+}
+</code>
+This will check wether the port is already forwarded and forward it if needed. Then it will set the PULSE_SERVER environment variable, so that sound will be streamed over the network. All you have to type in a terminal is P.
+
+Now you can do something like this to stream over the network:
+<code>
+P; mplayer *.ogg
+</code>
+
+Forwarding the port with ssh is not neccessary if your client can access the openWRT server directly (no firewall in between). For mpd you can use the following output configuration:
+<code>
+audio_output {
+        type            "pulse"
+        name            "openWRT Network Sink"
+        server          "openWRT:4000"
+        format          "48000:16:2"
+}
+</code>
+
+For console applications you can simply set the PULSE_SERVER environment variable
+<code>
+export PULSE_SERVER='openWRT:4000'
+</code>
+
+===== PulseAudio: Why software mixing? =====
+"Many people wonder why have software mixing at all if you have hardware mixing? The thing is, hardware mixing is a thing of the past, modern soundcards don't do it anymore. Precisely for doing things like mixing in software SIMD CPU extensions like SSE have been invented. Modern sound cards these days are kind of "dumbed" down, high-quality [[wp>Digital-to-analog converter|DACs]]. They don't do mixing anymore, many modern chips don't even do volume control anymore. Remember the days where having a Wavetable chip was a killer feature of a sound card? Those days are gone, today wavetable synthesizing is done almost exclusively in software – and that's exactly what happened to hardware mixing too. And it is good that way. In software mixing is is much easier to do fancier stuff like DRC which will increase quality of mixing. And modern CPUs provide all the necessary SIMD command sets to implement this efficiently." – [[http://0pointer.de/blog/projects/jeffrey-stedfast.html|Lennart Poettering]]

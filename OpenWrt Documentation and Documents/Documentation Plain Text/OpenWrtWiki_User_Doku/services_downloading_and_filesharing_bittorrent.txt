@@ -1,0 +1,25 @@
+====== BitTorrent ======
+[[wp>BitTorrent (protocol)]]
+  * [[http://events.ccc.de/congress/2007/Fahrplan/events/2355.en.html|24C3 lecture on BitTorrent especially on tracker software (german)]]
+
+
+===== BitTorrent Client Software =====
+^ Name ^  Version  ^ Dependencies  ^  Size  ^ Description  ^
+| transmission-daemon  |  2.40-1  |  libcurl, libopenssl, libpthread, libevent2, librt  |  182.225 | [[wp>Transmission (BitTorrent client)|Transmission]] is a simple BitTorrent client. It features a very simple, intuitive interface on top on an efficient, cross-platform back-end. This package contains the daemon itself.\\ See ->''[[docs:guide-user:services:downloading_and_filesharing:transmission|/etc/config/transmission]]'' to configure it  |
+| transmission-remote  |  2.40-1  |                       |  189.729 | CLI remote interface for transmission.  |
+| transmission-cli     |  2.40-1  |  transmission-daemon  |  709.887 | CLI utilities for transmission.  |
+| transmission-web     |  2.40-1  |  transmission-daemon  |  138.156 | Webinterface resources for transmission.  |
+| |
+| rtorrent  |  0.9.8-2  |  libc, libcurl4, libncurses6, libpthread, libopenssl1.1, libstdcpp6, zlib  |  562.281 | [[wp>rTorrent]] is a BitTorrent client for ncurses, using the [[wp>LibTorrent]] library. The client and library is written in C + + with emphasis on speed and efficiency, while delivering equivalent features to those found in GUI based clients in an ncurses client.  |
+| rtorrent-rpc  |  0.9.8-2  |  libc, libcurl4, libncurses6, libpthread, libopenssl1.1, libstdcpp6, zlib, xmlrpc-c-server  |  558.708 | [[wp>rTorrent]] is a BitTorrent client for ncurses, also has a built-in daemon mode, clients can control it via [[wp>XML-RPC]]. LuCI based client: [[https://github.com/wolandmaster/luci-app-rtorrent|luci-app-rtorrent]]  |
+| |
+| ctorrent  |  dnh3.3.2-5  |  uclibcxx, libopenssl  |  86.767 | [[wp>CTorrent]] is a BitTorrent client written in the C programming language, known to be a very robust and mature programming language, which produces fast and optimized application. This package is built with OpenSSL support. |
+| ctorrent-nossl  |  dnh3.3.2-5  |  uclibcxx  |  86.720 | CTorrent is a BitTorrent client written in the C programming language, known to be a very robust and mature programming language, which produces fast and optimized application. This package is built with builtin (Steve Reid's public-domain) SHA-1 support  |
+| |
+| deluge*   |                 |                 |            | [[wp>Deluge (software)|Deluge]] is written in Python and should be available since [[https://dev.openwrt.org/changeset/20178|R20178]].\\ Deluge is broken in OpenWrt: [[https://dev.openwrt.org/ticket/6888|6888]] deluge needs rblibtorrent, which is broken and won't probably be fixed anytime soon\\ https://dev.openwrt.org/browser/packages/net/deluge |
+| btpd  |  0.16-2  |              |    | BTPD is a bittorrent client consisting of a daemon and client commands, which can be used to read and/or manipulate the daemon state. The daemon is capable of running several torrents simultaneously and only uses one tcp port. It's fairly low on resource usage and should be perfect for file distribution sites. Efficient downloads and ease of use makes this client a good choice for the casual user as well. |
+
+
+===== BitTorrent Tracker Software =====
+^ Name ^  Version  ^ Dependencies  ^  Size  ^ Description  ^
+| cbtt  |  20060727-2  |  libc, libpthread, uclibcxx, zlib | | Bittorrent tracker  |

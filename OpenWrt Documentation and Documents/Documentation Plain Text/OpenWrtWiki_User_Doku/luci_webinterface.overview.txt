@@ -1,0 +1,29 @@
+====== Web Interface Overview ======
+This is for a Web Interface used to **administer** OpenWrt. For running a WebServer see [[docs:guide-user:services:webserver:start]].\\
+You can read about WebGUIs  on [[http://lwn.net/Articles/420066/]] from 2010-12-22
+
+===== LuCI =====
+Mainly [[wp>Lua (programming language)]]
+  * Project Homepage: [[https://github.com/openwrt/luci/wiki/]]
+  * Translation Portal: [[https://github.com/openwrt/luci/wiki/i18n]]
+  * [[docs:guide-user:luci:luci.essentials]]
+  * [[docs:techref:luci|LuCI – Technical Reference]]
+  * [[docs:guide-user:services:webserver:http.uhttpd]] is default web server
+
+===== LuCI2 =====
+
+:!: will eventually replace luci
+
+  * [[docs:techref:luci2|LuCI2 - Technical Reference]]
+  * [[docs:guide-user:services:webserver:http.uhttpd]] is default web server
+  * [[http://git.openwrt.org/?p=project/luci2/ui.git|luci2 sources (cgit)]]
+
+===== X-Wrt =====
+
+X-Wrt was the first web interface project for OpenWrt. It shouldn't to be confused with a more recent Chinese fork of OpenWrt also named X-Wrt.
+  * Archived Homepage: [[https://web.archive.org/web/20131031031526/http://x-wrt.org/]]
+===== Gargoyle =====
+Uses [[wp>JavaScript]] <del> ?</del>  to do as much of the computation on the client side as possible,
+server-side scripting that is necessary is done using [[http://haserl.sourceforge.net/|haserl]] .
+  * Project Homepage: [[http://www.gargoyle-router.com/]]
+  * Implementation Overview: [[http://www.gargoyle-router.com/wiki/doku.php?id=developer_documentation|developer_documentation]]

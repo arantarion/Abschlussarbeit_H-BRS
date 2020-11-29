@@ -1,0 +1,121 @@
+====== µMurmur ======
+µMurmur or uMurmur is a minimalistic [[wp>Mumble (software)]] server primarily targeted to run on embedded devices with an open OS like OpenWrt.
+
+Project page for more info and most up-to-date documentation at https://github.com/umurmur/umurmur
+
+===== Preparation =====
+==== Prerequisites ====
+So far there are two uMurmur packages available in the repos, one compiled against the PolarSSL library and one against the OpenSSL library. The PolarSSL variant needs less storage //and// less RAM:
+
+<code>
+opkg info umurmur-polarssl
+opkg info umurmur-openssl
+</code>
+
+__Firewall:__ The default ports are 64738 tcp and 64738 udp. [[docs:guide-user:firewall:fw3_configurations:fw3_config_examples#opening_ports_on_the_openwrt_router|open]] them up in ''[[docs:guide-user:firewall:start|/etc/config/firewall]]''.
+
+
+==== Required Packages ====
+The following list specifies package versions for latest stable release of OpenWrt. At time of writing Backfire 10.03.1.
+=== Server (OpenWrt) ===
+^ Name             ^ Version   ^  Size  ^ Description  ^
+| umurmur-polarssl  |  0.2.6-1   |   39696 | Minimalistic Mumble server daemon. Uses the PolarSSL library for SSL and crypto.  |
+| libpolarssl       |  0.14.3-1  |   95679 | Embedded SSL (library)  | 
+| libconfig         |  1.4.7-1   |   19143 | Libconfig is a simple library for manipulating structured configuration files. This file format is more compact and more readable than XML. And unlike XML, it is type-aware, so it is not necessary to do string  parsing in application code.  Libconfig is very compact -- just 38K for the stripped C shared library (less than one-fourth the size of the expat XML parser library) and 66K for the stripped C++ shared library. This makes it well-suited for memory-constrained systems like handheld devices.  |
+^ Name             ^ Version   ^  Size  ^ Description  ^
+| umurmur-openssl   |  0.2.6-1   |   40391 | Minimalistic Mumble server daemon. Uses OpenSSL library for SSL and crypto.  |
+| libopenssl        |  0.9.8r-1  |  510041 | The OpenSSL Project is a collaborative effort to develop a robust, commercial-grade, full-featured, and Open Source toolkit implementing the Secure Sockets Layer (SSL v2/v3) and Transport Layer Security (TLS v1) protocols as well as a full-strength general purpose cryptography library. This package contains the OpenSSL shared libraries, needed by other programs.  |
+| libconfig         |  1.4.7-1   |   19143| Libconfig is a simple library for manipulating structured configuration files. This file format is more compact and more readable than XML. And unlike XML, it is type-aware, so it is not necessary to do string  parsing in application code.  Libconfig is very compact -- just 38K for the stripped C shared library (less than one-fourth the size of the expat XML parser library) and 66K for the stripped C++ shared library. This makes it well-suited for memory-constrained systems like handheld devices.  |
+
+=== Client (your PC) ===
+On Linux you need to install the ''mumble'' package, like [[http://packages.debian.org/squeeze/mumble|this one]]. On Windows or MacOSX you have to download it: [[http://mumble.sourceforge.net/]].
+
+__**Note**__ that uMurmur version 0.2.x is compatible with Mumble version 1.2.x series. Mumble version 1.1.x series is **not** compatible.
+
+===== Installation =====
+Example using shell access:
+<code bash>
+opkg install umurmur-polarssl
+vi /etc/umurmur.conf
+/etc/init.d/umurmur enable
+/etc/init.d/umurmur start
+logread
+</code>
+Check log output that the ''uMurmurd'' started up OK.
+
+[[docs:guide-user:firewall:fw3_configurations:fw3_config_examples#opening_ports_on_the_openwrt_router|open]] port 64738 for TCP and UDP in ''[[docs:guide-user:firewall:start|/etc/config/firewall]]''.
+
+<code bash>
+vi /etc/config/firewall
+/etc/init.d/firewall reload 
+</code>
+You should now be able to connect via the mumble protocol.
+
+===== Configuration =====
+''cat /etc/umurmur.conf''
+
+| ''max_bandwidth = 48000;
+welcometext = "Welcome to uMurmur!";
+certificate = "/etc/umurmur/cert.crt";
+private_key = "/etc/umurmur/key.key";
+password = "";
+max_users = 10;
+
+# Root channel must always be defined first.
+# If a channel has a parent, the parent must be defined before the child channel(s).
+channels = ( {
+         name = "Root";
+         parent = "";
+         description = "The Root of all channels";
+         },
+         {
+         name = "Lobby";
+         parent = "Root";
+         description = "Lobby channel";
+         },
+         {
+         name = "Red team";
+         parent = "Lobby";
+         description = "The Red team channel";
+         },
+         {
+         name = "Blue team";
+         parent = "Lobby";
+         description = "The Blue team channel";
+         }
+);
+# Channel links configuration.
+channel_links = ( {
+         source = "Lobby";
+         destination = "Red team";
+         },
+         {
+         source = "Lobby";
+         destination = "Blue team";
+         }
+);
+
+default_channel = "Lobby";'' |
+
+===== Start on boot =====
+To enable/disable start on boot:
+''/etc/init.d/umurmur enable''  this simply creates a symlink to umurmur in "''/etc/rc.d/''"
+''/etc/init.d/umurmur disable'' this removes the symlink again
+
+===== Administration =====
+There is no privilege system implemented in uMurmur version < 0.2.10 meaning that users cannot be kicked, banned or muted by other users. If you have a need for this kind of functionality the options are:
+
+  * Set a server password 
+  * Add the IP of misbehaving users to your firewall.
+
+Since uMurmur 0.2.10 there is a password based administration scheme. A package is available in OpenWRT trunk. For this to work you'd need to install the dependencies from trunk as well if you are running Backfire.
+
+===== Troubleshooting =====
+The most common error is the firewall. Double check connection problems with <code>iptables -n -v</code> and check those counters.
+
+If users cannot connect and you get this error in the log <code>WARN: SSL handshake failed: -28672</code> you're probably running Backfire 10.03.1-rc4 with Polarssl 0.14. Upgrade to Backfire 10.03.1-RC5 or later.
+
+===== Notes =====
+  - Read about certificates in general. Do it!  [[wp>Public key certificate]]
+  - enlighten your friends, there is no point in security if not all users understand the principle of operation
+  * Project Homepage: [[https://github.com/umurmur/umurmur]]

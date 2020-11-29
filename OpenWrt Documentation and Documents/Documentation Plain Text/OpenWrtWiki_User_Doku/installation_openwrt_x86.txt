@@ -1,0 +1,144 @@
+====== OpenWrt em hardware x86, também conhecido como PC ou servidores ======
+
+É claro que o OpenWrt pode ser executado em hardware normal de PC ou servidor e tirar proveito do hardware muito mais poderoso que a arquitetura x86 (Intel / AMD) pode oferecer.
+
+** Nota: ** Para imagem OpenWrt inicializável UEFI, consulte [[docs: developer-guide: uefi-bootable-image | OpenWrt em sistemas x86 baseados em UEFI]]
+
+==== Baixe imagens de disco ====
+
+[[https://downloads.openwrt.org/releases/|Vá aqui]], escolha a versão do release e clique em ** target ** e, em seguida, em ** x86 **. Você verá diferentes alvos.
+
+:!: Existem vários destinos para o x86 OpenWrt, alguns são direcionados para hardware antigo ou específico e seus padrões de compilação podem não ser adequados ao hardware x86 moderno.
+
+  * ** 64 ** é para hardware de PC moderno (qualquer coisa a partir de 2007 em diante), foi desenvolvido para computadores com capacidade de 64 bits e suporta recursos modernos de CPU. Escolha isso, a menos que você tenha boas razões para não fazê-lo.
+  * ** Genérico ** é para hardware somente de 32 bits (hardware antigo ou alguns processadores Atom), deve ser ** i586 ** arquitetura Linux, funcionará no Pentium 4 e posterior. Use isso apenas se o seu hardware não puder executar a versão de 64 bits.
+  * ** Legacy ** é para hardware de PC muito antigo, anterior ao Pentium 4, que é chamado de ** i386 ** no suporte à arquitetura Linux. Perderá muitos recursos que você deseja / precisa em hardware moderno, como suporte multi-core e suporte para mais de 1 GB de RAM, mas na verdade será executado em hardware antigo, enquanto outras versões não.
+  * ** Geode ** é um destino herdado personalizado, personalizado para os SoCs de Geode, que ainda são usados ​​em muitos dispositivos de rede (antigos), como as placas Alix mais antigas da PCEngines.
+
+Agora você verá diferentes arquivos oferecidos, os dois a seguir são imagens de disco que você pode baixar e usar:
+
+  * ** combinado-squashfs.img.gz ** Esta imagem de disco usa o layout tradicional OpenWrt, um sistema de arquivos raiz squashfs somente leitura e uma partição de leitura e gravação em que as configurações e pacotes instalados são armazenados. Devido à forma como esta imagem é montada, você terá apenas 230 MB de espaço para armazenar pacotes e configurações adicionais, e o Extroot não funciona.
+  * ** combinado-ext4.img.gz ** Esta imagem de disco usa uma única partição ext4 de leitura e gravação sem sistema de arquivos raiz squashfs somente leitura, o que permite ampliar a partição. Recursos como Modo à prova de falhas ou Redefinição de fábrica não estarão disponíveis, pois eles precisam de uma partição squashfs somente leitura para funcionar.
+
+
+===== Suporte de hardware =====
+
+Todas as imagens suportam saída de vídeo básica (terminal de texto na tela), para que você possa conectar uma tela às portas de vídeo do dispositivo e vê-la inicializar.
+
+Como nenhuma imagem suporta teclado e mouse, a única maneira de se comunicar é através da Ethernet ou através da porta serial do dispositivo.
+
+Para se comunicar através de uma porta serial do PC, você precisará de um cabo serial "modem nulo", conhecido como "cruzado", para conectar a porta serial do dispositivo à porta serial do seu PC.
+
+Para poder se conectar ao seu dispositivo, a imagem deve suportar o hardware Ethernet.
+
+A imagem de 64 bits suporta chipsets Intel e Realtek Ethernet. Estes são os kmods instalados por padrão: ** kmod-hotplug kmod-e1000e kmod-e1000 kmod-r8169 kmod-igb ** \\
+
+As imagens genéricas e herdadas suportam Intel, Realtek, Via e alguns outros chipsets ethernet. Estes são os kmods instalados por padrão: ** kmod-botão-hotplug kmod-e1000e kmod-igb kmod-3c59x kmod-e100 kmod-e1000 kmod-natsemi kmod-ne2k-pci kmod-pcnet32 kmod-8139too kmod-r8169 kmod-sis900 kmod-tg3 kmod-via-rhine kmod-via-velocidade **
+
+As imagens Geode suportam hardware Geode, desde que você tenha uma placa baseada em Geode.
+
+===== Instalação =====
+
+A instalação está apenas gravando uma imagem de disco bruto em uma unidade flash USB ou leitor de cartão SD USB com cartão SD (recomendado) ou em um disco rígido Sata ou SSD do seu PC e, em seguida, conectando essa unidade ao dispositivo de destino e faça a inicialização a partir dessa unidade .
+
+O procedimento de instalação difere dependendo do PC em que você está usando para gravar a imagem do disco bruto, principalmente por causa das diferentes ferramentas que você precisa usar.
+
+<WRAP centro redondo importante 80%>
+** AVISO: gravar arquivos de imagem não processados ​​EXCLUI o conteúdo da unidade em que você os escreve, ** certifique-se de não excluir nada importante e de ter selecionado a unidade correta.
+</WRAP>
+
+
+==== Windows ====
+
+Se você estiver usando um PC com Windows, precisará de um programa para extrair a imagem do disco bruto do arquivo compactado baixado. \\
+Você precisará abrir o arquivo de imagem não processada com um programa que possa gravá-lo na unidade em que você deseja instalar o OpenWrt. \\
+
+Um bom programa de arquivador gratuito e de código aberto que você pode usar é [[https://www.7-zip.org/|7zip]].
+
+Um bom programa de gravador de imagem de disco bruto, gratuito e de código aberto, que você pode usar é [[https: //sourceforge.net/projects/win32diskimager/ | Win32 Disk Imager]], também há [[https: //www.balena.io/etcher/ | Etcher]].
+
+==== MacOS ====
+O mesmo que com o Windows.
+
+O programa de arquivamento recomendado pelo 7zip no MacOS é [[https://www.keka.io/en/|Keka]]
+
+Um bom programa de gravador de imagem de disco bruto, de código aberto e gratuito, que você pode usar é [[https: //www.balena.io/etcher/ | Etcher]].
+
+==== Linux ====
+
+Os usuários do Linux provavelmente já sabem como fazer isso melhor por conta própria, mas eu direi assim mesmo.
+
+Extraia o arquivo de imagem do arquivo morto. A maioria das distribuições sensatas permitirá que você faça isso com o botão direito do mouse e selecione "extrair", ou será necessário abrir seu gerenciador de arquivos gráficos e fazê-lo a partir daí. No terminal, isso é feito por '' gzip -d openwrt-18.06.1-x86-64-combinado-squashfs.img.gz ''.
+
+Em seguida, escreva o arquivo de imagem que você extraiu na unidade em que deseja instalar o OpenWrt. Muitas distros já incluem um aplicativo de gravação de imagem de disco (também, o aplicativo "Gnome Disks" permite fazer isso). No terminal, detecte como é chamada (sda, sdb, sdc, etc) a unidade desejada, escrevendo '' sudo blkid '' ou '' sudo lsblk '' e, em seguida, escreva a imagem com a boa e antiga ferramenta dd '' dd = openwrt-18.06.1-x86-64-combinado-squashfs.img de = / dev / sdX '' em que sdX é o nome da unidade na qual você deseja gravar a imagem.
+
+===== Layout da partição =====
+
+A imagem x86 está usando o seguinte layout de partição (como visto de dentro do dispositivo):
+  - / dev / sda1 é uma partição ext4 / boot de 16 MB na qual o GRUB e o kernel estão armazenados.
+  - / dev / sda2 é uma partição de 256 MB que contém o sistema de arquivos raiz squasfs e um sistema de arquivos f2fs de leitura e gravação OU o sistema de arquivos raiz ext4 (dependendo da imagem que você escolheu).
+
+Qualquer espaço adicional no dispositivo não é alocado.
+
+
+===== Redimensionando partições =====
+Isso só é possível se você tiver escolhido o tipo de imagem ** combinado-ext4.img.gz ** e, atualmente, devido a limitações técnicas, não é possível redimensionar a partição ext4 on-line (enquanto estiver montada), para que você precise para instalar o OpenWrt em outra unidade e usá-lo para executar as seguintes operações. Também usar um sistema Linux (a partir de uma VM ou realmente instalado em um PC) funcionará.
+
+/ * O sistema de arquivos ext4 pode ser ampliado "online", isto é, enquanto montado, para que possamos fazer isso diretamente da linha de comando do OpenWrt. * /
+
+  - Instale o fdisk e resize2fs
+  - use o fdisk para mostrar as partições
+  - anote o endereço do setor inicial de / dev / sdb2 (que é a partição raiz)
+  - use o fdsk para excluir a partição 2 (que é sdb2), não grave as alterações no disco ainda
+  - use o fdisk para criar uma nova partição 2, escolha / digite o endereço do setor inicial que você anotou anteriormente (como padrão, ele tentará colocá-lo em outro lugar) e deixe o endereço do setor final padrão (isso significa que a partição será agora use todo o espaço disponível)
+  - escreva as alterações da tabela de partição no disco. Ele pode reclamar de assinaturas de partição já presentes, escreva ** n ** para NÃO remover a assinatura da partição para continuar.
+  - escreva '' resize2fs / dev / sdb2 '' para aumentar o sistema de arquivos real para preencher o tamanho maior da partição.
+
+um exemplo de operação fdisk em uma unidade flash de 8 GB
+<code>
+root@OpenWrt:~# fdisk /dev/sdb
+
+Welcome to fdisk (util-linux 2.32).                                                                                                                                                                                                                                                                                                                  
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+
+
+Command (m for help): p
+Disk /dev/sdb: 7.2 GiB, 7751073792 bytes, 15138816 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0xcbad8a62
+
+Device     Boot Start    End Sectors  Size Id Type
+/dev/sdb1  *      512  33279   32768   16M 83 Linux
+/dev/sdb2       33792 558079  524288  256M 83 Linux
+
+Command (m for help): d
+Partition number (1,2, default 2): 
+
+Partition 2 has been deleted.
+
+Command (m for help): n
+Partition type
+   p   primary (1 primary, 0 extended, 3 free)
+   e   extended (container for logical partitions)
+Select (default p): p
+Partition number (2-4, default 2): 2
+First sector (33280-15138815, default 34816): 33792
+Last sector, +sectors or +size{K,M,G,T,P} (33792-15138815, default 15138815): 
+
+Created a new partition 2 of type 'Linux' and of size 7.2 GiB.
+Partition #2 contains a ext4 signature.
+
+Do you want to remove the signature? [Y]es/[N]o: n
+
+Command (m for help): w
+
+The partition table has been altered.
+Syncing disks.
+</code>
+===== Compilando sua própria imagem com maior tamanho de partição =====
+
+O símbolo que define o tamanho da partição é chamado ** TARGET_ROOTFS_PARTSIZE ** e pode ser alterado pelo menuconfig, acessando as configurações da imagem.

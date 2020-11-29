@@ -1,0 +1,13 @@
+====== see git-commit ======
+The recovery method is described in the git-commit which added support ((This implies that for unsupported devices there is no git-commit)) for this device.
+
+
+===== Devices with this recovery method =====
+---- datatable ----
+cols       : Brand, Model, Versions, Supported Current Rel_releasecurrent, Recovery method(s)_method-recoverys, Comment recovery, Device Page_page, Device Techdata_pageid, Supported Since Commit_git
+dynfilters : 1
+filter     : Model!=@@Model@@
+filter     : recovery method(s)=see git-commit
+sort       : Brand
+limit      : 25
+----

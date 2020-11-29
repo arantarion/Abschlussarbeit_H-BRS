@@ -1,0 +1,18 @@
+====== CFE web recovery ======
+
+Recovery can be done via CFE web recovery.
+
+  * -> [[docs:techref:bootloader:cfe|CFE bootloader]]
+    * -> [[docs:techref:bootloader:cfe#bcm47xx_cfe|brcm47xx CFE]]
+    * -> [[docs:techref:bootloader:cfe#bcm63xx_cfe|brcm63xx CFE]]
+
+
+===== Devices with this recovery method =====
+---- datatable ----
+cols       : Brand, Model, Versions, Supported Current Rel_releasecurrent, Target, Recovery method(s)_method-recovery, Comment recovery, Device Page_page, Device Techdata_pageid
+dynfilters : 1
+filter     : Model!=@@Model@@
+filter     : recovery method(s)=CFE web recovery
+sort       : Brand
+limit      : 25
+----

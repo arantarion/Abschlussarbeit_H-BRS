@@ -1,0 +1,5 @@
+====== Installing OpenWrt over XMODEM ======
+[[wp>XMODEM]] is file transfer protocol from 1977... Some new bootloaders for Lantiq-based devices use that.
+
+  * [[docs:techref:bootloader:brnboot]]
+  * [[toh/zyxel/nbg460n|ZyXEL NBG 460N 550N 550NH]] utilize the xmodem protocol

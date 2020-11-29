@@ -1,0 +1,162 @@
+FIXME ** Esta página aún no está completamente traducida. Ayude a completar la traducción. ** \\ // (elimine este párrafo una vez que la traducción haya finalizado)//
+
+====== Ejemplo de enrutamiento con IPv6 ======
+
+For creating a basic network configuration in IPv6 like it shows in the picture. 
+Example:  [[https://4.bp.blogspot.com/-gvwH2sZeG-U/Wlf3xIx9JfI/AAAAAAAAFPM/_xOaYyF7grc-YcrTgl8nqc7Zadt3JxjogCEwYBhgL/s1600/IPv6.jpeg|IPv6 CONFIG]]
+
+In this example, we will use 3 routers and 2 stations (computers)
+
+===== R1 =====
+The following configuration is for the Router  "R1" which is located in the directory
+''[[docs:guide-user:base-system:basic-networking|/etc/config/network]]'':
+
+| ''config interface 'loopback'
+	option ifname 'lo'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+
+config interface 'lan'
+	option ifname 'eth0'
+#	option type 'bridge'
+	option proto 'static'
+	option ip6addr '2008:a:a:b::1/64'
+#	option netmask '255.255.255.0'
+	option ip6assign '60'
+
+config interface 'lan2'
+	option ifname 'eth1'
+	option proto 'static'
+	option ip6addr '2008:a:a:a::1/64'
+	option ip6assign '60'
+
+config interface 'wan'
+	option ifname 'eth1'
+	option proto 'dhcp'
+
+config interface 'wan6'
+	option ifname 'eth1'
+	option proto 'dhcpv6'
+
+config globals 'globals'
+	option ula_prefix 'fd58:c7b9:863f::/48'
+
+config route6 'default'
+	option interface 'lan'
+	option target '2008:a:a:c::/64'
+	option gateway '2008:a:a:b::2'
+
+config route6 'route_inside'
+	option interface 'lan'
+	option target '2008:a:a:d::/64'
+	option gateway '2008:a:a:b::2'
+
+''|
+
+
+===== R2 =====
+
+For the "R2" router which is located is also placed the directory
+''[[docs:guide-user:base-system:basic-networking|/etc/config/network]]'':
+
+| ''
+config interface 'loopback'
+	option ifname 'lo'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+
+config interface 'lan'
+	option ifname 'eth0'
+#	option type 'bridge'
+	option proto 'static'
+	option ip6addr '2008:a:a:b::2/64'
+	option ip6assign '60'
+
+config interface 'lan2'
+	option ifname 'eth1'
+	option proto 'static'
+	option ip6addr '2008:a:a:c::1/64'
+	option ip6assign '60'
+
+config interface 'wan'
+	option ifname 'eth1'
+	option proto 'dhcp'
+
+config interface 'wan6'
+	option ifname 'eth1'
+	option proto 'dhcpv6'
+
+config globals 'globals'
+	option ula_prefix 'fd58:c7b9:863f::/48'
+
+config route6 'default'
+	option interface 'lan2'
+	option target '2008:a:a:d::/64'
+	option gateway '2008:a:a:c::2'
+
+config route6 'route_inside'
+	option interface 'lan'
+	option target '2008:a:a:a::/64'
+	option gateway '2008:a:a:b::1'
+''|
+
+
+
+===== WAN =====
+For the "WAN" router which is located is also placed the directory
+''[[docs:guide-user:base-system:basic-networking|/etc/config/network]]'':
+
+| ''
+
+config interface 'loopback'
+	option ifname 'lo'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+
+config interface 'lan'
+	option ifname 'eth1'
+#	option type 'bridge'
+	option proto 'static'
+	option ip6addr '2008:a:a:c::2/64'
+	option ip6assign '60'
+
+config interface 'lan2'
+	option ifname 'eth0'
+	option proto 'static'
+	option ip6addr '2008:a:a:d::1/64'
+	option ip6assign '60'
+
+config interface 'wan'
+	option ifname 'eth1'
+	option proto 'dhcp'
+
+config interface 'wan6'
+	option ifname 'eth1'
+	option proto 'dhcpv6'
+
+config globals 'globals'
+	option ula_prefix 'fd58:c7b9:863f::/48'
+
+
+config route6 'default'
+	option interface 'lan'
+	option target '2008:a:a:a::/64'
+	option gateway '2008:a:a:c::1'
+
+''|
+
+===== PC configuration =====
+
+For the pc configuration, we just set up the IP addresses in each station.
+|''PC1
+IP 2008:a:a:a::2/64 
+gateway 2008:a:a:a::1
+''|
+
+|''PC2 
+ip 2008:a:a:d::2/64 
+gateway 2008:a:a:d::1 
+''|

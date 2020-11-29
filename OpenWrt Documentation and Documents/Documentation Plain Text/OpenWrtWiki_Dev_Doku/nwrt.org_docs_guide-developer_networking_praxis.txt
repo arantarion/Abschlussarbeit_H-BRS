@@ -1,0 +1,65 @@
+====== Networking in the Linux Kernel ======
+Above we read merely about the theory of networking, about the basic ideas, about communication protocols and standards. Now, let us see, how all of this is being handled by the Linux Kernel 2.6:
+
+Everything related is found under ''[[http://lxr.free-electrons.com/source/net/|/net/]]''. But drivers, for the network devices, are of course found ''[[http://lxr.free-electrons.com/source/drivers|/drivers/]]''.
+
+**//NOTE//**:
+  - The Linux kernel is only one component of the operating system
+    - it does require libraries itself (we at OpenWrt use the µCLibC, see ->[[docs:guide-developer:links.software.libraries]]) [[http://man.cat-v.org/unix_8th/3/|Section: 3 - C library functions]]
+    - it is very modular and there are many modules
+    - it does require applications to provide features to end users (these run in userspace)
+
+The main interface between the kernel and userspace is the set of ''system calls''. There are about FIXME ''system calls''. Network related ''system calls'' include: writes to socket, ...
+
+===== Network Data Flow through the Linux Kernel =====
+  * [[http://www.linuxfoundation.org/collaborate/workgroups/networking/kernel_flow|Kernel Flow]]
+
+{{http://web.archive.org/web/20170905131225if_/https://wiki.linuxfoundation.org/images/1/1c/Network_data_flow_through_kernel.png}}
+[[http://web.archive.org/web/20170905131225/https://wiki.linuxfoundation.org/images/1/1c/Network_data_flow_through_kernel.png|Internet archive - Sep. 5th, 2017]]
+
+
+  * [[http://www.jsevy.com/network/Linux_network_stack_walkthrough.html|Linux Network Stack Walkthrough (Linux Kernel 2.4.20)]]
+  * [[http://www.google.com/search?q=Network+Data+Flow+through+the+Linux+Kernel&btnG=Search&hl=en&gbv=1&sei=Bv1dT4XfA_Da4QSM5ZG6Dw|google.com: "Network Data Flow through the Linux Kernel"]]
+
+==== Packet Handling ====
+=== TX Transmission ===
+  - Queue No.1: The application process does a ''write()'' on a //socket// and all the data is copied from the process space into the //send socket buffer//
+  - Queue No.2: The data goes through the //TCP/IP stack// and the packets are put ([[wp>Evaluation strategy#Call_by_reference]]) into the NIC's //egress buffer// (here works the packet scheduler)
+  - Queue No.3: After a packet gets dequeued, the transmission procedure of the driver is called, and it is copied into the //tx_ring//, a ring buffer the driver shares with the NIC
+
+=== RX Reception ===
+  - Queue No.1: The hardware (NIC) puts all incoming network packets into the //rx_ring//, a ring buffer the driver shares with the NIC
+  - Queue No.2: The //IRQ handler// of the driver takes the packet from the //rx_ring//, puts it (by ([[wp>Evaluation strategy#Call_by_reference]])) in the //ingress buffer// (aka //backlog queue//) and schedules a SoftIRQ (in kernels up to 2.4, every incoming packet triggered an IRQ, since Kernels 2.6 and the introduction of [[wp>New_API|NAPI]] this is solved by polling instead: [[https://lwn.net/Articles/30107/]])
+  - Queue No.3: is the the //receive socket buffer//
+
+=== Typical queue lengths ===
+  * The //socket buffers// can be set by the application (''set_sockopt()'')
+    * ''cat /proc/sys/net/core/rmem_default'' or ''cat /proc/sys/net/core/wmem_default''
+  * The default queuing discipline is a FIFO queue. Default length is 1000 packets (ether_setup(): dev->queue_len, net/ethernet/eth.c)
+  * The //tx_ring// and //rx_ring// are driver dependent (e.g. the e1000 driver set these lengths to 80 packets)
+  * The //backlog queue// is 1,000 packets in size (''/proc/sys/net/core/netdev_max_backlog''). Once it is full, it waits for being totally empty to allow again an enqueue() (netif_rx(), net/core/dev.c).
+
+== /proc ==
+''/proc'' is the POSIX complient mount point for the //Virtual Filesystem// for the processes.
+  * ''/proc/cpuinfo'': processor information
+  * ''/proc/meminfo'': memory status
+  * ''/proc/version'': kernel version and build information
+  * ''/proc/cmdline'': kernel command line
+  * ''/proc/<pid>/environ'': calling environment
+  * ''/proc/<pid>/cmdline'': process command line
+
+See [[wp>Procfs]] or [[http://www.comptechdoc.org/os/linux/howlinuxworks/linux_hlproc.html]] or [[http://www.mjmwired.net/kernel/Documentation/filesystems/proc.txt|proc.txt]]
+
+See -> [[http://gettys.wordpress.com/2010/11/29/home-router-puzzle-piece-one-fun-with-your-switch/]] for some "fun" with all the queues.
+
+== Transmitting ==
+So you can install hardware capable of Ethernet (usually a network card or more precisely an Ethernet card) on two //hosts//, connect them with a standardized cable, like a [[wp>Category 5 cable]] and communicate with one another over Ethernet as far as your software supports Ethernet ;-) Sooner or later the sausage will get to the Ethernet thingy of the network stack, this will prepare the data conforming to the Ethernet standard, then will deliver the frames to the network card drivers and this will make the hardware, the network card, transmit the data.
+
+== Receiving ==
+The NIC on the other side will receive the signal, relay it to the //Ethernet thingy// of the //network stack//, this will create one huge data out of the Ethernet frames and relay it to the software.
+
+When a packet is enqueued on an interface with ''dev queue xmit'' (in ''net/core/dev.c''), the ''enqueue'' operation of the packet scheduler is triggered and ''qdisc wakeup'' is being called (in ''net/pkt_sched.h'') to send the packet on that device.
+
+A transmit queue is associated with each device. When a network packet is ready for transmission, the "networking code" will call the driver's ''hard_start_xmit()''-function to let it know, a packet is waiting. The driver will then put that packet into the ''transmit queue'' of the hardware.
+
+You find the sources for the whole //TCP/IP protocol suite// implementation 

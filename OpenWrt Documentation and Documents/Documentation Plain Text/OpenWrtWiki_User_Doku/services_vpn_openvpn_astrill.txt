@@ -1,0 +1,81 @@
+====== Configure Astrill OpenVPN on OpenWrt ======
+
+[Base directions from [[https://hide.me/en/vpnsetup/openwrt/openvpn/]]]
+
+These directions assume you already have an account with astrill.com
+
+===== Create a new Certificate for your Router =====
+[[https://www.astrill.com/member-zone/tools/openvpn-certificates]]
+Create new Certificate
+Give it a meaningful name like OpenVPN Router
+Click Check Box
+Click the left most arrow for all Astrill Servers
+{{:media:astrill_1.png?400|}}
+Unzip **Astrill-OpenWRT Router.zip**
+Pick the server you wish to use and find its .ovpn file.
+
+===== Initial Configuration of Router =====
+Login to your router.  Possibly 192.168.0.1 or 192.168.1.1 or whatever you configured, in my case 192.168.215.1) 
+Navigate to **System: Software** [[http://192.168.215.1/cgi-bin/luci/admin/system/opkg]]
+update list
+filter "openvpn"
+  * luci-app-openvpn 
+  * openvpn-easy-rsa 
+  * openvpn-openssl
+install each
+
+  - Refresh Webpage (F5 on Windows)
+  - Look for **VPN** tab.
+  - Under **VPN** Click on **OpenVPN**
+  - Under **OVPN configuration file upload** select a the .ovpn file you selected above
+  - give it a meaningful **Name** (I suggest something similar to the one provided by Astrill to make switching servers later more intuitive)
+  - Click **Upload**
+  - under **OpenVPN instances** there is a new line with the **Name** you just typed, on the right Click **Edit**
+  - In the bottom you'll see "Section to add an optional 'auth-user-pass' file with your credentials (/etc/openvpn/<Name>.auth)
+  - Enter your Astrill.com Password
+  - **Save** 
+  - Click on VPN: OpenVPN at the top to go back to the **OpenVPN instances** page
+  - **Save & Apply**
+  - (I'm rewriting these directions after having already done the intial configuration, so its possible there may be some variation between what I'm writing and what you're seeing, sorry about that)
+  - Check the Enable box for your new VPN line
+  - **Save & Apply**
+
+
+
+===== Configure Interface & Firewall =====
+You have finished the VPN configuration now, but you still need to configure the interface as well as the Firewall.
+  - From the Menu at the top select **Networking -> Interfaces**.
+  - Click the "**Add new interface…**" button.
+  - Name: "**Astrill_VPN**" (or whatever you want)
+  - Protocol of the new interface: **Unmanaged**
+  - Cover the following interface: Custom Interface: **tun0**
+  - Right of "Interfaces » ASTRIL_VPN" Click **Edit** 
+
+==== Interfaces » ASTRIL_VPN ====
+Under **General Setting**
+  - Leave a checkmark on "**Bring up on boot**" 
+  - Click on "**Advanced Settings**" 
+  - remove checkmark from "**Use builtin IPV6-management**"
+
+At the top, Under **Network** Click on **Firewall Settings**
+  - Under **Zones** In "**unspecified**" field, type the zone name – "**astrill_fw**".
+  - Click on "**Save**"
+  - Now edit the **astrill_fw** zone.
+
+**Under Firewall - Zone Settings** In the **General Settings** tab, select the following settings:
+  - Set "Input" to "**reject**"
+  - Set "Output" to "**accept**"
+  - Set "Forward" to "**reject**"
+  - Click **Save** & **Apply**
+  - Edit **Astril_FW**
+  - Put check mark on "**Masquerading**"
+  - Covered networks – checkmark on "astril_vpn"
+  - In the "Inter-Zone Forwarding" section, set the checkbox for "Allow forward from source zones: lan".
+
+Under **Firewall - Zone Settings** In the **Advanced Settings** Tab
+  - Covered devices **tun0**
+
+**Save**
+
+**Save & Apply**
+

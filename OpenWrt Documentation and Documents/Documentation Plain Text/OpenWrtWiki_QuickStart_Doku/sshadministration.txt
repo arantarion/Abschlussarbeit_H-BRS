@@ -1,0 +1,136 @@
+====== SSH access for newcomers ======
+OpenWrt listens for incoming SSH connections on address ''192.168.1.1'' port ''22/tcp'' by default.
+To "ssh into your router", you can enter the following command in a terminal emulator:
+
+<code bash>
+ssh root@192.168.1.1
+</code>
+
+The first time you ssh into your router, you will probably see a warning about the //RSA key fingerprint//.
+If you are certain this is the address of your OpenWrt device, simply type ''yes'' and press Return.
+Then enter the password you have given to your router, or press Return if this is the initial setup.
+Here is an example session:
+
+<code>
+$ ssh root@192.168.1.1                                                    <== You type this
+The authenticity of host '192.168.1.1 (192.168.1.1)' can't be established.
+RSA key fingerprint is SHA256:4VbDA/MOc7inPiyllF5f0r3Q6iEx89ddKdhLGBovsiY.
+Are you sure you want to continue connecting (yes/no)? yes                <== and this
+Warning: Permanently added '192.168.1.1' (RSA) to the list of known hosts.
+root@192.168.1.1's password:                                              <== and the password here
+
+BusyBox v1.28.4 () built-in shell (ash)
+
+  _______                     ________        __
+ |       |.-----.-----.-----.|  |  |  |.----.|  |_
+ |   -   ||  _  |  -__|     ||  |  |  ||   _||   _|
+ |_______||   __|_____|__|__||________||__|  |____|
+          |__| W I R E L E S S   F R E E D O M
+ -----------------------------------------------------
+ OpenWrt 18.06.2, r7676-cddd7b4c77
+ -----------------------------------------------------
+
+root@OpenWrt:~#                                                           <== type next command here
+</code>
+
+To end your //ssh session// to your router, type ''exit'' and press Return.
+
+The remainder of this page describes several terminal emulators that Windows, Linux, or macOS can use to access your OpenWrt device.
+
+===== Windows terminal emulators =====
+Windows Terminal for Windows 10 or the legacy ConHost (both giving access to Windows PowerShell, Windows Command Prompt, WSL Bash), PuTTY, Cmder, SmarTTY, and WinSCP are terminal emulators that allow you to SSH into an OpenWrt router.
+
+==== Windows 10 built-in terminals ====
+Both Windows PowerShell and Command Prompt allows to use the default Windows 10 SSH client.
+That SSH client is an optional windows feature and has to be [[https://docs.microsoft.com/en-us/windows-server/administration/openssh/openssh_install_firstuse|enabled]].
+
+If you have installed a WSL distribution, the SSH client is usually preinstalled in there.
+
+If you directly launch ''cmd.exe'', ''powershell.exe'' or ''wsl.exe'' the legacy ConHost terminal will open.
+Otherwise, you can install the modern [[https://www.microsoft.com/store/productId/9N0DX20HK701|Windows Terminal]] from the store and select any of these shells from there.
+
+  - Open any of the above terminal emulators and write ''ssh root@192.168.1.1'' ("ssh" is the command, "root" is the OpenWrt user you are connecting to, and "192.168.1.1" is OpenWrt default IP)
+  - there will be a message about accepting a new key from the OpenWrt device, write "yes" and press Enter key.
+    - If for some reason you have reinstalled OpenWrt the device will have a different key and you get an error about key mismatch. The error will state what is the command line to copy-paste in your terminal to delete the old key and proceed. Do it and retry.
+  - if you want to close the session, write "exit"
+
+The Windows 10 optional SSH feature also includes SCP client (to open/edit/download/upload files in OpenWrt via SSH).
+Try google for some SCP tutorials to learn how to use it.
+Otherwise, use [[:docs:guide-quick-start:sshadministration#using_winscp|WinSCP]] which is way easier for SCP purposes.
+
+==== PowerShell ====
+[[https://devblogs.microsoft.com/powershell/announcing-PowerShell-7-0/|Powershell]] provides SSH access.
+
+==== PuTTY ====
+PuTTY gives you command line access to OpenWrt.
+
+  - Download [[https://www.putty.org/|PuTTY]], get the 32bit ''putty.exe'' from the ''Alternative binary files'' section.
+  - Start ''putty.exe'' on your Windows client -> PuTTY's login window pops up.
+  - go to the ''Session'' category of PuTTY's login window, look for the field ''Host Name (or IP address)'' and simply enter the IP-address (e.g. **192.168.1.1**) of your OpenWrt device, keep the default provided port **22**.
+  - Click the ''Open'' button at the Bottom to open a connection. This will pop up a shell windows, asking to ''login as''. Login as **root** with the OpenWrt password you have defined some time before. If you have not yet set a password yet on "root", you will not be asked for the password.
+  - Done, you are logged into the OpenWrt command line.
+
+==== WinSCP ====
+WinSCP allows you to browse the OpenWrt file system in Windows Exlorer like GUI-style.
+
+  - Download [[https://winscp.net/eng/download.php|WinSCP]], get the non-beta ''Installation package'' or ''portable executables'' and install or unzip them on your Windows client
+  - Start ''WinSCP.exe'' on your Windows client, WinSCP's login window will pop up
+  - Click on ''New Site'' on the left, then enter your OpenWrt device IP address (192.168.1.1) on the right side into ''Host name'', keep the default port ''22''. In ''User name'' enter **root**, in ''Password'', enter your root **password** (or leave blank, if you have not set a password yet)
+  - Click the ''Login'' at the bottom of the Window.
+  - Done. You now have an Exlorer-like view of your OpenWrt file system.
+
+Editing OpenWrt config files with WinSCP's integrated GUI editor.
+
+  - To edit a OpenWrt config file with WinSCP's GUI-based editor, just right-click the file in WinSCP and select ''Edit'' from the context menu.
+
+==== Cmder ====
+Cmder for Windows is an open-source terminal emulator that runs on Windows.
+It is free to use and provides an easy "command line shell" that allows you to ssh into OpenWrt.
+Its attractive fonts and color scheme are easy on the eyes.
+The //Full// distribution is preferred (over the //mini// distribution), since it provides a bash emulation, with a Unix-y suite of commands.
+
+  - Download [[https://cmder.net/|Cmder]].
+  - Unzip the //cmder.zip// file.
+  - Open the Cmder folder, and double-click the Cmder icon. You'll see a Cmder window open similar to the image below.
+  - To ssh into the OpenWrt router at 192.168.1.1, type ''ssh root@192.168.1.1'' then press Return.
+
+==== SmarTTY ====
+SmarTTY gives you command line access to OpenWrt and allows you to open/edit/download/upload files in OpenWrt, and is overall more modern and user-friendly than PuTTY (another tool detailed below).
+
+  - Download [[http://sysprogs.com/SmarTTY/|SmarTTY]], choose "download" for the installer, or "portable version" if you want it as a standalone program that works without installation.
+  - after installation or after unzipping the archive, doubleclick on **SmarTTY** executable file.
+  - You will be greeted by a window with two choices, doubleclick on "setup a new SSH connection" (the other option is for serial connections, for usb-TTL dongles and somesuch you connect to the device's debug serial pins on the board, we won't use that now).
+  - The window changes into the SSH setup, write the following info: 
+    - **Host name:** OpenWrt device IP address (default is **192.168.1.1** )
+    - **User Name:** **root** (this is the "administrator" and only user in default OpenWrt)
+    - **Password:** leave this blank for your first connection, then write the password you set up (either in Luci GUI or after your first SSH access)
+  - Click "Connect" button at the bottom, and you will now see a big terminal screen coming up
+  - A default OpenWrt firmware lacks the server component to allow you to open/edit/view/upoad/download files in SmarTTY, so after you have connected to the internet write ''opkg update && opkg install openssh-sftp-server'' to install it. If the next step fails, it might be necessary to reboot the OpenWrt device for this new service to start up properly.
+  - Now you can click on **File -> Open a Remote File** to open a popup that shows the file system of the OpenWrt device, and you can navigate in it and open text files for example as normal (they will open in a SmarTTY text editor window)
+  - If you want to upload or download files to/from a specific folder in the device, you can click on SCP menu and choose the most appropriate action from there.
+
+After the first time you connected to a device, SmarTTY saved a profile, so you can connect again to the same device (at that IP address with that password) by just doubleclicking its icon on the first window you see when starting SmarTTY.
+You can right-click on this profile icon to edit it again, if needed.
+
+===== Linux terminal emulators =====
+All Linux distributions provide a command-line ssh client as part of the default installation.
+
+  - Open a terminal emulator and write ''ssh root@192.168.1.1'' ("ssh" is the command, "root" is the OpenWrt user you are connecting to, and "192.168.1.1" is OpenWrt default IP)
+  - there will be a message about accepting a new key from the OpenWrt device, write "yes" and press Enter key.
+    - If for some reason you have reinstalled OpenWrt the device will have a different key and you get an error about key mismatch. The error will state what is the command line to copy-paste in your terminal to delete the old key and proceed.
+  - if you want to close the session, write "exit"
+
+Linux also usually has SCP clients (to open/edit/download/upload files in OpenWrt), which may or may not be installed by default.
+You need to look up your distro's documentation or search with your package management interface for "SCP" to find where it is and its current installation status.
+Read its integrated manual ("man scp" for example is for the command line SCP client) or google some tutorials to learn how to use it.
+
+===== macOS terminal emulators =====
+On macOS (formerly Mac OSX) any terminal emulator will allow you to ssh.
+
+  - Terminal - The macOS built-in terminal program, find it in /Applications/Utilities.
+  - [[https://iterm2.com/|iTerm2]] a much-enhanced terminal program, donation-ware - it's worth it.
+
+To ssh into your OpenWrt router at 192.168.1.1, type ''ssh root@192.168.1.1'', then press Return.
+
+===== Chrome OS terminal emulator =====
+On Chrome OS, [[https://chrome.google.com/webstore/detail/secure-shell-app/pnhechapfaindjhompbnflcldabbghjo?hl=en|Secure Shell App]] will allow you to ssh.

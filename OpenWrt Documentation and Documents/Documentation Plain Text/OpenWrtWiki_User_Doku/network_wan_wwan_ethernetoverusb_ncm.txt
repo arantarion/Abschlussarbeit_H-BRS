@@ -1,0 +1,326 @@
+====== Use NCM USB Dongle for WAN connection ======
+
+[[http://www.mcci.com/mcci-v5/hostside/ncm_drivers.html|NCM]] (Network Control Model) is [[https://en.wikipedia.org/wiki/Ethernet_over_USB|ethernet over USB]] protocol used by some fast speed USB modems/dongles.
+
+For more information about different protocols used:
+  * **ppp**, see [[docs:guide-user:network:wan:wwan:3gdongle|How to use 3g/UMTS USB Dongle for WAN connection]]
+  * **qmi** and **mbim**, see [[docs:guide-user:network:wan:wwan:ltedongle|How to use LTE modem in QMI mode for WAN connection]]
+  * **rndis**, see [[docs:guide-user:network:wan:wwan:ethernetoverusb_rndis|How to use LTE modem in RNDIS mode for WAN connection]]
+
+===== Modem Preparation =====
+You need to switch modem to provide native **NCM** interface instead of **Modem** interface.
+
+:!: Please read about [[docs:guide-user:network:wan:wwan:at_commands|AT commands]] for your modem.
+
+Once you've done - you can disconnect modem from the PC and connect it to the router.
+
+===== Router Preparation =====
+1. Install OpenWRT
+
+2. Complete steps [[docs:guide-quick-start:checks_and_troubleshooting|OpenWrt Configuration]]
+
+Router should be turned on and connected to the Internet to get the needed packages. Please refer to: [[docs:guide-user:network:wan:internet.connection|Internet Connection]].
+
+==== Required Packages ====
+To make use of NCM protocol, package **kmod-usb-net-huawei-cdc-ncm** and **comgt-ncm** are needed.
+
+  ***''usb-modeswitch''**    - __It will automatically issue a "special" command to the modem for switching it into the "Working" state__     
+
+<code>
+opkg update
+opkg install comgt-ncm kmod-usb-net-huawei-cdc-ncm usb-modeswitch
+</code>
+
+==== Optional Packages ====
+1. Add support for PC Interface (ttyUSB0)
+  ***''kmod-usb-serial''**
+  ***''kmod-usb-serial-option''**
+  ***''kmod-usb-serial-wwan''**
+<code>
+opkg update
+opkg install kmod-usb-serial kmod-usb-serial-option kmod-usb-serial-wwan
+</code>
+
+3. Add support for FlashCard of your dongle - refer to: [[docs:guide-user:storage:usb-drives|USB Storage]]
+
+===== Installation =====
+1. Install all the needed packages
+<code>
+opkg update
+opkg install comgt-ncm luci-proto-3g luci-proto-ncm luci-proto-qmi kmod-usb-net-huawei-cdc-ncm usb-modeswitch
+</code>
+
+:!: If your have not enough space on your device - think of installing [[docs:guide-user:additional-software:extroot_configuration|Rootfs on External Storage (extroot)]]
+
+:!: Another option is Hardware memory upgrade. Refer to your router Forum thread for possibility and instructions.
+
+2. Reboot the router
+<code>
+reboot
+</code>
+
+3. Check that everything is OK and you got new device:
+<code>
+ls -l /dev/cdc-wdm0
+
+crw-r--r--    1 root     root      180, 176 Oct  1 12:03 /dev/cdc-wdm0
+</code>
+
+If you have no such device - try to find out what went wrong:
+
+try **dmesg** to read kernel logs on USB init
+<code>
+dmesg
+</code>
+or look info about USB devices and interfaces present in the system:
+<code>
+cat /sys/kernel/debug/usb/devices
+
+...
+T:  Bus=03 Lev=01 Prnt=01 Port=00 Cnt=01 Dev#=  2 Spd=480  MxCh= 0
+D:  Ver= 2.10 Cls=00(>ifc ) Sub=00 Prot=00 MxPS=64 #Cfgs=  1
+P:  Vendor=12d1 ProdID=1506 Rev= 1.02
+S:  Manufacturer=HUAWEI_MOBILE
+S:  Product=HUAWEI_MOBILE
+C:* #Ifs= 5 Cfg#= 1 Atr=80 MxPwr=  2mA
+I:* If#= 0 Alt= 0 #EPs= 3 Cls=ff(vend.) Sub=03 Prot=10 Driver=(none)
+E:  Ad=82(I) Atr=03(Int.) MxPS=  10 Ivl=32ms
+E:  Ad=81(I) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+E:  Ad=01(O) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+I:* If#= 1 Alt= 0 #EPs= 2 Cls=ff(vend.) Sub=03 Prot=12 Driver=option
+E:  Ad=83(I) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+E:  Ad=02(O) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+I:  If#= 2 Alt= 0 #EPs= 1 Cls=ff(vend.) Sub=03 Prot=16 Driver=huawei_cdc_ncm
+E:  Ad=85(I) Atr=03(Int.) MxPS=  16 Ivl=2ms
+I:* If#= 2 Alt= 1 #EPs= 3 Cls=ff(vend.) Sub=03 Prot=16 Driver=huawei_cdc_ncm
+E:  Ad=85(I) Atr=03(Int.) MxPS=  16 Ivl=2ms
+E:  Ad=84(I) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+E:  Ad=03(O) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+I:* If#= 3 Alt= 0 #EPs= 2 Cls=08(stor.) Sub=06 Prot=50 Driver=usb-storage
+E:  Ad=86(I) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+E:  Ad=04(O) Atr=02(Bulk) MxPS= 512 Ivl=125us
+I:* If#= 4 Alt= 0 #EPs= 2 Cls=08(stor.) Sub=06 Prot=50 Driver=usb-storage
+E:  Ad=87(I) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+E:  Ad=05(O) Atr=02(Bulk) MxPS= 512 Ivl=125us
+
+...
+</code>
+
+See Troubleshooting Section of this page for more information.
+
+===== Configuration =====
+==== Protocol Configuration ====
+[[docs:guide-user:base-system:uci|UCI]] is supporting **NCM** network protocol configuration. 
+
+ :!: The package comgt-ncm + modem specific driver must be installed to use NCM.
+^Name 	^Type 	^Required 	^Default 	^Description^
+|device 	|file path 	|yes 	|(none) 	|NCM device node, typically **/dev/cdc-wdm0** or **/dev/ttyUSB#**|
+|apn 	|string 	|yes 	|(none) 	|Used APN|
+|pincode 	|number 	|no 	|(none) 	|PIN code to unlock SIM card|
+|username 	|string 	|no 	|(none) 	|Username for PAP/CHAP authentication|
+|password 	|string 	|no 	|(none) 	|Password for PAP/CHAP authentication|
+|auth 	|string 	|no 	|(none) 	|Authentication type: **pap**, **chap**, **both**, **none**|
+|mode 	|string 	|no 	|(modem default) 	|Used network mode, not every device support every mode: **preferlte**, **preferumts**, **lte**, **umts**, **gsm**, **auto**|
+|pdptype 	|string 	|no 	|IPV4V6 	|Used IP-stack mode, **IP** (for IPv4), **IPV6** (for IPv6) or **IPV4V6** (for dual-stack) |
+|delay 	|number 	|no 	|0 	|Seconds to wait before trying to interact with the modem (some modems require up to 30 s.)|
+
+You can configure UCI manually using [[docs:techref:uci|uci command line]] or [[docs:guide-user:base-system:user.beginner.cli#editing.files| text editor]] or with [[docs:techref:luci| Luci]] package **luci-proto-ncm**.
+
+ :!: If you are using option mode, an AT command setting the mode is sent to modem on every connection. Most of modems (at least all Huawei models) store this setting in internal flash. So on each connection Openwrt writes to modem flash. It is recommended to remove this option after a required mode is set once.
+      
+==== Network configuration =====
+Now you should add new **Interface** to /etc/config/network
+<code>
+config interface 'wwan'
+        option proto 'ncm'
+        option ifname 'wwan0'
+        option device '/dev/cdc-wdm0'
+        option apn 'internet'
+        option mode 'preferlte'
+        option pincode '0000'
+        option delay '5'
+</code> 
+
+You can do this using the vi text editor, but if you're not comfortable with that, point your browser to 192.168.1.1 again, choose Network -> Interfaces and click Add new interface.
+
+Write **wwan** as the name of the interface and make it cover the **wwan0** interface. Choose **ncm** as the protocol.
+
+FIXME Insert a screenshot of LUCI add Interface.
+
+==== Firewall configuration =====
+The only thing that is left - Add **wwan** interface to **WAN zone**
+
+Using LUCI:
+  * go to Network -> Firewall, scroll down to wan and click the Edit button
+  * add a checkmark to the **wwan** box under Covered networks heading, click **Save & Apply**
+
+FIXME Insert a Screen Shot from LUCI.
+
+==== Additional Info =====
+Some providers of the cellular internet use redirection to their pages for access activation, when you are connected first time.
+I.e. **YOTA** in Russia.
+
+Normally this would be blocked by **dnsmasq**:
+<code>
+Jan 18 14:36:49 OpenWrt daemon.warn dnsmasq[1325]: possible DNS-rebind attack detected: my.yota.ru
+</code>
+
+You have 2 options:
+  * Allow rebind responses RFC1918 (In LUCI goto **Network** -> **DHCP and DNS** and uncheck **Rebind protection** checkmark)
+  * Add Yota.ru domain to **Whitelist** (In LUCI goto **Network** -> **DHCP and DNS** and type in "yota.ru" without quotes to the **Domain whitelist** field.
+**Save & apply**
+
+===== Troubleshooting =====
+==== My router is not detecting the dongle. What should I do? ====
+
+Try the following commands:
+<code>
+usbmode -l
+</code>
+It should respond with a message about your USB device is detected. If it does, issue the next command. If it doesn't, you might want to get help from the forum.
+<code>
+usbmode -s
+</code>
+Then wait for the dongle to get issued an IP from your ISP.
+
+==== I have to issue //usbmode -l// and //usbmode -s// every time I reboot my router to detect my USB device. How can I automate it? ====
+
+Include the following codes into ///etc/rc.local// just before //exit 0//:
+<code>
+/sbin/usbmode -l
+/bin/sleep 2
+/sbin/usbmode -s
+</code>
+
+==== My modem doesn't reconnect after it loses the connection ====
+
+This script [[https://github.com/oilervoss/openvpnForNordvpn/tree/master/etc/init.d|GitHub oilervoss]] will check the connection pinging a public IP and, under failure, it will send AT commands to the serial interface of the modem restarting it.
+
+To achieve continuous monitoring of the connection, it must be called recurrently through a cron job as:
+
+<code>
+#/etc/crontabs/root
+#min    h   day  mon  week  command
+*/20    *    *    *    *    /etc/init.d/ncm-fix start
+</code>
+
+==== I am using 'huawei_cdc_ncm' module and the /dev/cdc-wdm0 does not respond. What do I do? ====
+
+This is probably related to ticket #18673 ([[https://dev.openwrt.org/ticket/18673]]).
+You should be able to use the modem by starting ndis manually by sending the following to ///dev/ttyUSB1//
+<code>
+AT^NDISDUP=1,1,"your_apn_address"
+</code>
+It is possible to automate this task using [[docs:techref:hotplug_legacy|hotplug]]. Below are some scripts fetched from [[http://forum.ixbt.com/post.cgi?id=print:14:59307&page=4]]. Do not forget to modify them to your needs. The scripts are for Huawei modems obviously.
+
+///etc/init.d/ncm-network//:
+<code>
+#!/bin/sh /etc/rc.common
+
+#
+DEVICE='/dev/ttyUSB1'
+# Interface name from /etc/config/network
+IFNAME='WWAN'
+# Your APN:
+APN='your_apn_here'
+
+START=70
+STOP=90
+
+start() {
+        if [ -e ${DEVICE} ]; then
+                echo -ne "AT^NDISDUP=1,0\r\n" > ${DEVICE}
+                sleep 3
+                echo -ne "AT^NDISDUP=1,1,\"${APN}\"\r\n" > ${DEVICE}
+                sleep 3
+                ifup $IFNAME
+        else
+                echo "No such device ${DEVICE}" | logger -t "ncm-network[$$]" -p info
+        fi
+}
+
+stop() {
+        if [ -e ${DEVICE} ]; then
+                ifdown $IFNAME
+                sleep 3
+                echo -ne "AT^NDISDUP=1,0\r\n" > ${DEVICE}
+        else
+                echo "No such device ${DEVICE}" | logger -t "ncm-network[$$]" -p info
+        fi
+}
+</code>
+
+///etc/hotplug.d/usb/70-ncm-network//
+<code>
+#!/bin/sh
+
+# Uncomment set line below and check your modalias I from tmp file
+MODEM_ID='usb:v12D1p1506d0102dc00dsc00dp00ic08isc06ip50in05'
+PAUSE=10
+PAUSE_FOR_HOTPLUG=5
+
+#set >> /tmp/ncm-network.debug
+
+if [ "${MODALIAS}" != "${MODEM_ID}" ]; then
+        exit 0
+fi
+
+case "$ACTION" in
+        add)
+                SYSTEM_UPTIME=$(cat /proc/uptime | awk -F"\." '{ print $1 }')
+                if [ "${SYSTEM_UPTIME}" -gt 60 ]; then
+                        PAUSE=$PAUSE_FOR_HOTPLUG
+                fi
+                {
+                sleep ${PAUSE} && \
+                echo "Start modem ${MODEM_ID}" | logger -t "hotplug[$$]" -p info && \
+                /etc/init.d/ncm-network start
+                } &
+                ;;
+        remove)
+                echo "Stop modem ${MODEM_ID}" | logger -t "hotplug[$$]" -p info
+                /etc/init.d/ncm-network stop
+                ;;
+esac
+</code>
+
+Some modems does not reconnect after losing connection.
+Here is a connection check sh script which checks if it can ping remote servers with time intervals. If all pings fail, it tries to start the network by executing ///etc/init.d/ncm-network start//
+<code>
+#!/bin/sh
+
+# Enter the FQDNs you want to check with ping (space separated)
+# Script does nothing if any tries to any FQDN succeeds
+FQDN="www.google.com"
+FQDN="$FQDN www.amd.com"
+FQDN="$FQDN www.juniper.net"
+
+# Sleep between ping checks of a FQDN (seconds between pings)
+SLEEP=3                         # Sleep time between each retry
+RETRY=3                         # Retry each FQDN $RETRY times
+SLEEP_MAIN=60                   # Main loop sleep time
+
+check_connection()
+{
+  for NAME in $FQDN; do
+    for i in $(seq 1 $RETRY); do
+      ping -c 1 $NAME > /dev/null 2>&1
+      if [ $? -eq 0 ]; then
+        return 0
+      fi
+      sleep $SLEEP
+    done
+  done
+  # If we are here, it means all failed
+  return 1
+}
+
+while true; do
+  check_connection
+  if [ $? -ne 0 ]; then
+    /etc/init.d/ncm-network start
+  fi
+  sleep $SLEEP_MAIN
+done
+
+</code>

@@ -1,0 +1,141 @@
+====== Filesystems ======
+This page contains advanced information about filesystems and partitions.
+
+A filesystem is "how data is written in a partition of the storage device".\\ 
+Windows, macOS/OSX and OpenWrt (Linux) use different default filesystems, and not all filesystems can be read by all equally well (if at all).\\
+OpenWrt is a Linux-based system, so it can read and write data written in Windows and macOS filesystems, it will be slower, more limited and less reliable than when reading/writing data from native linux filesystems. So if you want to transfer data they may be good enough, but for a storage device permanently attached to your OpenWrt device, using a native Linux filesystem is recommended.\\
+In case you wonder, the reason for this lack of performance/reliability is patents, trade secrets and other ways to impede the adoption of Windows or Apple filesystems by other parties.
+
+===== Currently supported filesystems =====
+To see what filesystems can be read by the firmware currently installed, write ''cat /proc/filesystems''.\\ 
+This is an example output from a OpenWrt x86 Virtual Machine, it can read many filesystems as space is not an issue for this target.
+For most devices, you will have to choose what filesystems you need to be able to access, and install the package with the filesystem driver for it.
+<code>nodev   sysfs
+nodev   rootfs
+nodev   ramfs
+nodev   bdev
+nodev   proc
+nodev   tmpfs
+nodev   binfmt_misc
+nodev   debugfs
+nodev   sockfs
+nodev   bpf
+nodev   pipefs
+nodev   devpts
+        ext3
+        ext2
+        ext4
+        squashfs
+nodev   overlay
+        btrfs
+        f2fs
+        xfs
+        vfat</code>
+
+===== OpenWrt/Linux filesystems =====
+There are 2 main filesystems you are going to be interested in, [[wp>ext4]] and [[wp>f2fs]].\\ 
+In short:\\
+  * ext4 is best suited for hard drives
+  * f2fs is best suited for flash drives (SSDs and usb thumbdrives)
+
+==== Setup ext4 ====
+This command will download the tools needed to create and fix ext4 (and older versions)\\
+''opkg install e2fsprogs''
+
+If in the list of supported filesystems in your device you don't see ext4, you must install also the driver itself\\
+''opkg install kmod-fs-ext4''
+
+==== Setup f2fs ====
+This command will download the tools needed to create and fix f2fs\\
+''opkg install f2fs-tools''
+
+If in the list of supported filesystems in your device you don't see f2fs, you must install also the driver itself\\
+''opkg install kmod-fs-f2fs''
+
+===== Other filesystems (for advanced users) =====
+a full list of filesystems available in OpenWrt can be obtained by writing\\ 
+''opkg update && opkg list | grep kmod-fs''
+
+the tools for the filesystem of your choosing can be found by writing\\
+''opkg list | grep FILESYSTEM_NAME''
+
+OpenWrt has drivers and filesystem tools for ext2/3/4, f2fs, xfs and btrfs, and drivers for most other filesystems supported by Linux.
+
+===== Multiplatform filesystems =====
+The only filesystem that is recommended for drives you will use for multiplatform usage is [[wp>FAT32]]. It will be read by Windows, macOS/OSX, Linux, and any other device you might have (smartTV, tablets, car sound systems with usb port...).
+Its main drawback (for a data drive) is that it cannot store a file bigger than 3.9 GiB even if the drive itself is bigger than that.
+It is also prone to corruption if the device is disconnected while still writing, which can lead to data loss if the device is written again without running a filesystem check.
+
+==== Setup FAT32 ====
+this command will download the tools needed to create and fix FAT32 (and older versions)\\
+''opkg install dosfstools'' (The dosfstools package includes the [[https://linux.die.net/man/8/mkfs.vfat|mkfs.fat]] and [[https://linux.die.net/man/8/fsck.vfat|fsck.fat]] utilities, which respectively make and check MS-DOS FAT filesystems. Also stated above.)
+
+If in the list of supported filesystems in your device you don't see **vfat**, you must install also the driver itself\\
+''opkg install kmod-fs-vfat''
+
+==== Available NLS files ====
+
+For some filesystems, like for FAT32, you need to additionally install language packages (codepages / charsets) to handle the filenames.  If your mount fails, look in dmesg - a message like\\
+''FAT: codepage cp437 not found''\\
+means that you need NLS codepage 437, and a message like\\
+''FAT: IO charset iso8859-1 not found''\\
+means that you need NLS ISO 8859-1.
+
+Available NLS files and their packages can be listed by writing ''opkg update; opkg list "kmod-nls*"''.
+
+^ Name                ^ Description  ^
+| kmod-nls-cp1250     | Kernel module for NLS Codepage 1250 (Eastern Europe)       |
+| kmod-nls-cp1251     | Kernel module for NLS Codepage 1251 (Russian)              |
+| kmod-nls-cp437      | Kernel module for NLS Codepage 437 (United States, Canada) |
+| kmod-nls-cp775      | Kernel module for NLS Codepage 775 (Baltic Rim)            |
+| kmod-nls-cp850      | Kernel module for NLS Codepage 850 (Europe)                |
+| kmod-nls-cp852      | Kernel module for NLS Codepage 852 (Europe)                |
+| kmod-nls-cp866      | Kernel module for NLS Codepage 866 (Cyrillic)              |
+| kmod-nls-iso8859-1  | Kernel module for NLS ISO 8859-1 (Latin 1)                 |
+| kmod-nls-iso8859-13 | Kernel module for NLS ISO 8859-13 (Latin 7; Baltic)        |
+| kmod-nls-iso8859-15 | Kernel module for NLS ISO 8859-15 (Latin 9)                |
+| kmod-nls-iso8859-2  | Kernel module for NLS ISO 8859-2 (Latin 2)                 |
+| kmod-nls-koi8r      | Kernel module for NLS KOI8-R (Russian)                     |
+| kmod-nls-utf8       | Kernel module for NLS UTF-8                                |
+
+===== Windows filesystems =====
+The only filesystem used on Windows PC is [[wp>NTFS]], on OpenWrt (Linux) it is available but it's performance is low, avoid it if you can.\\
+Another filesystem that is used on newer SD cards bigger than 32 GiB is [[wp>exFAT]], which is also available and has better performance and reliability than NTFS on OpenWrt. It is recommended to simply format these SD cards with FAT32, if the limitations aren't an issue for you.
+
+==== Setup NTFS ====
+This command will download the tools needed to create and fix NTFS\\ 
+''opkg install ntfsprogs_ntfs-3g''
+
+If in the list of supported filesystems in your device you don't see **ntfs**, you must install also the driver itself\\
+''opkg install ntfs-3g''
+
+See also [[docs:guide-user:storage:writable_ntfs|Writable NTFS]]
+==== Setup exFAT ====
+This command will download the driver to read exfat filesystems, there are no tools available to format and check exfat in OpenWrt (as of 2017).\\
+''opkg install kmod-fs-exfat''
+
+''opkg install libblkid''
+
+===== Apple filesystems =====
+In Apple land you have [[wp>HFS]], [[wp>HFS+]] and [[wp>APFS]]. Same as with Windows filesystems, there is a driver available for HFS and HFS+ but it has low performance and does not support all features.\\
+APFS is too new (as of 2017) and there is no support at all for it in OpenWrt (nor in Linux)
+
+==== Setup HFS and HFS+ ====
+This command will download the tools needed to create and fix HFS and HFS+\\
+''opkg install hfsfsck''
+
+If in the list of supported filesystems in your device you don't see **hfs** and **hfsplus**, you must install also the drivers\\
+''opkg install kmod-fs-hfs kmod-fs-hfsplus''
+
+
+
+======Partitions =====
+
+A partition is a way to split the storage space in more different sections, each using its own independent filesystem.
+
+This can be useful to separate different types of data, like for example to keep your expanded firmware system separated from the actual data you want to store and share, or data that must be easily accessible from Windows or MacOS directly if you disconnect the external drive.
+
+Discussing advanced partitioning is beyond the scope of this article, as OpenWrt uses the same commandline tools used by any other Linux system.
+
+**fdisk** tool is used to create/modify partitions on a drive initialized with MBR scheme\\
+**gdisk** tool is used to create/modify partitions on a drive initialized with GPT scheme\\

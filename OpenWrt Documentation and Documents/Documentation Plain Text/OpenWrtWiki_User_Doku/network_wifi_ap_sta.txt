@@ -1,0 +1,115 @@
+====== Configure A(ccess) P(oint or 'hotspot') + STA(tion or 'client') ======
+AP+STA mode allows OpenWrt to connect to a wireless hotspot (AP) and provide wireless access from that hotspot to anything connected to the OpenWrt AP and Ethernet ports, the ''br-lan'' device.
+This assumes that your OpenWrt device has the default settings where the AP and Ethernet port are bridged.
+
+===== Manual configuration =====
+The changes below assume an OpenWrt default configuration, the relevant files are:
+  * [[docs:guide-user:base-system:basic-networking|/etc/config/network]]
+  * [[docs:guide-user:network:wifi:basic|/etc/config/wireless]]
+  * [[docs:guide-user:base-system:dhcp|/etc/config/dhcp]]
+  * [[docs:guide-user:firewall:firewall_configuration|/etc/config/firewall]]
+
+==== 1. Backup the relevant configuration files ====
+<code bash>
+cp /etc/config/dhcp /etc/config/dhcp.bak
+cp /etc/config/firewall /etc/config/firewall.bak
+cp /etc/config/network /etc/config/network.bak
+cp /etc/config/wireless /etc/config/wireless.bak
+</code>
+
+==== 2. Modify the relevant configuration files' sections ====
+<code bash>
+# Disable DNS rebind protection
+uci set dhcp.@dnsmasq[0].rebind_protection="0"
+uci commit dhcp
+/etc/init.d/dnsmasq restart
+
+# Add WWAN network to WAN zone
+uci add_list firewall.@zone[1].network="wwan"
+uci commit firewall
+/etc/init.d/firewall restart
+
+# Change the default OpenWrt IP address
+# Note that OpenWrt AP IP address must be in a different subnet than the hotspot (AP) IP address.
+uci set network.lan.ipaddr="192.168.2.1"
+# Add the WWAN interface
+uci set network.wwan="interface"
+uci set network.wwan.proto="dhcp"
+uci commit network
+/etc/init.d/network restart
+
+# Add a Wi-Fi interface
+uci add wireless wifi-iface
+uci set wireless.@wifi-iface[-1].device="radio0"
+uci set wireless.@wifi-iface[-1].network="wwan"
+uci set wireless.@wifi-iface[-1].mode="sta"
+# The encryption and ssid values need to match those of the hotspot (AP)
+uci set wireless.@wifi-iface[-1].encryption="none"
+uci set wireless.@wifi-iface[-1].key="super_secret_key"
+uci set wireless.@wifi-iface[-1].ssid="hotspot or AP ssid"
+uci commit wireless
+wifi reload
+</code>
+
+:!: An alternative **event-driven** recovery solution is to be found [[https://forum.openwrt.org/viewtopic.php?pid=309131#p309131|here]].
+
+==== 3. Revert to AP Only mode on boot when Hotspot is not available ====
+When the hotspot is not available or it is incorrectly defined in the wireless configuration file, OpenWrt will disable the AP.
+This means that you can only access your OpenWrt device through its Ethernet port.
+The following will describe how to get OpnWrt to test for the hotspot availability after boot.
+If OpenWrt can not connect to the hotspot after 30 seconds, OpenWrt will automatically reconfigure itself to AP Only mode.
+This will allow wireless access to your OpenWrt device again.
+
+<code bash>
+# Create AP Only and AP+STA wireless configuration files
+cp /etc/config/wireless.original /etc/config/wireless.ap-only
+cp /etc/config/wireless /etc/config/wireless.ap+sta
+
+# Install the necessary packages
+opkg update
+opkg install iwinfo
+
+# Save the script
+cat << "EOF" > /usr/local/bin/fix_sta_ap.sh
+#!/bin/sh
+#
+# Fix loss of AP when STA (Client) mode fails by reverting to default
+# AP only configuration. Default AP configuration is assumed to be in
+# /etc/config/wireless.ap-only
+#
+
+TIMEOUT=30
+SLEEP=3
+
+sta_err=0
+
+while [ $(iwinfo | grep -c "ESSID: unknown") -ge 1 ]; do
+   let sta_err=$sta_err+1
+   if [ $((sta_err * SLEEP)) -ge $TIMEOUT ]; then
+     cp /etc/config/wireless.ap-only /etc/config/wireless
+     wifi up
+#    uncomment the following lines to try AP+STA after reboot
+#    sleep 3
+#    cp /etc/config/wireless.ap+sta /etc/config/wireless
+     break
+   fi
+   
+   sleep $SLEEP
+   
+done
+EOF
+
+# Make the script executable
+chmod +x /usr/local/bin/fix_sta_ap.sh
+
+# Configure autostart
+sed -i -e "
+/^exit 0$/\$i /usr/local/bin/fix_sta_ap.sh > /dev/null &
+" /etc/rc.local
+</code>
+
+==== 4. wwanHotspot: maintain allways up a dual wifi config, Access Point and HotSpot client ====
+In one place there may be several Hotspots that may be available or not according to the comings and goings of their owners; we will enter the parameters of each one of them in the configuration file therefore wwanHotspot will connect and disconnect the OpenWrt HotSpot client to one of them as they become available.
+
+This daemon may be used instead of the method described in step 3.
+Download the latest version of [[https://github.com/jordi-pujol/wwanHotspot/|wwanHotspot]] and follow the instructions.

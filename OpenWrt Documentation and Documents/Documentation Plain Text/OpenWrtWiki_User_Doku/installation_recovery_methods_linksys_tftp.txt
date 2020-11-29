@@ -1,0 +1,17 @@
+====== Linksys TFTP ======
+
+  * -> [[https://www.linksys.com/us/support-article?articleNum=137928]]
+  * -> [[docs:guide-user:installation:generic.flashing.tftp|Installing OpenWrt via TFTP]]
+
+FIXME //Identify devices with this recovery method and update dataentries accordingly.//
+
+
+===== Devices with this recovery method =====
+---- datatable ----
+cols       : Brand, Model, Versions, Supported Current Rel_releasecurrent, Recovery method(s)_method-recoverys, Comment recovery, Device Page_page, Device Techdata_pageid
+dynfilters : 1
+filter     : Model!=@@Model@@
+filter     : installation method(s)*~Linksys TFTP
+sort       : Brand
+limit      : 25
+----

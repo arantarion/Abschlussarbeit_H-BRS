@@ -1,0 +1,206 @@
+====== Network File System (NFS) ======
+The [[wp>Network File System]] is the protocol of choice to share files over an internal Local Area Network. Depending on your needs, you may also want to use [[docs:guide-user:services:nas:samba|Samba]] or the [[docs:guide-user:services:ssh:sshfs.server|SSH Filesystem]] additionally or instead.
+
+===== Preparations =====
+Normally an OpenWRT host acting as an NFS server will have external storage attached (e.g. USB).  Assuming clients access the NFS server from the LAN zone, OpenWRT's default configuration should not need any changes to the firewall to allow client access.
+==== Prerequisites ====
+  - [[docs:guide-user:storage:usb-installing]]  obtain basic support for USB.
+  - [[docs:guide-user:storage:usb-drives]]  obtain support for USB storage and mount local filesystem
+  - In your [[docs:guide-user:firewall:start]] (or see [[docs:guide-user:firewall:netfilter-iptables:netfilter]]) open port 111 tcp and udp, and 32777-32780 tcp and udp from your LAN.  This should be true of a default OpenWRT configuration.  If needed, an appropriate set of firewall rules allowing NFS looks like the following:
+<code bash>
+uci add firewall rule
+uci set firewall.@rule[-1].name='Allow-NFS-RPC'
+uci set firewall.@rule[-1].src='lan'
+uci set firewall.@rule[-1].proto='tcp udp'
+uci set firewall.@rule[-1].dest_port='111'
+uci set firewall.@rule[-1].target='ACCEPT'
+
+uci add firewall rule
+uci set firewall.@rule[-1].name='Allow-NFS'
+uci set firewall.@rule[-1].src='lan'
+uci set firewall.@rule[-1].proto='tcp udp'
+uci set firewall.@rule[-1].dest_port='2049'
+uci set firewall.@rule[-1].target='ACCEPT'
+
+uci add firewall rule
+uci set firewall.@rule[-1].name='Allow-NFS-Lock'
+uci set firewall.@rule[-1].src='lan'
+uci set firewall.@rule[-1].proto='tcp udp'
+uci set firewall.@rule[-1].dest_port='32777:32780'
+uci set firewall.@rule[-1].target='ACCEPT'
+
+uci commit firewall
+service firewall restart
+</code>
+
+The //portmap// service uses port 111 on both TCP and UDP, //nfsd// standard are ports between 32777 and 32780 on both TCP and UDP.\\
+It might be necessary to populate ''/etc/hosts.allow'' to whitelist NFS clients, insert an entry like ''portmap: 192.168.1.*'' then.
+
+==== Required Packages ====
+=== Server (OpenWrt) ===
+
+^ Name ^ Dependencies ^ Size ^ Description  ^
+| nfs-kernel-server  |  libwrap libblkid libuuid kmod-fs-nfsd kmod-fs-nfs portmap  |  75854 | Kernel NFS server support  |
+| libwrap            |  7.6-1        |   11286 | Security wrapper library for TCP services  |
+| libblkid           |  1.41.12-1    |   19423 | The blkid library which allows system programs like fsck and mount to quickly and easily find block devices by filesystem UUID and LABEL.  |
+| libuuid            |  1.41.12-1    |    7624 | Library for generating DCE compatible Universally Unique Identifiers.   |
+| kmod-fs-nfsd       |  kmod-fs-nfs-common kmod-fs-exportfs  |  52882 | Kernel module for NFS kernel server support  |
+| kmod-fs-exportfs   |  2.6.32.27-1  |    3612 | Kernel module for exportfs. Needed for some other modules.  |
+| kmod-fs-nfs        |  2.6.32.27-1  |   86611 | Kernel module for NFS support  |
+| portmap            |  6.0-2        |    7547 | Portmap is a server that converts RPC program numbers into DARPA protocol port numbers.  |
+| kmod-fs-nfs-common  |  2.6.32.27-1   |  133604 | Common NFS filesystem modules  |
+| nfs-kernel-server-utils  |  1.1.6-1  |  14617 | NFS server utils  |
+| nfs-server          |  2.2beta47-1   |   50620 | User Space NFS server  |
+| nfs-utils           |  libwrap, libblkid, libuuid, libevent  |  33390 | Updated mount.nfs command - allows mounting nfs4 volumes  |
+| libevent            |  1.4.14b-1  |  40436 | The libevent API provides a mechanism to execute a callback function when a specific event occurs on a file descriptor or after a timeout has been reached. Furthermore, libevent also support callbacks due to signals or regular timeouts. \\ libevent is meant to replace the event loop found in event driven  network servers. An application just needs to call event_dispatch() and then add or remove events dynamically without having to change the event loop.  |
+| unfs3               |  0.9.22-1  |  32804 | UNFS3 is a user-space implementation of the NFSv3 server specification. It provides a daemon for the MOUNT and NFS protocols, which are used by NFS clients for accessing files on the server. |
+
+**NOTE:** You do not need all packages: **''nfs-kernel-server''** should suffice.
+
+**NOTE:** You may need to install kmod-loop manually to fix "mount: can't setup loop device: No such file or directory" errors. (see https://dev.openwrt.org/ticket/11541)
+
+=== Client (your PCs) ===
+GNU/Linux distribution come with pre-installed support for this. So does MacOS X since version 10.2. In case your distribution is missing support, you need to install the client software. ArchLinux offers a Wikipage: [[https://wiki.archlinux.org/index.php/Samba#Configuration]].
+
+For Windows download //Microsoft Windows Services for UNIX// from [[http://www.microsoft.com/downloads/details.aspx?FamilyID=896c9688-601b-44f1-81a4-02878ff11778&DisplayLang=en|Microsoft]].
+
+You can also use [[http://j-ftp.sourceforge.net|JFtp]] as an alternative client.
+
+===== Installation =====
+[[docs:guide-user:additional-software:opkg]]
+<code bash>
+opkg update
+opkg install nfs-kernel-server
+vi /etc/exports
+. /etc/init.d/portmap start
+. /etc/init.d/portmap enable
+. /etc/init.d/nfsd start
+. /etc/init.d/nfsd enable
+netstat -a
+$IPT -A INPUT -j ACCEPT -i eth0.1 -s $NET_LAN -p tcp --dport 111 #------------------- portmap
+$IPT -A INPUT -j ACCEPT -i eth0.1 -s $NET_LAN -p udp --dport 111 #------------------- portmap
+$IPT -A INPUT -j ACCEPT -i eth0.1 -s $NET_LAN -p tcp --dport 32777:32780 #----------- nfsd
+$IPT -A INPUT -j ACCEPT -i eth0.1 -s $NET_LAN -p udp --dport 32777:32780 #----------- nfsd
+$IPT -t raw -A INPUT -i $IF_LAN -s $NET_LAN -p tcp --dport 32777:32780 -j CT --notrack #-- don't track nfs
+$IPT -t raw -A INPUT -i $IF_LAN -s $NET_LAN -p udp --dport 32777:32780 -j CT --notrack #-- don't track nfs
+$IPT -t raw -A OUTPUT -o $IF_LAN -d $NET_LAN -p tcp --dport 32777:32780 -j CT --notrack #- don't track nfs
+$IPT -t raw -A OUTPUT -o $IF_LAN -d $NET_LAN -p udp --dport 32777:32780 -j CT --notrack #- don't track nfs
+</code>
+
+===== Configuration =====
+We have a typical client <<>> server configuration.
+
+==== Server configuration ====
+
+Use the file ''/etc/exports'' to configure your shares.  NFSv4 export paths don't work the way they did in NFSv3.  NFSv4 has a global root directory (configured as fsid=0) and all exported directories are children to it. So what would have been nfs-server:/export/users on NFSv3 is nfs-server:/users on NFSv4, because /export is the root directory. 
+Example:
+| ''/mnt   *(fsid=0,ro,sync,no_subtree_check)
+/mnt/sda1   192.168.1.0/24(rw,sync,no_subtree_check)
+/mnt/sda2   192.168.2.0/255.255.255.0(rw,sync,no_subtree_check)'' |
+
+See [[https://linux.die.net/man/5/exports|exports(5)]] for configuration semantics.  A single asterisk matches all IP addresses (allowing anonymous access).
+
+If you set up pivot-root or pivot-overlay, u;se the path on /overlay/ partition, else you cannot export mounted fs.
+
+Assuming the daemons are already running, use the command ''exportfs -ar'' to reload and apply changes on the fly.
+
+=== Start on boot ===
+Since //opkg//-installed init.d scripts are not enabled nor started by default, you need to do this manually. Same procedure as with most (all?) OpenWrt packages: The first commands will will start them right now, the third and fourth will create the symlinks ''/etc/rc.d/S??portmap'' and  ''/etc/rc.d/S??nfsd'' so they get started on boot:
+
+<code>
+root@OpenWrt:~# /etc/init.d/portmap start
+root@OpenWrt:~# /etc/init.d/nfsd start
+root@OpenWrt:~# /etc/init.d/portmap enable
+root@OpenWrt:~# /etc/init.d/nfsd enable
+</code>
+
+After start (and after a reboot) verify with ''top'' or ''ps'' whether the services are running.\\
+The following entries should appear in the process list:
+
+<code>
+/usr/sbin/portmap -f
+/usr/sbin/rpc.mountd -p 32780 -F
+various nfsd instances
+nfsiod
+nfsd4_callbacks
+</code>
+
+Use the ''netstat -l'' command to see whether //portmap// is listening on port 111 for both tcp and udp. The //nfsd// process may use varying ports.
+
+==== Client configuration ====
+=== Linux-Client ===
+
+Mount manually:
+<code bash>
+sudo mount 192.168.1.254:/sda1 /home/sandra/nfs_share
+</code>
+
+Or mount permanently with entries in the ''/etc/fstab'' on each client PC:
+| ''192.168.1.254:/sda1 /media/openwrt       nfs  ro,async,auto  0  0
+192.168.1.254:/sda2 /media/remote_stuff  nfs  rw,async,auto  0  0'' |
+Check the manual for [[http://linux.die.net/man/8/mount|mount]] and take a particular look at the options. Choose wisely.
+
+With portmap running on your OpenWrt-Machine you can use ''rpcinfo -p 192.168.1.254'' on clients side to see open ports. The clients must be in ''/etc/hosts.allow''.
+
+=== Windows-Client ===
+Java client: [[http://j-ftp.sourceforge.net|JFtp]].
+TODO
+
+=== Mac OS X-Client ===
+Java client: .
+TODO
+
+===== Problems =====
+
+If the loopback device support is missing, an error like "//Cannot register service: RPC: Timed out//" may appear.
+Installing the kmod-loop package should solve this issue.
+
+==== clnt_create: RPC: Program not registered ====
+
+If portmap is not registering mountd daemon, you may need to install rpcbind package:
+
+<code>
+# install
+opkg install rpcbind # (if it is in your repos)
+
+# disable portmap
+/etc/init.d/portmap disable
+
+# enable
+/etc/init.d/rpcbind enable
+/etc/init.d/nfsd enable
+
+# start
+/etc/init.d/rpcbind start
+/etc/init.d/nfsd start
+</code>
+
+If opkg can't find it you probably have to build it yourself [[docs:guide-developer:build.a.package|Build a package]].
+
+**NB:** Always restart services after rpcbind, this order is important!
+===== Performance / Tuning =====
+Maybe you want to compare the read and write performance with that of your [[docs:guide-user:services:nas:samba]] setup. Post it in the forum or right here:
+
+Do not expect to much. When i started with my RouterStationPro i got 7 MB/s writing to and 10 MB/s reading from it.
+
+Now:
+
+Server: 
+  * echo 4 >  /proc/fs/nfsd/threads
+  * /etc/exports: /mnt/bla	192.168.1.0/255.255.255.0(rw,all_squash,insecure,async,no_subtree_check)
+  * Check out /proc/fs/nfsd/max_block_size if client reports other block size then what you have specified. It can be changed if the server is not running, but nfsd mounted. Now you can echo the right value to it. - Updated by fathom
+
+Client: mount options: udp,async,rsize=32768,wsize=32768,intr,noatime 
+
+i get: writing: 15,3MB/s and reading: 17,4MB/s 
+
+I have TL-WR1043ND from TP-Link by default it has a throughput of 4,5mb/sec, after tweaking the block size, and the mount options it delivers 9,5 mb/sec. Cheers! (Still on wifi it has a speed of 6 mb/s)
+
+==== Throughput Issues ====
+Since [[docs:guide-user:firewall:netfilter-iptables:netfilter]] will track every connection, if you use MASQUERADING for example, you could disable con-tracking for data connections:
+<code sh>
+$IPT -t raw -A PREROUTING -i $IF_LAN -s $NET_LAN -p tcp --dport 32777:32780 -j CT --notrack #---------- don't track nfs
+$IPT -t raw -A PREROUTING -i $IF_LAN -s $NET_LAN -p udp --dport 32777:32780 -j CT --notrack #---------- don't track nfs
+$IPT -t raw -A OUTPUT -o $IF_LAN -d $NET_LAN -p tcp --sport 32777:32780 -j CT --notrack #---------- don't track nfs
+$IPT -t raw -A OUTPUT -o $IF_LAN -d $NET_LAN -p udp --sport 32777:32780 -j CT --notrack #---------- don't track nfs
+</code>

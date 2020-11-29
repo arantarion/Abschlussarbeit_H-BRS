@@ -1,0 +1,37 @@
+====== Developer guide ======
+This page has links to all the pages of OpenWrt development documentation. Use the Search facility to find more information.
+
+===== Quick overview of OpenWrt's internals =====
+  * [[docs:guide-developer:overview| Overview]]
+
+===== Assembling firmware images with the ImageBuilder =====
+  * [[docs:guide-developer:quickstart-build-images| Build Images Quickstart]]
+  * [[docs:guide-user:additional-software:imagebuilder| Using the ImageBuilder]]
+  * [[docs:guide-developer:imagebuilder_frontends| Other software based on ImageBuilder to generate images]]
+
+===== Contribution guidelines =====
+See [[:submitting-patches|Submitting patches]]
+
+===== The source code =====
+  * [[docs:guide-developer:source-code:start| OpenWrt/LEDE source code]]
+  * [[docs:guide-developer:source-code:source-revision-calculation| Source code revision calculation]]
+
+===== Using the toolchain =====
+  * [[docs:guide-developer:using_the_sdk|Using the SDK to compile packages]]
+  * [[docs:guide-developer:build-system:start| The Build system]]
+    * [[docs:guide-developer:build-system:install-buildsystem| Install the build system on the host]]
+    * [[docs:guide-developer:build-system:use-buildsystem| Use the build system to compile a firmware image]]
+    * [[docs:guide-developer:build-system:use-patches-with-buildsystem| Work with patches in the build system]]
+  * [[docs:guide-developer:crosscompile|Cross compiling with the build system]]
+
+===== Security =====
+  * [[docs:guide-developer:security|Security]]
+===== All development articles =====
+{{pagequery>@:docs:guide-developer *;sort=ns,title;group;cols=2;hidestart;hidejump;display={title};filter=!name:sidebar}}
+{{pagequery>@:docs:techref -ns:docs:techref:instructionset *;sort=ns,title;group;cols=2;hidestart;hidejump;display={title};filter=!name:sidebar}}
+  * [[https://github.com/btsimonh/lede-vagrant|Vagrant-based automatic setup for a LEDE build environment in a VM]]
+
+===== Test OpenWrt in a virtual machine =====
+{{pagequery>@:docs:guide-user:virtualization *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}
+
+{{section>:contact#bug_tracker&nofooter&noeditbutton&noindent}}

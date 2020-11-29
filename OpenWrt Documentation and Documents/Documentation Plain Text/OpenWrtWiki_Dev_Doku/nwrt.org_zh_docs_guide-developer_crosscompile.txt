@@ -1,0 +1,36 @@
+====== 交叉编译 ======
+
+也许你想使用一个[[wp>Computer_program|程序]], 但它目前并没有被包含在OpenWrt的仓库中, 那你应该找不到其针对你的CPU编译出来的二进制发布版.
+在它是开源的前提下, 你可以下载其源码, 并使用[[docs:guide-developer:build-system:start|OpenWrt Buildroot]]进行编译.
+
+注: 并非所有代码都适合每种架构的CPU. 而且嵌入式系统的性能相对普通电脑来说有不少限制.
+
+
+===== 流程 =====
+
+  * 遵循[[docs:guide-developer:build-system:start|OpenWrt Buildroot – Usage]]中的构建指令概述.
+  * 将toolchain的二进制文件放在 ''staging_dir/toolchain-//architecture//_gcc-//compilerver//_uClibc-//libcver///bin/'' 目录中.
+  * 将上述目录加入 ''PATH'' 环境变量:
+    * ''PATH=$PATH:(将你的 toolchain/bin 目录放在这里)''
+    * ''export PATH''
+  * 设置 ''STAGING_DIR'' 环境变量, 指向上述toolchain目录并导入它:
+    * ''STAGING_DIR=(将你的toolchain目录放在这里)''
+    * ''export STAGING_DIR''
+  * 下载并解压需要编译的代码, 进入代码目录
+  * 将 //host// 和 //build// 传递给软件包构建系统来触发交叉编译
+    * 针对 GNU configure, 使用 ''%%--build=%%//architecture//-unknown-linux-gnu %%--host=%%//architecture//-openwrt-linux-uclibc'' (例如: ''./configure %%--build=%%x86_64-unknown-linux-gnu  --host=mips-openwrt-linux-uclibc'')
+      * 运行 ''./config.guess'' 来获取 ''%%--build=%%'' 选项.
+      * 检查输出并确认 '''checking whether we are cross compiling... yes''' 是yes.
+    * 针对 GNU make, 重写 ''CC'' 和 ''LD'' 环境变量 (如果使用GNU configure的话, 通常不需要)
+       * ''make CC=//architecture//-openwrt-linux-uclibc-gcc'' ''LD=//architecture//-openwrt-linux-uclibc-ld''
+  * 编译好的程序会生成在执行./configure 以及 make 的目录中的某个地方, 可以试试 ''find -iname *program*''
+  * 运行 ''file program'' 来确认交叉编译是否成功. 
+  * 如果编译因为缺少头文件或动态库而失败, 也许需要重写 ''CFLAGS'' 和 ''LDFLAGS'' 来指明 ''staging_dir/target-//architecture//_uClibc-//libcver///usr/include'' 和 ''.../usr/lib'' 目录.
+  * 在toolchain中Debugging需要gdb. 默认配置并不包含它. 可以用''make menuconfig''来加入. [Advanced configuration options->Toolchain Options->Build gdb]
+  * 可以使用 ''.///scripts///remote-gdb'' 进行远程Debugging.
+
+编译完成后, 则可以拷贝结果二进制文件和相关库文件到目标设备进行测试. 可能也需要在目标设备中设置 ''LD_LIBRARY_PATH'' 来指明二进制文件所需的非标准位置的库路径.
+
+如果程序运行地足够好, 也许你会想把它构建成一个真正的软件包, 提供给opkg manager以便让所有人都能很容易地访问.
+参考 [[docs:guide-developer:packages|Creating your own packages]] and [[docs:guide-developer:dependencies|Using Dependencies]] 获取更多相关信息.
+

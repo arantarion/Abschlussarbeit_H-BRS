@@ -1,0 +1,254 @@
+====== 使用ImageBuilder ======
+Image Builder（以前称为Image Generator）是一个预编译环境，适用在不从源代码编译的情况创建自定义镜像文件。
+它下载预编译的软件包并集成在一个可擦写的镜像中。
+
+适用于以下场景： 
+  * 您想在有限闪存中放入更多软件包。
+  * 您想跟进用于开发的“快照版”。
+  * 您的设备只有32MB或更低的内存，以至于opkg无法很好的工作。
+  * 您想要将特殊定制的固件刷入大量设备。
+
+实现相同目标的替代指南有：
+[[docs:guide-user:additional-software:imagebuilder|使用ImageBuilder]]，
+[[docs:guide-user:additional-software:beginners-build-guide|构建自己固件的入门指南]]。
+
+如果您的设备拥有很小的固件空间，您可以考虑移除一些软件包以[[docs:​guide-user:​additional-software:​saving_space|节省固件空间]]。
+
+===== 基于imagebuilder的前端 =====
+已有一系列工具为imagebuilder提供基于页面或配置模版的前端，详情查阅[[zh:docs:​guide-developer:​imagebuilder前端]]。
+===== 先决条件 =====
+:!:  Image Builder仅可运行在64位Linux环境下，您甚至可以在32位Windows系统的虚拟机(如virtualbox)中运行64位的Linux。\\
+:!: Image Builder具有构建系统的一些相同先决条件[[docs:guide-developer:build-system:install-buildsystem|Build system – Installation]]。\\
+
+最常见的发行版中的依赖关系示例：
+<WRAP>Debian/Ubuntu<code>apt-get install subversion build-essential libncurses5-dev zlib1g-dev gawk git ccache gettext libssl-dev xsltproc wget unzip python</code></WRAP>
+
+<WRAP>CentOS/RHEL<code>yum install subversion git gawk gettext ncurses-devel zlib-devel openssl-devel libxslt wget
+yum group install "Development Tools"</code></WRAP>
+
+<WRAP>Fedora 27+<code>dnf install @c-development @development-tools @development-libs zlib-static which</code></WRAP>
+===== 获取镜像生成工具 =====
+您可以下载包含**Image Builder**的压缩文件，它通常在您找到设备固件映像文件的同一下载页面中。
+例如，您在以下页面可以下载**ar71xx/generic**设备的所有固件映像文件：
+https://downloads.lede-project.org/snapshots/targets/ar71xx/generic/。在此页面，您也可以看到包含Image Builder的名为**lede-imagebuilder-ar71xx-generic.Linux-x86_64.tar.xz**的压缩文件。
+
+当然，**Image Builder**也可以由构建系统生成，因为需要创建映像文件。如果启用了''构建OpenWrt Image Builder''选项，则**Image Builder**将在您找到固件映像的同一文件夹（''source/bin/targets/xxx''）中生成，您可以使用它从编译期间获得的软件包创建更多镜像文件。
+
+===== 配置软件包存储库 =====
+您从OpenWrt页面下载的''Image Builder''已配置为不从官方存储库下载任何非默认软件包。
+软件包源在解压目录中的''repositories.conf''文件中配置。源约定以//opkg//原生格式配置。这可以是官方软件包存储库，也可以是自定义生成的存储库。
+
+**openwrt-imagebuilder-18.06.0-rc2-ramips-mt7621.Linux-x86_64.tar.xz**中''repositories.conf''的内容示例:
+
+<code>## Place your custom repositories here, they must match the architecture and version.
+# src/gz %n http://downloads.openwrt.org/releases/18.06.0-rc2
+# src custom file:///usr/src/openwrt/bin/ramips/packages
+
+## Remote package repositories
+src/gz openwrt_core http://downloads.openwrt.org/releases/18.06.0-rc2/targets/ramips/mt7621/packages
+src/gz openwrt_base http://downloads.openwrt.org/releases/18.06.0-rc2/packages/mipsel_24kc/base
+src/gz openwrt_luci http://downloads.openwrt.org/releases/18.06.0-rc2/packages/mipsel_24kc/luci
+src/gz openwrt_packages http://downloads.openwrt.org/releases/18.06.0-rc2/packages/mipsel_24kc/packages
+src/gz openwrt_routing http://downloads.openwrt.org/releases/18.06.0-rc2/packages/mipsel_24kc/routing
+src/gz openwrt_telephony http://downloads.openwrt.org/releases/18.06.0-rc2/packages/mipsel_24kc/telephony
+
+## This is the local package repository, do not remove!
+src imagebuilder file:packages
+</code>
+
+您从源代码编译而来的''Image Builder''的''repositories.conf''缺少"Remote package repositories"链接.
+
+如果您要添加自定义本地存储库，请复制以下代码： <code>src custom file:///usr/src/lede/bin/ramips/packages</code> 
+并将其修改为指向您拥有软件包和软件包列表的本地文件夹。
+如果您有在线的自定义存储库，请复制以下代码并替换修改：<code>src/gz reboot http://downloads.lede-project.org/snapshots</code>
+
+
+===== 用法 =====
+**生成映像(make image)** 指令会生成一个适配于默认设备的映像，这个映像包括了默认必需的包。绝大多数情况下，这与你阅读本文的目的不相符（你可以前往对应版本页面下载默认配置下编译完成的文件）。
+
+为了改善默认配置不尽如人意的表现，你可以尝试传递参数改变以下三个变量：
+
+  * //''PROFILE''// - 指定映像文件
+  * //''PACKAGES''// - 列出将会被直接嵌入映像中的包
+  * //''FILES''// - 该目录下的文件将会被包含在最终映像里
+
+首先给出简单的命令示例:
+<code>$ make image PROFILE=XXX PACKAGES="pkg1 pkg2 pkg3 -pkg4 -pkg5 -pkg6" FILES=files/</code>
+
+接着结合以下部分来做更详尽的解释。在make命令完成后，生成的映像就会被存在bin///device-architecture//目录下，这和你直接编译源文件的结果类似。
+
+这是**make help**输出的结果:\\
+  Available Commands:
+        help:   This help text
+        info:   Show a list of available target profiles
+        clean:  Remove images and temporary build files
+        image:  Build an image (see below for more information).
+  
+  Building images:
+        By default 'make image' will create an image with the default
+        target profile and package set. You can use the following parameters
+        to change that:
+  
+        make image PROFILE="<profilename>" # override the default target profile
+        make image PACKAGES="<pkg1> [<pkg2> [<pkg3> ...]]" # include extra packages
+        make image FILES="<path>" # include extra files from <path>
+        make image BIN_DIR="<path>" # alternative output directory for the images
+        make image EXTRA_IMAGE_NAME="<string>" # Add this to the output image filename (sanitized)
+
+The built image will be found under the subdirectory ''./bin/targets/<target>/generic'' .
+==== PROFILE Variable =====
+Syntax:<code>$ make image PROFILE=NAME_OF_PROFILE</code>
+
+=== Pre-defined Profiles ===
+Run ''make info'' to obtain a list of defined profiles.
+Example output from ''make info'' is listed below.
+
+== ar71xx-generic Profiles ==
+<code>
+Available Profiles:
+
+Default:
+    Default Profile
+    Packages: kmod-usb-core kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+ai-br100:
+    Aigale Ai-BR100
+    Packages: kmod-usb2 kmod-usb-ohci
+rp-n53:
+    Asus RP-N53
+    Packages: 
+rt-n14u:
+    Asus RT-N14u
+    Packages: 
+whr-1166d:
+    Buffalo WHR-1166D
+    Packages: 
+whr-300hp2:
+    Buffalo WHR-300HP2
+    Packages:
+-and many many more-
+</code>
+
+After you find the appropriate profile pass it to the ''make image'' command:
+
+For example, if we wanted to generate a default image for for Asus RT-N14u (from above).
+
+<code>
+$ make image PROFILE=rt-n14u
+</code>
+
+==== PACKAGES Variable ====
+The ''PACKAGES'' variable allows to include and/or exclude packages in the firmware image. By default (empty PACKAGES variable) the Image Generator will create a minimal image with device-specific kernel and drivers, uci, ssh, switch, firewall, ppp and ipv6 support.
+
+Syntax:<code>$ make image PACKAGES="pkg1 pkg2 pkg3 -pkg4 -pkg5 -pkg6"</code>
+The example above will include pkg1, pkg2, pkg3, and exclude pkg4, pkg5, pkg6, note the "-" before each excluded package.
+
+You don't need to list all dependencies of the packages you need in this list, the Image Generator uses ''opkg'' to resolve automatically the package dependencies and install other required packages.
+
+**Tip:** The list of currently installed packages on your device can be obtained with the command below:
+<code>echo $(opkg list_installed | awk '{ print $1 }')</code>
+
+==== FILES Variable ====
+The ''FILES'' variable allows custom configuration files to be included in images built with Image Generator. This is especially useful if you need to change the network configuration from default before flashing, or if you are preparing an image for mass-flashing many devices.
+
+Syntax:
+<code>$ make image FILES=files/</code>
+
+**Note:** The ''files/'' folder must be in the same folder where you issue the make command.
+
+
+==== Examples ====
+The following example shows:
+
+  -Creating the directory for the configuration files
+  -Using ''scp'' to transfer ''uci'' configuration files from a WL500GP router to the ''files/etc/config'' directory
+  -Generating an image for WL500GP with custom packages and ''uci'' configuration files
+
+<code>mkdir -p files/etc/config
+scp root@192.168.1.1:/etc/config/network files/etc/config/
+scp root@192.168.1.1:/etc/config/wireless files/etc/config/
+scp root@192.168.1.1:/etc/config/firewall files/etc/config/
+make image PROFILE=wl500gp PACKAGES="nano openvpn -ppp -ppp-mod-pppoe" FILES=files/
+</code>
+
+=====清除=====
+您可以使用**make clean**命令来清除临时构建文件和已生成的镜像文件。
+=====移除固件中无用的文件=====
+<WRAP center round important 60%>
+This is not a standard feature of the Image Builder. 
+
+Note that it requires patching of the ''Makefile''
+</WRAP>
+
+1. 创建一个包含了文件完整径名为'files_remove'，如：
+<code>
+/lib/modules/3.10.49/ts_bm.ko
+/lib/modules/3.10.49/nf_nat_ftp.ko
+/lib/modules/3.10.49/nf_nat_irc.ko
+/lib/modules/3.10.49/nf_nat_tftp.ko
+</code>
+
+2. 给Makefile打补丁
+<code bash>
+ ifneq ($(USER_FILES),)
+ 	$(MAKE) copy_files
+ endif
++
++ifneq ($(FILES_REMOVE),)
++	@echo
++	@echo Remove useless files
++
++	while read filename; do				\
++	    rm -rfv "$(TARGET_DIR)$$filename";	\
++	done < $(FILES_REMOVE);
++endif
++
+ 	$(MAKE) package_postinst
+ 	$(MAKE) build_image
+</code>
+
+3. 重构固件
+<code>
+# make image \
+    PROFILE=tlwr841 \
+    PACKAGES="igmpproxy ip iptraf kmod-ipt-nathelper-extra openvpn-polarssl tcpdump-mini -firewall -ip6tables -kmod-ip6tables -kmod-ipv6 -odhcp6c -ppp -ppp-mod-pppoe" \
+    FILES_REMOVE="files_remove"
+</code>
+
+
+===== Building the Image Generator with all packages inside =====
+It is possible to build the Image Generator and integrate in it all packages so it will be able to generate images without downloading packages:
+
+In the graphical configuration, select "**Build the LEDE Image Builder**" to build the image builder, then  select **Global Build Settings** -> **Select all packages by default**, save and exit.
+Then build the image, including ''IGNORE_ERRORS=1'' as there might be unmaintained packages that fail to compile.
+
+Enabling ''IGNORE_ERRORS=1'' should only be done **once the kernel and required packages are known to compile successfully.**
+
+<code>make IGNORE_ERRORS=1
+</code>
+
+**Note:** Don't call ''make defconfig'' or leave an old ''.config'' file in the path as ''Select all packages by default'' will only set the package selection to ''[m]'' for packages that are not already configured otherwise!(''make defconfig'' will set most packages to ''[n]'', i.e. //do not build//.)
+
+
+===== Adding/Modifying Profiles =====
+The image generation is tied to the profile names. If you add a new profile without also adding an appropriate macro to the image-generation Makefile, no suitable firmware file will get generated when using the custom profile. 
+:!: Make sure to remove the /tmp directory to get modified package selection from profiles to work. 
+
+The location of the profiles for the pre-compiled package for //brcm47xx-for-Linux-i686// was //target/linux/brcm47xx/profiles///
+
+Remarkably, all that needs to be done to add a new profile, is to add a new file to the //profiles// directory. //While this may have been the case in earlier releases, for 17.01, it appears that manual editing of ''.targetinfo'' is also required.//
+
+Here is what the //profiles/100-Broadcom-b43.mk// profile file looks like:  
+
+<WRAP>
+<code>
+define Profile/Broadcom-b43
+  NAME:=Broadcom BCM43xx WiFi (default)
+  PACKAGES:=kmod-b43 kmod-b43legacy
+endef
+
+define Profile/Broadcom-b43/Description
+	Package set compatible with hardware using Broadcom BCM43xx cards
+endef
+$(eval $(call Profile,Broadcom-b43))
+</code>
+</WRAP>

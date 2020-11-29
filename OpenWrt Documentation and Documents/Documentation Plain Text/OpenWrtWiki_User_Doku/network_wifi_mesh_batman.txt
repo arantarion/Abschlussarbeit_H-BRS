@@ -1,0 +1,333 @@
+====== B.A.T.M.A.N. / batman-adv ======
+B.A.T.M.A.N. is derived from "Better Approach To Mobile Adhoc Networking" and works for stationary systems as well.
+
+In addition to providing node-to-node and node-to-net connectivity, batman-adv can provide bridging of multiple VLANs over a mesh (or link), such as for "trusted" client, guest, IoT, and management networks. It provides an easy-to-configure alternative to other approaches to "backhaul", such as WDS connections, GRE tunnels, and various "relay" and "pseudo-relay" approaches.
+
+batman-adv can run on top of a variety of mesh implementations, including 802.11s, ad-hoc (IBSS), and multiple point-to-point links, wired or wireless.
+
+batman-adv is reasonably robust to topology changes, typically adapting within a couple seconds.
+
+batman-adv does //not// provide encryption or authentication. If required, it should be implemented either or both in the underlying transport (encrypted, authenticated mesh, for example), or protocols (IPSEC, TLS, ssh, ...).
+
+  * ''[[packages:pkgdata:kmod-batman-adv|batman-adv]]'' is a mesh protocol for a Layer 2 networking (like Ethernet frames) running in the kernel
+  * ''[[packages:pkgdata:batmand|batmand]]'' is a user-space daemon for an older B.A.T.M.A.N. protocol that operates at Layer 3 (like TCP/IP packets)
+
+Unless you've got a strong reason to use the older, Layer 3 protocol (such as interoperation with an existing mesh), ''batman-adv'' is suggested. This page documents configuration of ''batman-adv'' for a local mesh.
+
+For further information, see, for example
+  * [[http://www.open-mesh.org/projects/open-mesh/wiki|Documentation on the B.A.T.M.A.N. Project Homepage]]
+  * [[http://www.open-mesh.org/wiki/open-mesh/BranchesExplained]]
+  * [[https://downloads.open-mesh.org/batman/manpages/batctl.8.html|batctl man page]]
+
+Special thanks to the authors of this OpenWrt walk-through
+  * https://www.radiusdesk.com/old_wiki/technical_discussions/batman_basic
+
+<WRAP center round tip 60%>
+**This page now applies to OpenWrt with ''batman-adv'' 2019.1 and later.**
+
+The configuration approach for ''batman-adv'' changed in March 2019, 
+See [[https://git.openwrt.org/?p=feed/routing.git;a=commit;h=54af5a209e0a0a75b5eb712c0ca8056e66de02c0|commit 54af5a2]] for further details.
+
+The last [[https://openwrt.org/docs/guide-user/network/wifi/mesh/batman?rev=1555021785|revision of this page discussing the older configuration]] is still available. 
+</WRAP>
+
+
+====== Installation and Configuration of batman-adv ======
+
+802.11s configuration developed and tested on ''openwrt-18.06'' and ''master'' in September, 2018 on Archer C7v2 units running the non-CT firmware (see note above about configuration changes if running 18.06 and its older version of ''batman-adv''. 
+
+Current (2019.1 and later) ''batman-adv'' configuration confirmed on EA8300 and ''master'' in May, 2019.
+
+===== Does Your Device Support 802.11s or IBSS? =====
+
+Typically, either 802.11s or IBSS ("ad hoc") is required to set up a mesh.
+
+IBSS configuration is not discussed in detail on this page. See further [[docs:guide-user:network:wifi:basic|WiFi /etc/config/wireless]]
+
+Note that not all driver / firmware combinations support 802.11s mesh (or IBSS). This may be checked with ''iw phy'', looking for "mesh point" (or "IBSS") in the various sections of the output. If the -CT drivers/firmware do not support mesh on your device, it may be the case that the "classic" (no -CT) variants do.
+
+<code>
+root@test:~# iw phy | fgrep mesh
+		 * mesh point
+		 * #{ managed } <= 16, #{ AP, mesh point } <= 16, #{ IBSS } <= 1,
+		 * mesh point
+		 * #{ managed } <= 16, #{ AP, mesh point } <= 16, #{ IBSS } <= 1,
+		 * mesh point
+		 * #{ managed } <= 16, #{ AP, mesh point } <= 16, #{ IBSS } <= 1,
+</code>
+
+It has been reported that certain Marvell chips supported by the ''mwlwifi'' driver do not support 802.11s, even if indicated in the capabilities.\\
+ See further https://github.com/kaloz/mwlwifi/issues?utf8=%E2%9C%93&q=is%3Aissue+802.11s
+===== Overview =====
+
+In this walk-through the following steps are described
+  * Install needed packages for batman-adv
+  * Configure a mesh on which batman-adv will run
+  * Configure batman-adv to use the mesh
+  * Configure one or more VLANs to be routed by batman-adv
+
+While an 802.11s mesh is described here, an ad-hoc (IBSS) mesh, or point-to-point links can also be utilized. 
+
+Note that use of Ethernet links with their typical MTU of 1500 will reduce the PMTU to below 1500 due to the batman-adv headers. batman-adv is typically configured to [[https://www.open-mesh.org/news/43|manage fragmentation]], with the attendant slight reduction in throughput when packets are fragmented. For many use cases, the higher speeds, lower latency, and/or reliability of an Ethernet link will make up for this effect.
+
+===== Installation =====
+<code>
+opkg update
+opkg install kmod-batman-adv
+</code>
+Suggested for ease of monitoring and debugging
+<code>
+opkg install batctl
+</code>
+To enable use of 802.11s mesh
+<code>
+opkg remove wpad-basic
+opkg install wpad-mesh-openssl  # or wpad-mesh-wolfssl
+</code>
+
+If building/assembling your own image, you will need to remove the default ''wpad-basic'' as it conflicts with ''wpad-mesh=*''. 
+
+''wpad'' (full) is //**not**// sufficient for 802.11s use.
+
+===== Configuration =====
+==== General ====
+Configuration for batman-adv from 2019.1 and onward is done in ''/etc/config/network'' (only). There is no ''/etc/config/batman-adv'' file used with current versions.
+
+Options for an interface with ''option proto 'batadv''' are described in the ''batctl'' man page, available at this time at https://downloads.open-mesh.org/batman/manpages/batctl.8.html
+
+The UCI configuration is applied by ''/lib/netifd/proto/batadv*.sh'' at this time. 
+
+VLAN-specific configuration is not discussed here, but can be see by examining ''/lib/netifd/proto/batadv_vlan.sh'' and consulting the batman-adv documentation.
+
+==== (1) 802.11s Encrypted, Authenticated Mesh ====
+For purposes of this walk-through, an 802.11s mesh is used. Other mesh and point-to-point links can be used. 
+
+Configure //all// mesh nodes with the same ''/etc/config/wireless'' stanza:
+
+<code>
+config wifi-iface 'mesh0'
+        option device 'radio5pci'
+        option ifname 'mesh0'
+        option network 'nwi_mesh0'
+        option mode 'mesh'
+        option mesh_fwding '0'
+        option mesh_id '<your advertised mesh "name" goes here>'
+        option encryption 'psk2+ccmp'
+        option key '<your secure pass phrase goes here>'
+</code>
+
+//Note that in 18.01 "key" is the proper place to put the passphrase, not "sae_password"//
+
+Important points:
+
+In many places I use a more descriptive name than default configuration or add a name that is not required for clarity.
+
+  * ''radio5pci'' needs to match the declaration in ''/etc/config/wireless'' of your device, such as ''config wifi-device 'radio5pci'''
+    * The radios all need to be on the same channel and be configured to interoperate with each other (basically configured the same as each other)
+  * ''mesh0'' is a //fixed// identifier for the name of the interface itself, for clarity (otherwise it will be dynamically assigned)
+  * ''nwi_mesh0'' is a reference to the entry in ''/etc/config/network'' that will be used to set the MTU and associate it with a batman-adv interface. Its name is selected here for readability, not to match a construct such as OpenWrt's prefixing of interface names.
+  * ''mesh_fwding '0''' turns off 802.11s forwarding/routing; it will be handled by batman-adv at each node
+  * ''psk2+ccmp'' is believed to be the most secure option for home users at this time
+
+Once applied, ''mesh0'' should be seen in the output of ''ip link''. 
+
+<code>
+8: mesh0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DORMANT group default qlen 1000
+    link/ether 32:23:03:xx:xx:xx brd ff:ff:ff:ff:ff:ff
+</code>
+
+The operation of the mesh can be confirmed with ''iw dev mesh0 station dump''. You should see the other peers in the listing with ''mesh plink:	ESTAB'' indicating that the peering has been successful. 
+
+<hidden Click to reveal example ''iw dev mesh0 station dump'' output>
+<code>
+root@test:~# iw dev mesh0 station dump
+Station c6:6e:1f:xx:xx:xx (on mesh0)
+	inactive time:	50 ms
+	rx bytes:	40640
+	rx packets:	439
+	tx bytes:	966
+	tx packets:	7
+	tx retries:	0
+	tx failed:	0
+	rx drop misc:	2
+	signal:  	-87 [-88, -92, -95, -95] dBm
+	signal avg:	-86 [-88, -91, -95, -95] dBm
+	Toffset:	366695690570 us
+	tx bitrate:	6.0 MBit/s
+	rx bitrate:	6.0 MBit/s
+	rx duration:	0 us
+	last ack signal:-95 dBm
+	mesh llid:	0
+	mesh plid:	0
+	mesh plink:	ESTAB
+	mesh local PS mode:	ACTIVE
+	mesh peer PS mode:	UNKNOWN
+	mesh non-peer PS mode:	ACTIVE
+	authorized:	yes
+	authenticated:	yes
+	associated:	yes
+	preamble:	long
+	WMM/WME:	yes
+	MFP:		yes
+	TDLS peer:	no
+	DTIM period:	2
+	beacon interval:100
+	connected time:	17 seconds
+Station 1a:d6:c7:xx:xx:xx (on mesh0)
+	inactive time:	50 ms
+	rx bytes:	38909
+	rx packets:	418
+[...]
+</code>
+</hidden>
+\\
+If testing the mesh prior to association with an entry in ''/etc/config/network'', you may need to use ''ip'' to bring the interfaces up and modify their parameters, such as MTU.
+
+==== (2) Associate batman-adv With Mesh ====
+Now that the mesh is (or could be) up and running, create the batman-adv interfaces for routing traffic over the mesh.
+
+Configure //all// mesh nodes with the same two ''/etc/config/network'' stanzas:
+
+The first, ''bat0'', is the "control" interface. Here it is taken verbatim from [[https://git.openwrt.org/?p=feed/routing.git;a=commit;h=54af5a209e0a0a75b5eb712c0ca8056e66de02c0|commit 54af5a2]] that introduced the 2019 configuration. 
+
+Adjust if you have a reason to do so. Options for an interface with ''option proto 'batadv''' are described in the ''batctl'' man page, available at this time at https://downloads.open-mesh.org/batman/manpages/batctl.8.html
+
+<code>
+config interface 'bat0'
+	option proto 'batadv'
+	option routing_algo 'BATMAN_IV'
+	option aggregated_ogms 1
+	option ap_isolation 0
+	option bonding 0
+	option fragmentation 1
+	#option gw_bandwidth '10000/2000'
+	option gw_mode 'off'
+	#option gw_sel_class 20
+	option log_level 0
+	option orig_interval 1000
+	option bridge_loop_avoidance 1
+	option distributed_arp_table 1
+	option multicast_mode 1
+	option network_coding 0
+	option hop_penalty 30
+	option isolation_mark '0x00000000/0x00000000'
+</code>
+
+The second puts a "physical" link under the control of ''bat0''. 
+
+In this case, the wireless management in OpenWrt will do the association of the wireless interface when it comes up. See the [[https://git.openwrt.org/?p=feed/routing.git;a=commit;h=54af5a209e0a0a75b5eb712c0ca8056e66de02c0|commit 54af5a2]] for suggestions of how to add other link types.
+
+<code>
+config interface 'nwi_mesh0'
+	option mtu '2304'
+	option proto 'batadv_hardif'
+	option master 'bat0'
+</code>
+
+Important points:
+
+  * ''nwi_mesh0'' needs to match the declaration in ''/etc/config/wireless'' of your device, such as ''option network 'nwi_mesh0'''
+  * The MTU is set to 2304 here, what an 802.11s link will support. A minimum of 1532 is suggested to provide batman-adv routing of typical 1500-byte Ethernet packets. The MTU cannot exceed the link's native MTU.
+
+At this time (Fall, 2018, batman-adv 2018.2), the default routing algorithm is BATMAN_IV (4). BATMAN_V (5), in the author's experience, is not robust in this on-premise application. See, for example, https://forum.openwrt.org/t/batman-v-routing-on-prem-connectivity-loss-seen/20432
+
+With the mesh up and the network configuration done, you should see ''bat0'' in the output of ''ip link''. The output of ''batctl o'' and/or ''batctl n'' should indicate that the various batman-adv nodes are "seeing" each other over the mesh.
+
+<hidden Click to reveal diagnostic output>
+<code>
+8: bat0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/ether ea:cb:a5:xx:xx:xx brd ff:ff:ff:ff:ff:ff
+9: mesh0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 2304 qdisc noqueue master bat0 state UP mode DORMANT group default qlen 1000
+    link/ether 32:23:03:xx:xx:xx brd ff:ff:ff:ff:ff:ff
+    
+root@test:~# batctl n
+[B.A.T.M.A.N. adv openwrt-2019.2-0, MainIF/MAC: mesh0/32:23:03:xx:xx:xx (bat0/ea:cb:a5:xx:xx:xx BATMAN_IV)]
+IF             Neighbor              last-seen
+        mesh0	  c6:6e:1f:xx:xx:xx    0.730s
+        mesh0	  32:b5:c2:xx:xx:xx    0.950s
+        mesh0	  1a:d6:c7:xx:xx:xx    0.140s
+</code>
+</hidden>
+
+==== (3) Bridge VLANs Over batman-adv ====
+//Note: This does not discuss how to [[docs:guide-user:base-system:basic-networking|configure switches for VLANs]], [[docs:guide-user:network:wifi:basic|associate wireless interfaces with bridges]], or [[docs:guide-user:firewall:|firewall traffic]]. Please consult other documentation for details of those operations as they may apply to your situation.//
+
+With batman-adv now able to route packets among peers, the remaining step is to use that facility to route "useful" traffic.
+
+As appropriate for each node, edit ''/etc/config/network'' based on these examples. Multiple VLANs can be bridged/routed over a single batman-adv interface.
+
+The ''option delegate '0''' "turns off" certain IPv6-related features on the interface. If you are using IPv6, you should examine if this is the proper setting for your application.
+
+By current convention, OpenWrt will name the interfaces for bridges by prefixing them with ''br-'' yielding ''br-vlan1111'' and the like. There is the typical 15-character limit on interface names in the Linux kernel, which needs to include the ''br-'' prefix.
+
+These bridges will have an MTU no larger than the smallest MTU of its bridged interfaces. As soon as a typical Ethernet-like interface is included, the MTU will be 1500 or less, even if one or more members of the bridge have a larger MTU. This is how bridges operate in Linux, in general, not an OpenWrt-specific limitation.
+
+=== Bridge With IPv4 Address ===
+<code>
+config interface 'vlan1111'
+        option type 'bridge'
+        option stp '1'
+        option ifname 'eth1.1111 bat0.1111'
+        option proto 'static'
+        option ipaddr '192.168.11.11'
+        option netmask '255.255.255.0'
+        option delegate '0'
+</code>
+
+=== Bridge Without IPv4 Address ===
+<code>
+config interface 'vlan2222'
+        option type 'bridge'
+        option stp '1'
+        option ifname 'eth1.2222 bat0.2222'
+        option proto 'none'
+        option auto '1'
+        option delegate '0'
+</code>
+
+=== Bridge Without Ethernet Interface ===
+(such as for "only" a bridged wireless interface)
+
+<code>
+config interface 'vlan3333'
+        option type 'bridge'
+        option stp '1'
+        option ifname 'bat0.3333'
+        option proto 'none'
+        option auto '1'
+        option delegate '0'
+</code>
+
+==== (Optional) /etc/bat-hosts  ====
+
+//This is not a required step -- It makes some diagnostic output easier to read.//
+
+By creating the file ''/etc/bat-hosts'' the output of many ''batctl'' commands will replace the MAC addresses with symbolic names. These names do not need to be the host name, nor be consistent with DNS.
+
+The MAC address to use is that of the "raw" interfaces that are used by ''bat0'' -- in this example configuration, those of ''mesh0'' on each of the nodes.
+
+<code>
+32:b5:c2:aa:aa:aa	office.5g
+c6:6e:1f:bb:bb:bb	garage.5g
+32:b5:c2:cc:cc:cc	front.5g
+1a:d6:c7:dd:dd:dd	back.5g
+c6:e9:84:ee:ee:ee 	devel.5g
+</code>
+
+====== In Operation ======
+===== On- and Off-Mesh Access =====
+When bridging VLANs as described above, with one node bridging to the wired networks, off-mesh clients have access to mesh clients and vice-versa without any additional configuration. Off-mesh clients can also access other off-mesh clients over the mesh (such as clients of different APs and/or those on the wired network). With a five-node, on-premise mesh using BATMAN_IV, initial ping requests are typically returned within one or two seconds.
+
+===== Multiple Nodes Bridging to Same Network Segment =====
+Use of multiple nodes bridged to the same wired networks has not been deeply examined at this time. STP //might// be sufficient as a "poor-man's" approach, though there have been cases with other networking protocols where bridge loops involving the on-device switches did not seem to be detected and resolved by STP alone. 
+
+A quick test with two of the OpenWrt nodes (of the five deployed and participating in batman-adv) connected to the wired network through Cisco SG300-series switches had a "fail-over" occur after unplugging the "active" cable in ~90 seconds, with disturbances evident for another half minute. The output of ''batctl cl'' ("claim table") appears to empty and update on about the same time scale. STP in the OpenWrt bridges has a hello_time of 2.00 s, max_age of 20.00 s, and forward_delay of 2.00 s, suggesting an STP cut-over time of ~26 seconds. Watching the claim table on one node while bringing down ''bat0'' on the "preferred gateway" (without changing Ethernet connectivity) showed a one-minute delay before those associated with the down node were removed. As a result, at this time the delays are believed to be primarily due to batman-adv operation.
+
+There is a [[https://www.open-mesh.org/projects/batman-adv/wiki/Gateways|batman-adv feature around advertising gateways]]. It appears to be designed for larger-scale deployments and seems to work by moderating DHCP assignments, rather than by dynamically routing packets with the mesh-routing logic itself.
+
+===== Other Systems' Logs Flooded With kernel: arp: 43:05:43:05:00:00 is multicast =====
+The batman-adv [[https://www.open-mesh.org/projects/batman-adv/wiki/Bridge-loop-avoidance-Protocol|Bridge Loop Avoidance Protocol]] appears to use gratuitous ARP for 0.0.0.0 with the multicast bit set, acknowledging that "this is a misuse of ARP packets". Some RFC-compliant systems will log this as an error, as "Installing such entries is an [[https://tools.ietf.org/html/rfc1812#section-3.3.2|RFC 1812]] violation, but some proprietary load balancing techniques require routers to do so."
+
+Disabling Bridge Loop Avoidance Protocol in ''/etc/config/batman-adv'' with ''option bridge_loop_avoidance 0'' is one way to resolve this, though STP or other loop-avoidance methods are strongly suggested if this done.
+
+For FreeBSD and FreeBSD-based systems, setting ''net.link.ether.inet.allow_multicast=1'' should remove the log messages, but will "pollute" the ARP table as described in [[man>arp(4)]].

@@ -1,0 +1,13 @@
+====== Table of capabilities for wireless chipsets ======
+
+^ WLAN NIC ^ PA ^ rate ^ MIMO ^ LDPC ^ TX STBC ^ RX STBC ^ EIRP CH11 ^ EIRP CH6 ^ EIRP 5G ^ models ^
+| AR9285 | | 150 | 1x1:1 | 0 | 0 | 1 | 17 | 17 | - | [[toh:tp-link:tl-wr740n|740/741 v1/v2/v3]], [[toh:tp-link:tl-mr3220|3220v1]], 743v1, [[:toh:views:toh_performance_details?dataflt%5BWLAN+Hardware*%7E%5D=AR9285|More]] |
+| AR9331 | | 150 | 2x1:1 | 0 | 0 | 1 | 16-18 | 18 | - | [[toh:tp-link:tl-mr3020|3020]], [[toh:tp-link:tl-mr3220|3220v2]], 740/741v4, [[toh:tp-link:tl-wr743nd|743v2]], [[:toh:views:toh_performance_details?dataflt%5BWLAN+Hardware*%7E%5D=AR9331|More]] |
+| AR9287 | | 300 | 2x2:2 | 0 | 1 | 1 | 18 | 21 | - | 841v7, [[toh:tp-link:tl-wr842nd|842v1]], [[:toh:views:toh_performance_details?dataflt%5BWLAN+Hardware*%7E%5D=AR9287|More]] |
+| AR9340 | | 300 | 2x2:2 | 1 | 1 | 1 | 18 | 21 | - | [[toh:tp-link:tl-mr3420|3420v2]], 841v8, 842v2, [[toh:tp-link:tl-wr843nd|843v1]], 941v5, 940v2, [[:toh:views:toh_performance_details?dataflt%5BWLAN+Hardware*%7E%5D=AR9340|More]] |
+| QCA9533 | | 300 | 2x2:2 | 1 | 1 | 1 | 19-23 | 21-23 | - | [[toh:tp-link:tl-wr841n|841v9+]], [[:toh:views:toh_performance_details?dataflt%5BWLAN+Hardware*%7E%5D=QCA9533|More]] |
+| AR9103 | | 300 | 3x3:2 | 0 | 0 | 0 | 23 | 24 | - | [[toh:tp-link:tl-wa901nd|901v2]], 941v1/v2/v3, [[toh:tp-link:tl-wr1043nd|1043v1]], [[:toh:views:toh_performance_details?dataflt%5BWLAN+Hardware*%7E%5D=AR9103|More]] |
+| TP9343 | | 450 | 3x3:3 | 0 | 1 | 1 | 22-28 | 22-28 | - | [[toh:tp-link:tl-wr941nd|941v6]], [[toh:tp-link:tl-wr940n|940v3]], [[:toh:views:toh_performance_details?dataflt%5BWLAN+Hardware*%7E%5D=TP9343|More]] |
+| AR9380 | SE2595L | 450 | 3x3:3 | 1 | 1 | 1 | 20 | 24 | 20-21 | [[toh:tp-link:tl-wr2543nd|2543]], [[:toh:views:toh_performance_details?dataflt%5BWLAN+Hardware*%7E%5D=AR9380|More]] |
+| AR9344 | | 300 | 2x2:2 | 1 | 1 | 1 | 18 | 21-22 | - | [[toh:tp-link:tl-wdr3600|WDR3600]], [[:toh:views:toh_performance_details?dataflt%5BWLAN+Hardware*%7E%5D=AR9344|More]] |
+| AR9582 | | 300 | 2x2:2 | 1 | 1 | 1 | - | - | 15-19 | [[toh:tp-link:tl-wdr3600|WDR3600]], [[:toh:views:toh_performance_details?dataflt%5BWLAN+Hardware*%7E%5D=AR9582|More]] |

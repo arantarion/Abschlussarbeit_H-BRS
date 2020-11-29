@@ -1,0 +1,22 @@
+====== Share USB hard-drive with Samba using LuCI ======
+USB-connections are becoming common on most routers today. A popular usage scenario is connecting a USB storage device like a USB-pen or hard-drive and share the content on your LAN. This recipe will guide you through how this can easily be set-up using the Luci web-interface.
+
+===== Install dependencies =====
+You will find detailed walk throughs for [[docs:guide-user:storage:usb-drives|USB-storage]] and [[docs:guide-user:services:nas:samba|Samba]] respectively. At a minimum, you will need to install the packages: 
+  * kmod-usb-storage
+  * block-mount
+  * samba36-server
+  * luci-app-samba. 
+In addition you will need support for the file system you format the USB device with. For ext file-systems install kmod-fs-ext4, for btrfs install kmod-fs-btrfs. Avoid using ntfs from Microsoft, it lacks a couple of important features for file-systems. But if you still want to use it, install [[docs:guide-user:storage:writable_ntfs|ntfs-3g]] in order to have read & write access.
+
+===== Mount your USB drive =====
+Whether it is a USB pen or a hard-drive. Simply plug it in the USB port, and it should show be automatically detected by OpenWrt (if you ssh into the router you will typically find a new entry /dev/sda for the device, and /dev/sda1 for it's first partition). Now go to the **Mount points** tab under System in the Luci web-interface. You will find your USB storage device listed already as show below. If you have formatted your drive with the Ext file system, all you need is to tick **Enable** and then **Save & Apply**. 
+:!: Mount points is only visible if dependencies are already installed\\ \\ {{media:doc:recipes:usb-storage-samba-webinterface-mountpoint.png|The partition(s) on your USB device is already listed in the web-interface.}}\\ \\ \\ 
+In my case I used the btrfs filesystem due to it's advanced functionalities. In this case you will need to change the file system. Choose **Edit**, and you will be able to revise like this:
+\\ \\ {{media:doc:recipes:usb-storage-samba-webinterface-btrfsmount.png|Choose among installed file systems to match the formatting of your drive}}\\ \\ 
+
+===== Share the drive on your local network =====
+We will only show how to do simply sharing here. Samba supports advanced access policies, but this recipe is meant for the most common use case. Please consult the [[docs:guide-user:services:nas:samba|Samba howto]] for a more thorough walk-through.
+
+Open the web-interface Luci, under **Services** choose the **Network Shares** tab. Here you will need to fill in the name of your shared folder as it will appear on you network. In our example we called it //Share//. You will also need to fill in the mount point from above, we used the default ///home//. You will also need to tick **Allow guests** (otherwise setting up user access control is necessary). Also tick Read-Only is you only want to grant read access for clients on you local network, we allowed write access here:
+\\ \\ {{media:doc:recipes:usb-storage-samba-webinterface-guest.png|Simple Samba set-up with read and write access for all clients on local network.}}

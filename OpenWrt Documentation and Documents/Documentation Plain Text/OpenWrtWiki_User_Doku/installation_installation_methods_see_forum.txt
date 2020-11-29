@@ -1,0 +1,15 @@
+====== see forum ======
+
+The installation method is described in the OpenWrt forum.\\
+  * See the forum links provided in below table **OR**
+  * Use the forum search to find installation instructions
+
+===== Devices with this installation method =====
+---- datatable ----
+cols       : Brand, Model, Versions, Supported Current Rel_releasecurrent, Installation method(s)_method-installations, Comment installation, OWrt forum topic URL_url, Forum search_search-forum, Device Page_page, Device Techdata_pageid
+dynfilters : 1
+filter     : Model!=@@Model@@
+filter     : installation method(s)*~see forum
+sort       : Brand
+limit      : 25
+----

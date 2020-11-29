@@ -1,0 +1,278 @@
+FIXME **This page is not fully translated, yet. Please help completing the translation.**\\ //(remove this paragraph once the translation is finished)//
+
+====== Wifi扩展器、中继器及桥接配置 ======
+
+<WRAP center round important 80%>
+本文中以relayd为基础的实现不保证一定能用。\\
+最常见的问题是，作为客户端的路由无法在主路由和连接至客户端路由的客户端（设备）之间正常传递DHCP消息。目前看来，问题在于硬件/SOC的限制（或许与MAC地址克隆相关？）\\
+您可以考虑使用[[docs:guide-user:network:wifi:atheroswds|WDS]]或[[docs:guide-user:network:wifi:mesh:start|mesh networking]]。\\
+或许可以用**kmod-trelay**来代替relayd，相关信息仅能从[[https://github.com/openwrt/openwrt/commit/c3bba7f8c61ee98265bcffef8ee86e22aa89bbe9|这段源码]]获取, 如果您成功了，请在此文中添加一段对应的说明。\\
+</WRAP>
+
+
+在本文中，您将看到如何将您的设备配置为WiFi扩展器/中继器/桥接。\\
+
+在某些情况下,因为OpenWrt所用的开源无线驱动不支持"链路层(2层)"客户端模式下的桥接，所以LAN和无线客户端之间的流量只能用路由的方式来合并到一起，然后在其中广播比如DHCP和mDNS等本链路上的不可路由的消息。\\
+
+**relayd**包借由DHCP和广播中继在仅IPv4的环境下实现了类似桥接的行为。此配置可以通过SSH（远程终端）和Luci图形界面完成。
+
+\\ 简单起见，我们将把配置的设备称为“wifi扩展器”。
+
+\\ {{ docs:guide-user:wifirepeater_802.11-routed-relay.png |}} \\ 
+
+上图展示了一个示例配置。wifi扩展器的**LAN**接口**必须**配置为不同的子网，否则realyd无法正常工作（因为它需要两个不同的子网来进行路由）。
+
+因为有线端口和无线网络均属于同一个**LAN**接口，所有连接至WiFi扩展器有线端口和无线网络的客户端将由**relayd**进行路由，进而连接到您的主网。
+
+**LAN**接口所配置的子网将只被用作“管理”网段，而连接到wifi扩展器的设备则会被分配到主网段。您必须给您的PC设置一个和**LAN**接口同网段的静态IP地址（比如192.168.2.10）以便再次连接到wifi扩展器的管理界面或SSH。\\
+
+===== 必须安装的包 =====
+您必须安装**relayd**包以实现本文讨论的方法。
+如果您想使用Luci图形界面来配置您的wifi扩展器，还需要安装**luci-proto-relay**包。
+
+===== 使用Luci图形界面进行设置 =====
+如上图所示，**LAN**接口必须设置一个与您将连接的wifi网段不同的子网。
+
+Begin by configuring and enabling the normal WiFi network and configure it as you want it.\\
+If you are making a simple WiFi Repeater (a device that extends the same wifi network's coverage) it's a good choice to set this WiFi network to be the same as the one of your main router, same name, encryption, password, and so on. This way, devices connected to your (wider) network will automatically stay connected to the best WiFi network.\\
+But you can also choose to have a different name/encryption/password if you prefer to.\\
+Setting up a WiFi network at this stage is not necessary if you want a "WiFi bridge", a device designed to connect ethernet-only devices to your existing WiFi network.
+
+\\ {{ :docs:guide-user:wifirepeater_interfaces_lan.png |}} \\ 
+
+Set LAN as static address 192.168.2.1 and disable DHCP for the **LAN** interface (as it does prevent **relayd** from working). Apply the setting change.\\
+
+----
+
+Set your PC's ethernet or wifi settings at static IP 192.168.2.10 and default gateway 192.168.2.1, then connect again to the wifi repeater (through ethernet or wifi). When you finish all of the following steps, remember to reset your PC's IP address back to the original address (or DHCP), otherwise you won't have Internet access. The repeater won't route traffic from the 192.168.2.0/24 subnet.
+
+We will now set up the client wifi network, the configuration needed to connect to another wifi network.\\ Once you are connected again to the wifi extender, go in the wireless networks page, and click on **Scan** button.\\
+
+\\ {{ :docs:guide-user:wifirepeater_joinnetwork_wifi_scan.png |}} \\ 
+
+Choose the wifi network you want to connect to from the page and click "Join Network".\\ 
+
+----
+
+\\ {{ :docs:guide-user:wifirepeater_joinnetwork_settings.png |}} \\ 
+
+Enter the wifi password, leave the "name of new network" as "wwan" and select **lan** firewall zone. Click Save.\\
+
+----
+
+----
+
+\\ {{ :docs:guide-user:wifirepeater_clientwifi_settings.png |}} \\ 
+
+You will land in the client wifi settings page, set other things as needed.\\ The most important settings are on the **Operating Frequency** line.\\ Set the **Mode** to **Legacy** if you are connecting to a wifi g network (like in my example) or **N** if you are connecting to a wifi n (and so on).\\ Set the **Width** to the same value that you set on the wifi you are connecting to (to avoid bottlenecking the connection for no reason).
+
+----
+
+----
+
+Go in the **Interfaces** page, we will now add the relayd interface that will join the **lan** and **wwan** interfaces.\\
+Click on **Add New Interface**.\\
+
+\\ {{ :docs:guide-user:wifirepeater_newinterface.png |}} \\ 
+
+ Write a name for it (**repeater_bridge** is the name I used in the example), and then choose **Relay bridge** in the **Protocol of the new interface** field. Click **Submit**.
+
+----
+
+\\ {{ :docs:guide-user:wifirepeater_relaybridge1.png |}} \\ 
+
+In this new interface's setting page, select both **lan** and **wwan** in the **Relay between networks** list.
+
+This interface needs to have an IP address from 192.168.1.0/24 zone otherwise this bridge will not be accessible from the clients connected directly to the primary router.
+----
+
+----
+
+\\ {{ :docs:guide-user:wifirepeater_relaybridge2.png |}} \\ 
+Move to the Firewall tab of this interface settings page and select **lan**. Click on **Save and Apply**.
+
+----
+
+----
+
+After you have done this, it might be necessary to reboot the wifi extender.
+
+\\ {{ :docs:guide-user:wifirepeater_final_result.png |}} \\ 
+
+This is the final result. Note how the client network has a ? instead of a IP address.
+
+----
+
+----
+
+:!: The following part of the configuration should not be necessary (already default options or changed automatically), in case something isn't working check this too. 
+
+\\ {{ :docs:guide-user:wifirepeater_firewall.png |}} \\ 
+Under the **Network** tab, click on the **Firewall** tab. Under **Zones**, change the forwarding for **lan** and **wwan** to **accept**
+
+----
+
+----
+
+:!: if you are doing this with a device that has a single radio, both wifi networks will stay on the same channel, and total bandwith will be halved as the same radio is used for 2 different wifi networks.
+
+
+
+===== 用命令行进行设置 =====
+
+Before doing any actual configuration, the wifi interface must be enabled in order to be able to scan for networks in the vincinity:
+
+<code>uci set wireless.@wifi-device[0].disabled=0
+uci commit wireless
+wifi</code>
+
+  * Set the disabled option to 0 (to enable wireless)
+  * Save changed configuration file
+  * Start wireless using the //wifi// command
+
+Now we can list networks in range using ''iw dev wlan0 scan'', substituting your actual wireless interface for //wlan0// if different (''ifconfig'' lists all available interfaces to find how your wlan is called)
+
+''iw dev wlan0 scan'' output example:\\
+
+<code>root@OpenWrt:/# iw dev wlan0 scan
+BSS c8:d5:fe:c8:61:b0(on wlan0) -- associated
+        TSF: 24324848870 usec (0d, 06:45:24)
+        freq: 2412
+        beacon interval: 100 TUs
+        capability: ESS (0x0411)
+        signal: -72.00 dBm
+        last seen: 140 ms ago
+        Information elements from Probe Response frame:
+        SSID: Violetta
+        RSN:     * Version: 1
+                 * Group cipher: CCMP
+                 * Pairwise ciphers: CCMP
+                 * Authentication suites: PSK
+                 * Capabilities: 1-PTKSA-RC 1-GTKSA-RC (0x0000)
+BSS f8:35:dd:eb:20:f8(on wlan0)
+        TSF: 24225790925 usec (0d, 06:43:45)
+        freq: 2457
+        beacon interval: 100 TUs
+        capability: ESS (0x0431)
+        signal: -90.00 dBm
+        last seen: 1450 ms ago
+        Information elements from Probe Response frame:
+        SSID: GOinternet_EB20FB
+        HT capabilities:
+                Capabilities: 0x11ee
+                        HT20/HT40
+                        SM Power Save disabled
+                        RX HT20 SGI
+                        RX HT40 SGI
+                        TX STBC
+                        RX STBC 1-stream
+                        Max AMSDU length: 3839 bytes
+                        DSSS/CCK HT40
+                Maximum RX AMPDU length 65535 bytes (exponent: 0x003)
+                Minimum RX AMPDU time spacing: 4 usec (0x05)
+                HT RX MCS rate indexes supported: 0-15, 32
+                HT TX MCS rate indexes are undefined
+        HT operation:
+                 * primary channel: 10
+                 * secondary channel offset: below
+                 * STA channel width: any
+        RSN:     * Version: 1
+                 * Group cipher: TKIP
+                 * Pairwise ciphers: TKIP CCMP
+                 * Authentication suites: PSK
+                 * Capabilities: 1-PTKSA-RC 1-GTKSA-RC (0x0000) </code>
+
+In the example, there are two networks, a Wifi g one called Violetta and a Wifi n one called GOinternet_EB20FB.
+The device was configured to connect to the one called Violetta.
+
+These are the uci values that were added or changed by the configuration procedure.\\
+For SSID, BSSID, and encryption you must use the info you got from the wifi scan above.\\
+For an explanation of why these values were changed, please read the luci tutorial above.\\
+
+<code>network.lan.ipaddr='192.168.2.1'
+network.repeater_bridge=interface
+network.repeater_bridge.proto='relay'
+network.repeater_bridge.network='lan wwan'
+network.wwan=interface
+network.wwan.proto='dhcp'
+firewall.@zone[0].network='lan repeater_bridge wwan'
+dhcp.lan.ignore='1'
+wireless.radio0.hwmode='11g'
+wireless.radio0.country='00'
+wireless.radio0.channel='1'
+wireless.radio0.disabled='0'
+wireless.@wifi-iface[0]=wifi-iface
+wireless.@wifi-iface[0].device='radio0'
+wireless.@wifi-iface[0].mode='ap'
+wireless.@wifi-iface[0].encryption='none'
+wireless.@wifi-iface[0].ssid='OpenWrt'
+wireless.@wifi-iface[0].network='lan'
+wireless.@wifi-iface[1]=wifi-iface
+wireless.@wifi-iface[1].network='wwan'
+wireless.@wifi-iface[1].ssid='Violetta'
+wireless.@wifi-iface[1].encryption='psk2'
+wireless.@wifi-iface[1].device='radio0'
+wireless.@wifi-iface[1].mode='sta'
+wireless.@wifi-iface[1].bssid='C8:D5:FE:C8:61:B0'
+wireless.@wifi-iface[1].key='myWifiPasswordHere'
+</code>
+
+Please note that the wifi network generated by the device in this example (the one called OpenWrt) has no password nor encryption.\\
+This was done because the focus of this article was getting the relay bridge up and running.\\
+You will likely want to set up your device's wifi network in a more secure way, as explained in the WiFi setup page [[docs:guide-user:network:wifi:basic|here]].
+
+===== 访问OpenWrt设备 =====
+
+With this setup your OpenWrt device itself may only be accessible from those computers directly connected to the W-LAN AP, not from the ones connected to the OpenWrt W-LAN client only, when in the 192.168.1.0 subnet. It is however still possible to access the OpenWrt box via its ''192.168.2.1'' address, when you are in that subnet. One way of being in both subnets at the same time with a Linux client is by adding a second, a virtual network interface to /etc/network/interfaces:
+
+<code>
+iface eth0 inet dhcp
+  gateway 192.168.1.1
+
+auto eth0:1
+iface eth0:1 inet static
+    address 192.168.2.102
+    netmask 255.255.255.0
+    broadcast 192.168.2.255
+</code>
+
+//[If someone can describe a solution without modifications to the client network configuration that would be appreciated!]//
+
+===== Adding IPv6 support =====
+
+Activate IPv6 support on your Internet box, this will get you a public IPv6 prefix. We will now activate IPv6 on our WiFi Extender to allow for [[https://en.wikipedia.org/wiki/IPv6_address#Stateless_address_autoconfiguration|Stateless Address Autoconfiguration (SLAAC)]] of your public IPv6 addresses and IPv6 traffic.
+
+1. Go to Network / Interfaces and create a new interface. Name it ''WWAN6'', using protocol DHCPv6, cover the WWAN interface. In the Common Configuration of the new interface, configure: Request IPv6 address: disabled. In the Firewall settings: check that the "lan / repeater bridge…" line is selected. Leave the other settings by default, especially, leave the "Custom delegated IPv6-prefix" field empty. On the Interfaces / overwiew page check that the WWAN interface gets a public IPv6 address.\\
+
+2. Edit the ''LAN'' interface settings, DHCP server / IPv6 settings: check/modify the following settings: Router Advertisement Service: relay mode, DHCPv6 service: disabled, NDP-Proxy: relay mode.\\
+
+3. Open a SSH session on your OpenWrt device. Issue the following commands:\\
+<code>
+uci set dhcp.wan.interface=wwan
+uci set dhcp.wan.ra=relay
+uci set dhcp.wan.ndp=relay
+uci set dhcp.wan.master=1
+uci commit
+</code>
+We suppose that you created a ''wwan'' interface when you joined to the other wifi network as suggested earlier in this guide; otherwise, change the ''dhcp.wan.interface=…'' line accordingly.\\
+
+That's it. Restart ''ophcpd'' (LuCI System/Starup page, or ''/etc/init.d/odhcpd restart'') and your IPv6-network should begin to configure itself. Connected IPv6-enabled devices should get their public IPv6 addresses, derived from your public IPv6 prefix, and IPv6 traffic should go through your WiFi Extender. 
+
+===== 用NAT实现Wifi扩展器(如果别的方法都不行）=====
+
+这个方法就是单纯的将第二个无线路由配置在第一个的层级之下。\\
+就好像用一根网线把Wifi扩展器的WAN接口连到主路由的LAN接口。Wifi扩展器在自身和连接至它的客户端之间创建了新的网络。此网络可以访问互联网以及主路由所在的子网。只不过我们是用无线网络来达成这个目的。
+
+先决条件:
+- 路由必须由两个初始接口（lan，wan）
+
+使用luci图形界面进行设置：
+  * 至网络 -> 接口页面，点击lan接口的编辑按钮，
+  * 设置LAN的静态IPv4地址为192.168.x.1。（x取决于您通过wifi连入的网络的配置）
+  * 至网络 -> Wifi界面, 点击扫描，并选择对应的网络连接，点击“加入网络”。
+  * 输入wifi密码，保留“新网络名称”为"wwan"并选择wwan(或wan)防火墙区域，点击保存，
+  * 至网络 -> 接口页面，点击wwan接口的编辑按钮，
+  * 至防火墙标签页，点击保存并应用。
+  * 至网络 -> 防火墙页面, 点击wan区域的编辑按钮，在"covered networks"中勾选wan和wwan。点击保存并应用。
+
+至此，您已经正确的将wwan绑定至wan，也就是建立了wwan至lan的通路

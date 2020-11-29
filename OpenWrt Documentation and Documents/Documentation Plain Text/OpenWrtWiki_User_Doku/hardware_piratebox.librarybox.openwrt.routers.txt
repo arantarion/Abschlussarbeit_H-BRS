@@ -1,0 +1,51 @@
+====== PirateBox & LibraryBox ======
+PirateBox & LibraryBox are special configured OpenWrt Routers. The primary target is to share data, located on USB Stick, with people at the location of the device. PirateBox is the origin of those projects and offers, beside the access on the USB Stick, an upload possibility and a shoutbox.
+
+{{media:raspberry_pi_foundation:raspberry.pi.jpg?0x200|Some casing with a funny logo}}
+{{media:tplink:piratebox.png?0x200|}}
+{{media:tplink:librarybox.jpeg?500|}}
+
+===Requirements===
+For installing PirateBox you need a device with at least one USB port.  The whole list of known devices is [[https://github.com/MaStr/mkPirateBox/wiki/Router-support|PirateBox gitHub Repository]].
+
+===HowTo PirateBox===
+The following HowTo is for people, who have basic knowledge of OpenWrt configuration. If you need a detailed HowTo, please follow [[http://daviddarts.com/piratebox-diy-openwrt/|David Dart's HowTo]].
+
+**Warning:** This will change the routers configuration (i.e. SSID, disable uhttpd and probably other stuff).
+
+  * Install OpenWrt on your router depending on its specific needs.
+  * Enable internet-access for you device
+  * run (installs the repository to opkg.conf): 
+
+    opkg install http://stable.openwrt.piratebox.de/all/packages/pbxopkg_0.0.4_all.ipk
+
+  * run
+
+    opkg update
+
+  * run
+
+    opkg install piratebox
+
+  * reboot your device
+
+If you encounter any problems, please report to [[http://forum.daviddarts.com/index.php|PirateBox Forum]].
+
+===Suitable Hardware ===
+Any openwrt-supported device will do, in case you want something battery driven:
+[[http://stable.openwrt.piratebox.de/trunk/ |Ready to go openwrt images]]
+
+===== Link dump =====
+  * [[http://forum.daviddarts.com/read.php?8,8052|Piratebox forum of TP-Link TL-MR10U]]
+  * [[http://forum.daviddarts.com/read.php?8,8311|Piratebox forum of TP-Link TL-MR13U]]
+  * http://daviddarts.com/piratebox-diy-openwrt/
+  * http://piratebox.aod-rpg.de/dokuwiki/doku.php
+  * http://forum.daviddarts.com/index.php
+  * https://forum.openwrt.org/viewtopic.php?id=44803
+  * http://www.youtube.com/watch?v=sldcEwQKfb0
+  * http://librarybox.us/
+  * http://jasongriffey.net/librarybox/MR3020.html
+  * https://groups.google.com/forum/#!forum/librarybox
+  * https://forum.openwrt.org/viewtopic.php?id=44803
+  * http://www.youtube.com/watch?v=WEGgUw34F1E
+  * http://vimeo.com/38210825

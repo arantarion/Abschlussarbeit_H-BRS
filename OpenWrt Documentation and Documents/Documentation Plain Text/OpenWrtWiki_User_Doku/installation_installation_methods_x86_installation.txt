@@ -1,0 +1,14 @@
+====== x86 installation ======
+
+  * -> [[docs:guide-user:installation:openwrt_x86|OpenWrt on x86 compatible systems]]
+  * -> [[docs:guide-developer:uefi-bootable-image|OpenWrt on UEFI based x86 systems]]
+
+===== Devices with this installation method =====
+---- datatable ----
+cols       : Brand, Model, Versions, Supported Current Rel_releasecurrent, Installation method(s)_method-installations, Comment installation, Device Page_page, Device Techdata_pageid
+dynfilters : 1
+filter     : Model!=@@Model@@
+filter     : installation method(s)=x86 installation
+sort       : Brand
+limit      : 25
+----

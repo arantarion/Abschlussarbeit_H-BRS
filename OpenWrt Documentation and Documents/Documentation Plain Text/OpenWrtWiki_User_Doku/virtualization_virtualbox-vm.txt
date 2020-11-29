@@ -1,0 +1,217 @@
+====== Como correr OpenWrt en VirtualBox  ======
+
+Este documento describe como correr la imagen x86-6 de OpenWRT en  <abbr>Maquina Virtual (MV)</abbr> [[https://www.virtualbox.org|VirtualBox]], o abreviado VBox.
+
+===== Pre requisitos =====
+
+  * Descarga e instala [[https://www.virtualbox.org/wiki/Downloads|VirtualBox]]
+  * Descargar e instalar Adiciones de invitados de VirtualBox <<VirtualBox Guest Additions>> (Necesaria para connectividad USB entre otras)
+
+==== Selecciona una imagen OpenWrt ====
+Necesitas  la  [[docs:guide-user:installation:openwrt_x86|version de x86 64 bit de OpenWrt]].
+Hay dos versiones de ella:
+
+  * ''combined-squashfs.img.gz'' Esta imagen usa el diseño tradisional de OpenWrt, un sistema de archivos raiz de solo lectura squashfs, y una partición de lectura-escritura donde se almacenan las configuraciones y los paquetes que se instalan. Debido a como está ensamblada la imagen tendrás solo 230 MB de espacio de almacenamiento de paquetes adicionales y configuraciones, y Extroot no funciona.
+  * ''combined-ext4.img.gz'' Esta imagen usa una simple partición de lectura-escritura sin sistema de archivos raiz squashfs  de solo lectura, el cual puedes incrementar el tamaño de la partición. Las funciones como el modo a prueba de errores restablecimiento de fabrica no estarán disponibles ya que necesitan una partición squashfs de solo lectura para funcionar
+
+En la guía usaremos  //openwrt-x86-64-combined-ext4.img.gz// por que tiene menos limitaciones.
+
+
+  * Descarga una versión estable de la imagen //openwrt-x86-64-combined-ext4.img.gz// de [[https://downloads.openwrt.org/|targets/x86/64/ folder]] Ejemplo: [[https://downloads.openwrt.org/releases/19.07.2/targets/x86/64/openwrt-19.07.2-x86-64-combined-ext4.img.gz|19.07.2]]. O puedes probar con la imagen más reciente pero inestable [[https://downloads.openwrt.org/snapshots/targets/x86/64/openwrt-x86-64-combined-ext4.img.gz| snapshot]] 
+  * Descomprime el archivo gziped img. En Linux usa el comando ''gzip -d openwrt-*x86-64-combined*.img.gz''.Como resultado, deberia obtener el archivo de imagen sin procesar''openwrt-x86-64-combined-ext4.img'' 
+
+
+=== Imagenes  Personalizadas ===
+
+Puedes compilar tu propia imagen  (//Target System -> x86-64// and //Target Images -> Build VirtualBox image files//). Necesita primero ser habilitado ''ext4'' .
+
+==== Convierte openwrt.img a unidad VBox  ====
+
+  * Abre una termian y ve al direcotorio en donde has descargado el archivo (disculpa, la herramiento tiene solo interfaz por linea de comandos) 
+  * Convierte al nativo formato VBox escribiendo esto en la linea de comandos (es lo mismo para Windows, Mac y Linux. Tristemente esta herramienta no tiene interfaz de usuario grafica): ''VBoxManage convertfromraw %%--%%format VDI openwrt-*x86-64-combined*.img openwrt.vdi''. Esto creará el archivo  ''openwrt.vdi'' que es una unidad virtual para la maquina virtual VBoxrtual drive for VBox virtual machine.
+
+
+=== Error ===
+Si recibes un error similar a: \\ 
+<code>VBoxManage: error: VD: The given disk size 19444018 is not aligned on a sector boundary (512 bytes)
+VBoxManage: error: Error code VERR_VD_INVALID_SIZE at /Users/vbox/tinderbox/5.1-mac-rel/src/VBox/Storage/VD.cpp(7002) in function int VDCreateBase(PVBOXHDD, const char *, const char *, uint64_t, unsigned int, const char *, PCVDGEOMETRY, PCVDGEOMETRY, PCRTUUID, unsigned int, PVDINTERFACE, PVDINTERFACE)
+VBoxManage: error: Cannot create the disk image "openwrt.vdi": VERR_VD_INVALID_SIZE</code>\\
+Es posible que debas rellenar la imagen ''dd if=openwrt-x86-64-combined-ext4.img of=openwrt.img bs=128000 conv=sync'' y use la imagen rellenada de entrada para VBoxManage convertfromraw.
+
+
+  * Alargar la imagen a un tamaño util (El tamaño esta en MB)
+
+  $ VBoxManage modifymedium openwrt.vdi --resize 128
+  0%...10%...20%...30%...40%...50%...60%...70%...80%...90%...100%
+
+
+
+===== Configuración VM en VirtualBox =====
+
+==== Creación de VM  ====
+:!: Tutorial y capturas de pantalla desde VirtualBox 5.1.8 en un equipo anfitrión  GNU/Linux , en  Windows o macOS el equipo anfitrión habrán algunas diferencias cosmeticas entre sistemas operativos (una barra superior diferente)  pero los paneles y botones de VirtualBox serán exactamente los mismos
+
+{{docs:guide-user:vboxstart.png?direct&70 |}} Inicia VirtualBox y has clic en  //Nuevo// para agregar una Maquina Virtual (MV)\\
+----
+{{docs:guide-user:vboxaddvm1.png?direct&70 |}} Elige un  //Nombre// para tu maquina virtual, elige  ''Linux'' para  //Tipo//, y ''Linux 2.6 / 3.x / 4.x (64-bit)'' para la  //Version//, después has clic en  //Siguiente//.\\
+----
+{{docs:guide-user:vboxaddvm2.png?direct&70 |}} OpenWrt funcionará bien con mucha menos RAM de la cantidad recomendada, 128MiB será suficiente. 
+----
+{{docs:guide-user:vboxaddvm3.png?direct&70 |}} Elige  //Usar un archivo de disco duro existente //, has clic en el icono  //archive// para abrir  //Virtual Media Manager//, has clic en  //Agregar// y luego elige tu archivo  ''openwrt.vdi'' usando la ventana de elección de archvio. Has clic  //Crear// para finalizar este procedimiento.\\
+----
+:!: Se recomienda colocar la imagen del disco en un lugar permanente //antes// de enlazarlo con VBox. Si lo mueves  //después//, VBox ya no lo encontrará y se quejará de este problema en el proximo inicio (o cuando intentes reiniciar la MV). Se ofrecerá un procedimiento guiado para vincular la imagen del disco nuevo, así que no te preocupes.
+
+
+==== Configuración de la MV ====
+Esta parte de la configuracion se ocupará de configurar la red manualmente.\\
+La configuración que va a configurar siguendo este tutorial es: 
+
+  * **eth0** de la MV en la interfaz **mng** (management/administración), la dirección estatica  192.168.56.2, configurada en VirtualBox como **Adaptador solo-anfitrion** en el adaptador **vboxnet0**. Esta interfaz estará__siempre__  disponible para el anfitrion incluso si el anfitrion o la MV está desconectada de cualquier red.
+  * **eth1** de la MV en la interfaz  **wan** , dirección dinámica, configurarla en  VirtualBox como **NAT**. Esta interfaz será usada para acceder a Internet  a través de cualquier configuración que utilice el anfitrion.
+  * //(opcional) **eth2** de la VM en la interfaz  **lan**, configurada en función de su red local, establecer en VirtualBox como  **Adaptador Puente**. Esta interfaz permite que otros dispositivos (incluido el anfitrion) se conecte a la MV como si fuera un equipo físico en la red local. Sólo funcionará si ya existe una red local de algún tipo.//
+  * //Para una configuración con 2 tarjetas de red físicas con configuración puente WAN/LAN consulte [[#troubleshooting]]. El resto de esta guía se aplica a una configuración con dos tarjetas físicas. //
+
+Tenga en cuenta que el //orden// del Adaptador solo-anfitrión como  "Adaptador 1" y "NAT" como  "Adaptador 2" es importante para una operación  como llave de seguridad de OpenWrt en la MV. Si bien se puede configurar mediante la consola, la configuración de esta manera simplifica el acceso a una configuración en ejecución.
+
+=== Ajustes de Virtualbox  ===
+== Adaptador de Red solo-anfitrión  ==
+Primero debemos asegurarnos  de que haya un adaptador de red solo-anfitrión y que tenga la configuración correcta.\\
+Nota: esto se encuentra en  VBox 6.0 (al menos para  Windows) en Herramentas  y está pre-configurada.
+----
+{{docs:guide-user:vboxvmhost-only-network1.png?direct&70 |}} Has en la pestaña clic en **Archivo** -> **Preferencias** -> **Red**\\ 
+En macOS, ésta configuración se puede encontrar en  Archivo > Administrador de Red anfitrión...
+----
+{{docs:guide-user:vboxvmhost-only-network2.png?direct&70 |}} Has clic en la pestaña  de Red solo-anfitrion y luego si no se vé  **vboxnet0**  hags clic en el icono  **+** a la derecha de la ventana para agregar una nueva.\\
+Ahora seleccione la entrada  **vboxnet0**,  y haga clic en el icono del destornillador a la derecha para abrir su configuración.\\
+----
+{{docs:guide-user:vboxvmhost-only-network3.png?direct&70 |}} La **Dirección IPv4** debe de ser **192.168.56.1**, la ** Mascara de Red IPv4** debe de ser **255.255.255.0**,la **Dirección IPv6** debe de estar vacía y la  **Mascara de Red IPv6** debe de ser **0**\\
+----
+{{docs:guide-user:vboxvmhost-only-network4.png?direct&70 |}} //(opcional)También puedes configurar el servidor DHCP como se muestra en la captura de pantalla si deseas tener direcciones dinámicas para la MV, pero para este tutorial no es necesario, ya que configuramos la IP estática en la propia MV.//
+----
+Presiona OK para guardar y cerrar hasta que vuelva la Interfaz del Gestor de VirtualBox.
+
+== Configuraciones de Red  ==
+{{docs:guide-user:vboxvmsettings1.png?direct&70 |}} Abre las configuraciones de la MV 
+----
+{{docs:guide-user:vboxvmsettings2.png?direct&70 |}} Selecciona la pestana **Red** 
+----
+{{docs:guide-user:vboxvmsettings3.png?direct&70 |}}Configura el  **Adaptador 1**:\\
+    - con **Adaptador solo-anfitrion**
+    - Selecciona vboxnet0 (adaptador ) como **Nombre** 
+    - Has clic en **Avanzado**  y en **Tipo de Adaptador** selecciona **Intel PRO/1000 MT Desktop**
+    - **Modo promiscuo** debe estar establecido en  **Denegar** a menos que tenga razones para habilitarlo.\\ 
+
+  * Configurar el  **Adaptador 2** 
+    - con **NAT**
+  * //(opcional) Configurar el **Adaptador 3**//
+    - //con **Adaptador puente**//
+    - //en el campo Nombre selecciona el nombre de la tarjeta de red (ethernet or wifi) de la PC que se conectó a la red local. En Windows tiene un nombre de dispositivo completo, en Linux tendrá nombres en codigo como **eth0**, **eth1** para ethernet o **wlp2s0** para wifi.//
+    - //Has Clic en **Avanzado** y has lo mismo que se realizó en las opciones avanzadas del  **Adaptador 1**//
+
+=== Configuraciones de la Maquina Virtual ===
+:!: Debido a las limitaciones, el teclado en el terminal de la maquina virtual está configurado en EE.UU, Por lo que algunas (o la mayoria) de sus teclas pueden no escribir los simbolos marcados en las teclas.\\
+Además, debido al hecho de que lo que ve es un terminal de maquina  limpia y no algo como un programa SSH (Putty/Kitty/cualquier otro) o un programa emulador de terminal, no puedes copiar-pegar en él.\\
+No te preocupes, la mayor parte de la configuración se realizará después de que te conectes por SSH(terminal remota) que no tiene ninguno de estos problemas.\\
+{{docs:guide-user:1280px-qwerty.png?direct&50 |}} Mira esta distribución de teclado de EE.UU. Para encontrar que botón debes presionar en tu teclado para generar el simbolo correcto. 
+----
+  - Arranca tu Maquina Virtual
+  - Espera 4 segundos para que el GRUB arranque automaticamente
+  - Presiona Enter para activar la consola  cuando los mensajes de inicio hayan terminado de desplazarse. La entropia puede tardar 2 o 3 minutos en generarse (''random: crng init done'' with OpenWrt 17.01.4). Hasta que haya suficiente entropía, SSH y otras funciones criptográficas pueden fallar.
+  - Mostrar la configuración de red actual\\ <code>root@openwrt:~# uci show network
+network.loopback=interface
+network.loopback.ifname='lo'
+network.loopback.proto='static'
+network.loopback.ipaddr='127.0.0.1'
+network.loopback.netmask='255.0.0.0'
+network.globals=globals
+network.globals.ula_prefix='fd1b:e541:8f1a::/48'
+network.lan=interface
+network.lan.type='bridge'
+network.lan.ifname='eth0'
+network.lan.proto='static'
+network.lan.netmask='255.255.255.0'
+network.lan.ip6assign='60'
+network.lan.ipaddr='192.168.1.1'
+network.wan=interface
+network.wan.ifname='eth1'
+network.wan.proto='dhcp'
+network.wan6=interface
+network.wan6.ifname='eth1'
+network.wan6.proto='dhcpv6'</code>
+Tenga en cuenta que la dirección LAN predeterminada en el primer arranque es 192.168.1.1.
+  - Edita la configuración de red para permitir el acceso SSH escribiendo estos comandos y presionando Enter: 
+    - **uci set network.lan.ipaddr='192.168.56.2'**
+    - **uci commit**
+    - **reboot**
+  - Ahora tu MV deberia de ser accesible desde SSH, usuario **root** (sin contraseña) dirección **192.168.56.2**
+  - Después de que hayas conectado correctamente, podremos hacer la verdadera configuración, por favor copia y pega el siguiente bloque de codigo y presiona Enter:\\ <code>uci batch <<EOF 
+set network.mng=interface 
+set network.mng.type='bridge' 
+set network.mng.proto='static'
+set network.mng.netmask='255.255.255.0'
+set network.mng.ifname='eth0'
+set network.mng.ipaddr='192.168.56.2'
+delete network.lan
+delete network.wan6
+set network.wan=interface
+set network.wan.ifname='eth1'
+set network.wan.proto='dhcp'
+EOF</code>
+  - Ahora escribe **uci changes** para revisar si los ajustes de configuración fueron cargados correctamente. Si ves lo siguiente   (the **network.mng** las entradas deben de ser las mismas que las que se muestran aquí, el **network.wan** podría ser ligeramente diferente),todo ha ido bien\\ <code>root@openwrt:~# uci changes
+network.mng='interface'
+network.mng.type='bridge'
+network.mng.proto='static'
+network.mng.netmask='255.255.255.0'
+network.mng.ifname='eth0'
+network.mng.ipaddr='192.168.56.2'
+-network.lan
+-network.wan6
+network.wan='interface'</code>
+  - Si todo está bien guarte la configuración con **uci commit && reboot**, Si no todo está bien, escribe  **reboot** para borrar los cambios temporales y encontrar una manera de establecer la configuración anterior manualmente.
+  - Cierra y abre de nuevo la terminal SSH cuando la MV haya reiniciado, con los mismos parámetros de conexión  (usuario **root** y **192.168.56.2**)
+  - Ahora deberías tener acceso a internet  (prueba un **opkg update**) Y una interfaz de administración con una dirección estática a la que puedes conectar tu programa cliente de SSH incluso si tu PC está desconectada de una red local.
+  - Lo opcional **Adaptador Puente ** en  **Adaptador 3** no es crucial para funcionalidades básicas y también es específico para sus propios parámetros de red local. En mi propia red (y en la mayoria de las redes domésticas) funcionaria bien si escribes <code>uci batch <<EOF 
+set network.lan=interface
+set network.lan.ifname='eth2'
+set network.lan.proto='dhcp'
+EOF
+uci commit</code>\\ Si tu tienes requerimientos más complejos tendrás que configurarlos por tu cuenta leyendo la documentación o por medio de luci.
+  - Ahora puedes instalar paquetes a esta imagen de manera normal, probablemente querras instalar luci, escribe **opkg update && opkg install luci**, luego puedes conectarte a luci de la MV escribiendo 192.168.56.2 en la barra de direcciones de tu navegador o [[http://192.168.56.2| haciendo clic en este link ]] para ir.
+
+===== Solución de problemas =====
+  * Si reconstruyes la imagen de disco, y VirtuaBox se queja de los UUIDs no validos para el disco. 
+    * Necesitas remover el disco de  **ambas partes** la //MV// **y** del //Administrador de Medios Virtuales //
+    * Luego agurega la imagen del disco nuevamente en la MV 
+
+  * Si quieres usar un puente VPN en tu dispositivo para conectarlo a tu red local, debes configurar el 
+    * **Modo Promiscuo** del correspondiente  **Adaptador de Red Puente** para  "Permitir Todo" de lo contrario, tu red local no se conectará correctamente a tu red puente VPN
+
+  * También puedes tener 2 interfaces de red en tu sistema operativo principal que aloja la máquina virtual. En este caso
+    * Usa una de los Adaptadores de Red como **WAN** y en VirtualBox selecciona **Adaptador Puente** con **Modo Promiscuo** para **Rechazar**
+    * Use the other Network Adapter as **LAN** and in VirtualBox you select **Bridged Adapter** with **Promiscuous Mode** to
+      * **Rechazar**  si no quieres exponer redes virtuales puenteadas a tu red física.
+      * **Permitir Todo** si tu quieres conectar tu red virtual puenteada a tu red física
+
+===== Arrancar VirtualBox automaticamente al iniciar Windows  =====
+
+  * Elemento de lista ordenado, Importe la siguiente entrada a su registro o agréguela manualmente:
+    - [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run]
+    - "VB-MYDEVICE"="\"C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe\" startvm \"NAMEOFVBINSTANCE\" --type headless"
+
+  * Alternativa, cree 2 accesos directos y usa el programador de tareas de Windows
+    - "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" startvm MYDEVICE --type headless
+      - Create a task in the Scheduler triggered by logon of any user as action the shortcut
+    - "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" controlvm MYDEVICE acpipowerbutton
+      - Create a task in the Scheduler triggered by an event and as action the shortcut
+        - Begin the task: On an event
+        - Basic Log: System
+        - Source: User32
+        - Event ID: 1074
+  
+  * O usa lo siguiente :
+       - [[https://github.com/onlyfang/VBoxVmService|VBoxVmService]] Servicio de Windows para ejecutar automaticamente máquinas virtuales de VirtualBox 
+
+===== Ver también =====
+
+  * [[docs:guide-user:virtualization:virtualbox-advanced|VirtualBox Advanced]]
+  * [[docs:guide-user:virtualization:start|Other virtualization options]]: Docker, VMware etc.

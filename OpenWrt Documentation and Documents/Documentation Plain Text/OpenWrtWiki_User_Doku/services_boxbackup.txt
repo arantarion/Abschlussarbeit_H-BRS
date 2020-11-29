@@ -1,0 +1,79 @@
+====== BoxBackup ======
+Boxbackup is a client/server system for doing backups over the network, especially over slow and unreliable links, e.g. DSL connections.  You can read more at the [[http://www.boxbackup.org/|BoxBackup Homepage]]
+
+As of 2011/08/16 approx 18:30 EST5EDT, boxbackup was added to the packages repository.
+
+Both, client and server are available as software package in the repos, but only the one for the server contains an init script and the option to use an UCI config (see ''[[docs:guide-user:services:bbstored|/etc/config/bbstored]]'').
+
+===== Installation =====
+[[docs:guide-user:additional-software:opkg]]
+
+<code>
+opkg install boxbackup
+</code>
+
+===== Configuration =====
+-> ''[[docs:guide-user:services:bbstored|/etc/config/bbstored]]''
+
+===== Further proceedings for server =====
+  - <code>touch <accountdb-file></code>
+  - Create certficates, keys, and put them in place.
+  - <code>bbstoreaccounts create <accountnum> soft-limit hardlimit
+e.g.
+bbstoreaccounts create A0B0CDEF 100G 150G</code>
+   - Start the server: ''/etc/init.d/bbstored start''
+   - Check the syslogs: ''logread''
+   - Connect clients.
+
+Account numbers are arbitrary 32-bit integers, represented in hex (with no leading 0x).
+
+
+===== Generating Certificates =====
+
+If you're like me you want more control over your config and/or certificate requests and generation than is allowed by using the supplied scripts.  The following details the openssl commands boxbackup's scripts use for generating certificates.
+
+==== Certificate Authority ====
+The boxbackup self-signed CA scripts create a CA and sign (and verify) certificates.
+
+=== Generate CA ===
+It does the equivalent of (with different filenames):
+
+  - Generate a key: <code>openssl genrsa -out ca-key.pem</code>
+  - Generate a request: <code>openssl req -new -key ca-key.pem -sha1 -out ca-req.pem</code>
+  - Self-sign request: <code>openssl x509 -req -in ca-req.pem -sha1 -extensions v3_ca -signkey ca-key.pem -out ca-cert.pem -days <numberofdays></code>
+
+It does this for a 'server' CA and a 'client' CA.  The serverCA signs server requests and the clientCA signs client requests.  You do not have to use seperate CAs if you don't want to, even though they do.
+
+=== Sign server certificate ===
+
+<code>openssl x509 -req -in server-req.pem -sha1 -extension usr_cert -CA ca-key.pem -CAkey ca-key.pem server-key.pem -out server-cert.pem -days <numberofdays></code>
+
+=== Sign client certificate ===
+
+<code>openssl x509 -req -in client-req.pem -sha1 -CA ca-key.pem -CAkey ca-key.pem client-key.pem -out client-cert.pem -days <numberofdays></code>
+
+Note that the difference between the server signing and the client signing ends up being insignificant because the default openssl configuration uses a default extension of usr_cert.
+
+==== Server ====
+  - A 2048-bit key is generated <code>openssl genrsa -out server-key.pem 2048</code>
+  - A certificate request is generated with all fields blank, except CommonName (CN) is ''hostname.domain.tld''  (only the hostname and fqdn of the server). <code>openssl req -new -key server-key.pem -sha1 -out server-req.pem</code>
+
+==== Client ====
+  - A 2048-bit key is generated <code>openssl genrsa -out client-key.pem 2048</code>
+  - A certificate request is generated with all fields blank, except CommonName (CN) is BACKUP-<accountnum>  where <accountnum> is the 8-hexdigit account number, for example ''BACKUP-A0002001'' <code>openssl req -new -key client-key.pem -out client-req.pem</code>
+
+
+===== Building =====
+The ''boxbackup'' package is found in menuconfig under ''Utilites|backup''.
+
+''boxbackup'' defines a menu containing the actual packages which can be built and installed.  Those packages are:
+
+^Package ^Desciption^
+|''bbstored'' | the server |
+|''bbstored-config-external''| utilities for use in creating a non-uci (external) config, including generating a server certificate request |
+|''boxbackup-certs''| tool for creating the CA's for clients and server, and for signing client and server certificates. |
+|''bbackupd'' | the client and related tools including non-uci config and certificate request generator (currently no uci configuration is possible) |
+
+
+==== Notes ====
+When generating your own certificates you can fill in all fields except CommonName (CN) as you wish.  The CN is what boxbackup uses to verify the client is associated with the account, or the server is a server.

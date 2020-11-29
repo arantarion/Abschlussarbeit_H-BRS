@@ -1,0 +1,194 @@
+====== SMTP clients ======
+
+This page lists SMTP and SMTPS clients available on OpenWRT, that are able to send email to other email servers.
+
+===== Overview =====
+
+The table below is based on Chaos Calmer (15.05).
+
+^ Name ^ Version ^ Dependencies ^ Size ^ Features  ^
+| [[packages:pkgdata:msmtp|msmtp]]| 1.6.2-1 | //libopenssl//  | 37785 | SSL, smarthost only, sendmail-compatible, SMTP auth |
+| msmtp-nossl | 1.6.2-1 |  | 33503 | smarthost only, sendmail-compatible, SMTP auth |
+| mailsend | 1.17b15-2 | //libopenssl//  | 36679 | SSL, smarthost only, no configuration required, MIME, attachements, IPv6, SMTP auth |
+| mailsend-nossl | 1.17b15-2 |  | 34865 | smarthost only, no configuration required, MIME, attachements, IPv6, SMTP auth  |
+| ssmtp | 2.64-1.1 | //libopenssl// | 11669 | SSL support, smarthost only, SMTP auth |
+| mini-sendmail | //not present on CC// | | 4726 | smarthost only, no configuration required |
+| [[packages:pkgdata:emailrelay|emailrelay]] | 1.9-5 | //libc// //libssp// //libopenssl// //libstdcpp//| 316 | simple SMTP proxy and store-and-forward message transfer agent (MTA); can be used similar to postfix with mail queue in combination with msmtp and mutt |
+
+"smarthost only" means that the program is only capable to send email through a configured "smarthost", that is, it cannot directly deliver to the destination SMTP server.
+
+===== Using mailsend =====
+
+==== Description ====
+
+<code>
+Mailsend is a simple command line program to send mail via SMTP protocol.
+</code>
+
+Being quite lightweight and not requiring any configuration, mailsend is ideal for sending mails in shell scripts.
+
+==== Installation ====
+
+Depending on whether you want SSL support or not (actually, the size of libopenssl will probably be the decisive factor), install one of the two versions:
+
+<code>opkg install mailsend</code>
+<code>opkg install mailsend-nossl</code>
+
+==== Usage ====
+
+Simple usage:
+
+<code>
+mailsend -f root@openwrt -t foo@example.com -smtp smtp.example.com -sub "My subject" -msg-body /tmp/body
+</code>
+
+For advanced usage (MIME attachements, authentication, BCC, etc), see:
+
+<code>
+mailsend -h
+mailsend -example
+</code>
+
+===== Using msmtp =====
+
+==== Description ====
+
+<code>
+msmtp is an SMTP client. In the default mode, it transmits a mail to
+an SMTP server (for example at a free mail provider) which does the
+delivery. To use this program with your mail user agent (MUA), create
+a configuration file with your mail account(s) and tell your MUA to
+call msmtp instead of /usr/sbin/sendmail.
+</code>
+
+Since msmtp understands standard sendmail options, it can be used in places where sendmail is expected (e.g. PHP code).
+
+==== Installation ====
+<code>opkg install msmtp</code>
+
+==== Configuration ====
+Place your configuration in ''%%/etc/msmtprc%%''. There is an existing ''%%default%%''-block in the included config file so if you want to call ''%%msmtp%%'' without specifying an account, then you need to rename the existing ''%%default%%''-block to something else.
+
+Here is an example configuration using Fastmail's servers:
+
+<code>
+# Example for a system wide configuration file
+
+# A system wide configuration file is optional.
+# If it exists, it usually defines a default account.
+# This allows msmtp to be used like /usr/sbin/sendmail.
+account previous_default
+
+# The SMTP smarthost.
+host mailhub.oursite.example
+
+# Construct envelope-from addresses of the form "user@oursite.example".
+#auto_from on
+#maildomain oursite.example
+
+# Use TLS.
+#tls on
+#tls_trust_file /etc/ssl/certs/ca-certificates.crt
+
+# Syslog logging with facility LOG_MAIL instead of the default LOG_USER.
+syslog LOG_MAIL
+#//////DEFAULT END//////
+
+
+account default
+
+host mail.messagingengine.com
+from something@your-domain.tld
+
+auth on
+user something@your-domain.tld
+password your-password-here
+
+tls on
+tls_starttls off
+</code>
+
+The part below ''%%#//////DEFAULT END//////%%'' contains our changes with the exception of the line ''%%account previous_default%%'', which was originally ''%%account default%%''.
+
+Unless you happen to use Fastmail, replace ''%%mail.messagingengine.com%%'' with whatever the IMAP server address for your provider is. You might also need to enable the ''%%tls_starttls%%'' option.
+
+==== Sending mail ====
+<code>echo -e "Subject: Test mail\n\nThis is a test \"message\"." | sendmail -f "Sender's Name <something@your-domain.tld>" recipient@destination.tld</code>
+
+Note that //sendmail// (''%%/usr/sbin/sendmail%%'') is a symlink to ''%%/usr/bin/msmtp%%''.
+
+
+===== Using mini-sendmail =====
+
+==== Description ====
+
+^ Name ^ Version ^ Dependencies ^ Size ^ Description  ^
+| mini-sendmail  |  1.3.6-4  |  //none//  |   5866 | mini_sendmail reads its standard input up to an end-of-file and sends a copy of the message found there to all of the addresses listed. The message is sent by connecting to a local SMTP server. This means ''mini_sendmail'' can be used to send email from inside a chroot(2) area.  |
+
+
+==== Installation and Configuration ====
+
+<code>opkg install mini-sendmail</code>
+
+On Chaos Calmer, the package is no longer available, but the version from Barrier Breaker still works (AA & BB versions as installed below work in AA):
+
+<code>opkg install http://downloads.openwrt.org/barrier_breaker/14.07/ar71xx/generic/packages/oldpackages/mini-sendmail_1.3.6-4_ar71xx.ipk</code>
+
+==== Example ====
+|<code bash>
+mini_sendmail -ssmtp.mail.yahoo.com -p465 -t foo@example.com < input_file
+
+usage: mini_sendmail [-f<name>] [-t] [-s<server>] [-p<port>] [-T<timeout>] [-v] [address ...]
+</code> |
+
+Note that there must not be a space between the option and the value; e.g. "-p 465" is incorrect.
+
+Several sample configurations found on the internet failed, but as of 160413, this worked
+|<code bash> 
+echo -e 'From: valid@email.com\r\nSubject: Test Subject\r\n\r\nTesting\r\n.' | mini_sendmail -fvalid@email.com -smail.brighthouse.com toAddr@gmail.com
+</code> |
+smtp.gmail.com failed; omitting -f failed; omitting "From: " resulted in transmission, but no sender shown.
+
+This is a very small package if you can find an smtp server which works and you can configure the command so that the server accepts it.
+===== Using ssmtp =====
+
+==== Description ====
+
+<code>
+A secure, effective and simple way of getting mail off a system to your
+mail hub. It contains no suid-binaries or other dangerous things - no
+mail spool to poke around in, and no daemons running in the background.
+mail is simply forwarded to the configured mailhost. Extremely easy
+configuration.
+</code>
+
+==== Installation ====
+
+<code>opkg install ssmtp</code>
+
+==== Usage ====
+
+ssmtp expects its two configuration files named ''/etc/ssmtp/revaliases'' and ''/etc/ssmtp/ssmtp.conf''. Both are self-explaining:
+
+|<code>
+# /etc/ssmtp/ssmtp.conf
+root=arnold@gmx.net
+mailhub=mail.gmx.net:465
+rewriteDomain=gmx.net
+hostname=gmx.net
+FromLineOverride=YES
+UseTLS=YES
+#UseSTARTTLS=YES
+</code>|
+
+|<code>
+# /etc/ssmtp/revaliases
+# Format: local_account:outgoing_address:mailhub
+root:arnold@gmx.net:mail.gmx.net:465
+</code>|
+
+To use the program, with SMTP auth:
+
+<code bash>
+cat /etc/banner | ssmtp -vvv -auultranerd@universum.tb -ap123password456 someguy@gmx.net
+</code>|

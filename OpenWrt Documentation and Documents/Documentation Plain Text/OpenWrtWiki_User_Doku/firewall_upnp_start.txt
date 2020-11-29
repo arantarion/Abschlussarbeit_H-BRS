@@ -1,0 +1,12 @@
+====== UPnP (aka Universal Plug and Play) ======
+
+<WRAP alert>
+  * **<color #960000>Please be aware, UPnP on WAN facing devices is a //__massive security risk__// and is not recommended fort utilization</color>**
+    * Please take the time, figure out what devices need port redirects (most do not), and manually configure [[docs:guide-user:firewall:fw3_configurations:fw3_config_examples|firewall redirect rules]].
+      * Specific ports for devices/services which need redirects can either be found on the device’s/service’s website or [[https://portforward.com|PortForward.com]]
+
+  * [[https://security.stackexchange.com/questions/38631/what-are-the-security-implications-of-enabling-upnp-in-my-home-router/38661#38661|What are the security implications of enabling UPnP in my home router?]]
+    * //Other such explanations can be found via any search engine//
+</WRAP>
+
+{{pagequery>@:docs:guide-user:firewall:upnp *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

@@ -1,0 +1,27 @@
+====== Make luci-app-statistics graphs public ======
+according to this issue
+https://github.com/openwrt/luci/issues/4375
+
+this feature was removed
+
+
+You've [[docs:guide-user:luci:luci_app_statistics|configured luci-app-statistics]] to your liking and now you want to share the charts.
+
+One way is to serve them via LuCI but without authentication:
+  - create ''/usr/lib/lua/luci/controller/public_stats.lua'' with the following content:\\ <code>
+module("luci.controller.public_stats", package.seeall)
+
+function index()
+    assign({"graph"}, {"admin", "statistics", "graph"}, nil)
+end</code>
+  - wipe out some caches that are now stale: ''rm -rf /tmp/luci-indexcache /tmp/luci-modulecache/''
+  - log out from LuCI if you're still logged in
+  - visit http://192.168.1.1/cgi-bin/luci/graph
+  - add ''/usr/lib/lua/luci/controller/public_stats.lua'' to ''/etc/sysupgrade.conf'' so it survives upgrades
+
+
+"Graph" will now appear in the page footer, including on the login page, so you shouldn't need a custom index.
+
+Another way might be to use a ''collectd'' network output plugin and log the data to a more powerful remote host running something like Cacti.
+
+//(Thanks to jow for these instructions.)//

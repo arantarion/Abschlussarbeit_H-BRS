@@ -1,0 +1,222 @@
+====== Adding a new device ======
+
+A good all-round advice would be to start by looking at recent commits about adding a new device, to see what files where changed and how. Many files try to be as self-explanatory as possible, most of the times just opening them will be enough to understand their function.
+
+===== Learn by example =====
+
+==== Search by grep locally ====
+
+A good method is learn by example, so you can do: 
+
+  grep -lri mt300a target/
+
+The result is minimal list of files required to add a new board:
+
+<code>
+target/linux/ramips/base-files/etc/board.d/01_leds
+target/linux/ramips/base-files/etc/board.d/02_network
+target/linux/ramips/base-files/lib/upgrade/platform.sh
+target/linux/ramips/base-files/lib/ramips.sh
+target/linux/ramips/dts/GL-MT300A.dts
+target/linux/ramips/image/mt7620.mk
+</code>
+
+==== Search by Git commit ====
+
+[[https://git.openwrt.org/?p=openwrt%2Fopenwrt.git&a=search&h=HEAD&st=commit&s=add+support+for|Browse the source filtered by "add support for"]] and checkout the ''diff'' for newly added device
+
+===== Important files =====
+
+This is a general map of where most important files are located:
+
+==== /target/linux/<arch_name>/base-files/etc/… ====
+
+This folder contains files and folders that will be integrated in the firmware’s /etc folder.
+
+These are its subfolders and files:
+
+  * **…board.d/** scripts for defining device-specific default hardware, like leds and network interfaces.
+  * **…hotplug.d/** scripts for defining device-specific actions to be done automatically on hotplugging of devices
+  * **…init.d/** scripts for defining device-specific actions to be done automatically on boot
+  * **…uci-defaults/** files for defining device-specific uci configuration defaults
+  * **…diag.sh** defines what is the led to use for error codes for each board
+
+//Note that some of these functions are now done in the DTS for the board.//
+==== /target/linux/<arch_name>/base-files/lib/… ====
+
+This folder contains files and folders that will be integrated in the firmware’s /lib folder.
+
+These are its subfolders and files:
+
+  * **…<arch_name>.sh** human-readable full board name associated to script-safe board name
+  * **…preinit/** common <arch_name> preinit startup scripts
+  * **…upgrade/** common <arch_name> upgrade scripts
+
+==== /target/linux/<arch_name>/base-files/sbin ====
+
+This folder contains files and folders that will be integrated in the firmware’s /sbin folder, usually common <arch_name> sbin scripts and tools.
+
+==== /target/linux/<arch_name>/dts/ ====
+
+Device tree source files, or dts for short.
+
+//Certain architectures have the DTS directory deeper down. ARM devices, for example, typically have it located at ''files-X.yy/arch/arm/boot/dts/''//
+
+//If the DTS or DTSI file is already present in upstream Linux, they will usually not be present in the OpenWrt source. Configuring for the target and running ''make target/linux/{clean,prepare}'' will download and patch Linux, allowing the resulting file to be found in the ''build_dir''//
+==== /target/linux/<arch_name>/image/ ====
+
+Configuration needed to build device-specific flashable images.
+
+==== /target/linux/<arch_name>/<board_name>/ ====
+
+Board-specific configuration.
+
+==== /target/linux/<arch_name>/modules.mk ====
+
+Arch-specific kernel module config file for menuconfig
+
+==== Making new device appear in make menuconfig ====
+
+After edit the files above, you need to touch the makefiles
+
+  touch target/linux/*/Makefile
+
+===== Patches =====
+The patches-* subdirectories contain the kernel patches applied for every target.\\ 
+All patches should be named 'NNN-lowercase_shortname.patch' and sorted into the following categories:
+
+**0xx** - upstream backports\\
+**1xx** - code awaiting upstream merge\\
+**2xx** - kernel build / config / header patches\\
+**3xx** - architecture specific patches\\
+**4xx** - mtd related patches (subsystem and drivers)\\
+**5xx** - filesystem related patches\\
+**6xx** - generic network patches\\
+**7xx** - network / phy driver patches\\
+**8xx** - other drivers\\
+**9xx** - uncategorized other patches\\
+
+<WRAP center round tip 80%>
+All patches must be written in a way that they are potentially upstreamable, meaning:
+
+  - they must contain a **proper subject**
+  - they must contain a **proper commit message** explaining what they change
+  - they must contain a **valid Signed-off-by line**
+</WRAP>
+
+===== Testing images =====
+Test firmware images without writing them to flash by using ramdisk images.
+
+In **make menuconfig** select **Target Images** and then you can select the **ramdisk** option.
+
+This will create an image with kernel + initramfs, that will have **initramfs** in the name. The resulting image can be loaded in the device through the bootloader's tftp function and should boot to a prompt without relying on flash/filesystem support.
+
+===== Tips and tricks =====
+==== Getting a shell on the target device ====
+In order to collect relevant data for a port of OpenWrt to the device of interest one wants shell access. Most devices though do not offer a way to get a shell with telnet or ssh.
+=== Abuse Unsanitized User Input ===
+Some router offers ping test or NTP server configuration and may not properly sanitize user input. Try to enter shell script and see if you are lucky. You may need some ''javascript'' knowledges to disable client-side input validation.
+== Starting telnetd ==
+<code bash>
+$( /bin/busybox telnetd -l/bin/sh -p23 & )
+</code>
+== Obtain the password hash using HTTP or use ''sed'' to delete/change the default password if telnet login is required ==
+<code bash>
+$( cp /etc/shadow /www )
+$( cp /etc/passwd /www )
+</code>
+Then try to download them to your computer and crack the hash
+
+=== Downgrade to older firmware ===
+Some router may try to download a firmware file (e.g. [[toh:tp-link:archer_c2_ac750|TP-Link Archer C2 AC750]]) from specific private IP at the beginning of booting, which allow user to downgrade to older firmware
+
+=== Downgrade by Serial access ===
+Serial access may allow you to enter console mode of u-boot for flashing/loading other firmware. Usually soldering is required.
+See [[docs:guide-user:installation:generic.flashing.serial|Generic flashing over the Serial port]]
+
+=== HTTP Server Vulnerability ===
+Some routers may be running outdated/insecure HTTP server and may be vulnerable to buffer overflow or other attack
+
+=== Netgear ===
+With [[toh:netgear:telnet.console|netgear-telnetenable]] many Netgear devices can be opened up for telnet access. Also see [[https://github.com/insanid/NetgearTelnetEnable|GitHub: insanid/NetgearTelnetEnable]].
+When such means cannot be used, one could try to flash an image build from the sources published by the vendor with telnetd enabled.
+
+With [[https://github.com/jclehner/nmrpflash|nmrpflash]] many Netgear devices can be flashed. Devices that are compatible with this tool become effectively unbrickable.
+
+==== Collecting relevant data ====
+On [[https://wikidevi.com/wiki/Main_Page|WikiDevi]] lots of information can be found, e.g. the FCC ID is very useful when searching for documentation, datasheets and internal photo's (to be able to distinguish used chips without having to open the casing).
+
+Typically one can use the following commands:
+
+<code bash>
+dmesg                          # log buffer might be to small, see note 1.
+cat /proc/cmdline
+cat /proc/cpuinfo
+cat /proc/meminfo
+cat /proc/devices
+ls /sys/devices/platform
+cat /proc/mtd
+cat /sys/class/mtd/mtd*/offset # Linux 4.1 and newer, see note 2.
+ifconfig -a
+ls /sys/class/net
+brctl show
+cat /sys/kernel/debug/gpio     # GPIO information
+</code>
+
+**Note 1:** Often the log buffer is to small and the earliest messages may be missing from the information retrieved with ''dmesg''. If one build a stock image from the sources the vendor has published, a larger buffer size can be set within the kernel config.
+
+**Note 2:** [[http://lxr.free-electrons.com/source/Documentation/ABI/testing/sysfs-class-mtd]]
+
+Another useful tool for getting information for setting LEDs might be [[https://github.com/jclehner/gpiodump-mt7620|gpiodump]], a MT7620 GPIOMODE register dumper (RAMIPS).
+
+==== Getting collected data from a device ====
+Because of the limited space, common file transfer utilities such as rsync/curl/ssh/scp/ftp/http/tftp may not be available, a stripped down version/applet may be available from busybox.
+
+Assume the router ip is ''192.168.0.123'', and the file to be transfer located at ''/tmp/important-data.txt''. 
+ 
+=== HTTP by ''httpd'' and ''busybox mount'' ===
+If the web interface are served from ''/www''.
+
+== Sender ==
+<code bash>
+mount -o bind /tmp /www
+</code>
+
+== Receiver ==
+<code bash>
+wget http://192.168.0.123/important-data.txt
+</code>
+
+=== FTP by ''busybox ftpput'' ===
+== Receiver ==
+Setup an FTP server. Add an anonymous account with write permission
+
+<code bash>
+python -m pyftpdlib -w -p 21
+</code>
+== Sender ==
+<code bash>
+busybox ftpput 192.168.0.123 important-data.txt /tmp/important-data.txt 
+</code>
+
+=== netcat by ''busybox nc'' ===
+== Receiver ==
+<code bash>
+busybox nc -l -p 12345 > important-data.txt 
+</code>
+== Sender ==
+<code bash>
+cat /tmp/important-data.txt | busybox nc 192.168.0.123:12345 
+</code>
+
+=== TFTP by ''busybox tftp'' ===
+== Receiver ==
+Setup a tftp server 
+
+== Sender == 
+<code bash>
+busybox tftp -p -l /tmp/important-data.txt -r important-data.txt 192.168.0.123
+</code>
+
+=== Copy from terminal ===
+If all of the above tools/applets are unavailable, you may copy from telnet terminal but it may not work for binary file

@@ -1,0 +1,83 @@
+====== PPTP client ======
+{{section>meta:infobox:howto_links#cli_skills&noheader&nofooter&noeditbutton}}
+
+===== Introduction =====
+  * This how-to describes the method for setting up [[wp>Point-to-Point_Tunneling_Protocol|PPTP]] client on OpenWrt.
+  * Follow [[docs:guide-user:services:vpn:pptp:server|PPTP server]] to set up PPTP server and [[docs:guide-user:services:vpn:pptp:extras|PPTP extras]] for additional tuning.
+
+===== Goals =====
+{{section>docs:guide-user:services:vpn:wireguard:server#goals&noheader&nofooter&noeditbutton}}
+
+===== Instructions =====
+==== 1. Preparation ====
+Install the packages and specify the VPN client configuration parameters.
+
+<code bash>
+# Install packages
+opkg update
+opkg install ppp-mod-pptp kmod-nf-nathelper-extra
+
+# Configuration parameters
+PPTP_USER="PPTP_USERNAME"
+PPTP_PASS="PPTP_PASSWORD"
+PPTP_SERV="SERVER_NAME_OR_IP_ADDRESS"
+</code>
+
+==== 2. Firewall ====
+Enable conntrack helper to allow related GRE traffic.
+Consider VPN network as public and assign VPN interface to WAN zone to minimize firewall setup.
+
+<code bash>
+# Configure kernel parameters
+cat << EOF >> /etc/sysctl.conf
+net.netfilter.nf_conntrack_helper=1
+EOF
+/etc/init.d/sysctl restart
+
+# Configure firewall
+uci rename firewall.@zone[0]="lan"
+uci rename firewall.@zone[1]="wan"
+uci del_list firewall.wan.network="vpn"
+uci add_list firewall.wan.network="vpn"
+uci commit firewall
+/etc/init.d/firewall restart
+</code>
+
+==== 3. Network ====
+Set up VPN interface.
+
+<code bash>
+# Configure network
+uci -q delete network.vpn
+uci set network.vpn="interface"
+uci set network.vpn.proto="pptp"
+uci set network.vpn.username="${PPTP_USER}"
+uci set network.vpn.password="${PPTP_PASS}"
+uci set network.vpn.server="${PPTP_SERV}"
+uci commit network
+/etc/init.d/network restart
+</code>
+
+===== Testing =====
+{{section>docs:guide-user:services:vpn:wireguard:server#testing&noheader&nofooter&noeditbutton}}
+
+===== Troubleshooting =====
+Collect and analyze the following information.
+
+<code bash>
+# Restart services
+/etc/init.d/log restart; /etc/init.d/network restart; sleep 10
+
+# Log and status
+logread -e pppd
+
+# Runtime configuration
+pgrep -f -a pppd
+ip address show; ip route show table all
+ip rule show; ip -6 rule show; iptables-save; ip6tables-save
+sysctl net.netfilter.nf_conntrack_helper
+
+# Persistent configuration
+uci show network; uci show firewall
+grep -v -e "^#" -e "^$" /etc/sysctl.conf
+</code>

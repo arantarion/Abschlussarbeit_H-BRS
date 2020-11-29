@@ -1,0 +1,39 @@
+====== Release goals for 20.XX ======
+
+===== About this page =====
+
+This page lists "release goals" that are expected to be met before OpenWrt 20.XX, the next major release of OpenWrt, can be released.
+
+===== Major features =====
+
+^ Status ^ Feature ^ Description ^ References ^
+| @orange:WIP | DSA | Distributed Switch Architecture is the upstream replacement for swconfig | TODO: core support, netifd, LuCI, documentation |
+| @lightgreen:OK   | HTTPS client support enabled by default | Enable HTTPS support in uclient-fetch by including libustream-wolfssl, fetch opkg packages using HTTPS | [[commit>e79df3516d3e2931a2a2964cadfed0af99acef49]] |
+| @orange:WIP   | HTTPS enabled by default for LuCI web interface | Based on wolfssl, using self-signed certificate | |
+| @orange:WIP   | WPA3 support enabled by default | Enable WPA3 by default using wolfssl | [[commit>c487cf8e94cb|wpad-basic-wolfssl package]] |
+| @orange:WIP   | Improve security of ImageBuilder | Check signatures, use HTTPS | [[commit>c1875d1ebbd4c4bad45d7c93cf012317f8ce1810|HTTPS]] |
+| @lightgreen:OK   | compat-version | Prevent "seamless" upgrade with incompatible config (like swconfig->DSA) | [[docs:guide-user:installation:generic.sysupgrade#upgrade_compatibility|Documentation]]  [[https://patchwork.ozlabs.org/project/openwrt/list/?series=189613&state=*|Main Patchset]] |
+===== Targets and devices support =====
+
+^ Status ^ Type ^ Description ^ References ^
+| @lightgreen:OK | Device support | Stop building for devices with 4M flash | [[commit>6da5356195003]], [[commit>55e2d5eb3b]] |
+| @lightgreen:OK | Target removal | Drop unmaintained ixp4xx target | [[commit>28fd4ac512ec]] |
+| @lightgreen:OK | Target removal | Drop [[docs:techref:targets:ar71xx]] that has been superseded by [[docs:techref:targets:ath79]] | [[docs:techref:targets:ar71xx-ath79]] |
+| @orange:? | Target removal | Drop 4.14 targets that were not ported to kernel 5.4: ath25, rb532, samsung. |  |
+| @orange:? | Target removal | Drop 4.19 target that was not ported to kernel 5.4: cns3xxx. |  |
+| @lightgreen:OK | Target update | Update ramips/rtxxxx subtargets (currently 4.14 with 5.4 testing kernel) |  |
+| @lightgreen:OK | Target update | Use 5.4 as default kernel for bcm47xx and bcm53xx |  |
+| @lightgreen:OK | Target rename | brcm2708 to bcm27xx, brcm47xx to bcm47xx, brcm63xx to bcm63xx | [[docs:guide-developer:20.xx.major.changes]] |
+| @lightgreen:OK | Device rename | Use vendor_model-variant scheme for device/image names, harmonize board names | [[docs:guide-developer:20.xx.major.changes]] |
+
+
+
+
+===== Core components =====
+
+^ Status ^ Component ^ Version ^ Description ^ References ^
+| @lightgreen:OK | GCC | 8.4 | Too risky to update above 8.4 | [[meetings:20200713|Meeting notes]] |
+| @lightgreen:OK | musl | 1.1.X | Too risky to update to 1.2 now | [[meetings:20200713|Meeting notes]], [[https://github.com/openwrt/openwrt/pull/3004|musl 1.2 thread]] |
+| @orange:WIP | Linux | 5.4 | Some targets still use older kernels (see above) |  |
+| @lightgreen:OK  | wolfssl | 4.5.0 | Latest upstream version | [[commit>00722a720c77]] |
+| @orange:?  | hostapd | ? | | |

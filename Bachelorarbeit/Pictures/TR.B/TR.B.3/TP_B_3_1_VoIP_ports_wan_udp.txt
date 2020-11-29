@@ -1,0 +1,10 @@
+# Nmap 7.91 scan initiated Sat Nov 28 17:59:48 2020 as: nmap -sUV -p 5060 -oN TP_B_3_1_VoIP_ports_wan_udp.txt 192.168.1.1
+Nmap scan report for OpenWrt.lan (192.168.1.1)
+Host is up (0.00030s latency).
+
+PORT     STATE  SERVICE VERSION
+5060/udp closed sip
+MAC Address: B0:95:75:48:F5:EF (Tp-link Technologies)
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Sat Nov 28 17:59:48 2020 -- 1 IP address (1 host up) scanned in 0.63 seconds

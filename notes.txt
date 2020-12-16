@@ -45,3 +45,8 @@ TR.A.12: Code analyse?
 - Firmware validation ist komisch!
 - TR.E.10 ungenau
 
+
+-----------------------------
+
+Statement in Methodik oder Results?
+

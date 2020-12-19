@@ -1,4 +1,0 @@
-====== Class Based Queueing ======
-
-  * [[man>tc-cbq|Man Page]]
-  * [[http://lxr.free-electrons.com/source/net/sched/sch_cbq.c|Source Code]]

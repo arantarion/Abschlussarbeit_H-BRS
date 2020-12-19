@@ -1,3 +1,0 @@
-====== Deficit Round Robin ======
-  * [[wp>Deficit_round_robin|Wiki Page]]
-  * [[man>tc-drr|Man Page]]

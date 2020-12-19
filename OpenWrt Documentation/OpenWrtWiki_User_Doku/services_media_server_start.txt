@@ -1,3 +1,0 @@
-====Media Server (aka stream media to devices in your local network)====
-
-{{pagequery>@:docs:guide-user:services:media_server *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

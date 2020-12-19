@@ -1,3 +1,0 @@
-====== Web servers ======
-
-{{pagequery>@:docs:guide-user:services:webserver *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

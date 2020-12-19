@@ -1,7 +1,0 @@
-====== Guest Wi-Fi ======
-Guest Wi-Fi provides an isolated wireless network which is independent from your main WLAN.
-Guest clients have internet connectivity and restricted LAN connectivity. Guest Wi-Fi typically relies on multi-SSID.
-However some hardware or drivers might not support multi-SSID, e.g. Broadcom requires to use the [[docs:techref:hardware:soc:soc.broadcom.bcm47xx#broadcom-wl|proprietary driver]].
-In addition, multi-SSID decreases your data bandwidth, so update the firmware or try other devices if you experience unstable network.
-
-{{pagequery>@:docs:guide-user:network:wifi:guestwifi *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

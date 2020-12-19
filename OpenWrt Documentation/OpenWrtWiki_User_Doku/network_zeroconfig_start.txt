@@ -1,3 +1,0 @@
-====== Zero configuration network setup ======
-
-{{pagequery>@:docs:guide-user:network:zeroconfig *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

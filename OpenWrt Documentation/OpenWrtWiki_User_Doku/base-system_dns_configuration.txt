@@ -1,2 +1,0 @@
-====== DNS configuration ======
-Follow: [[docs:guide-user:base-system:dhcp|DNS and DHCP configuration /etc/config/dhcp]]

@@ -1,3 +1,0 @@
-====== OpenConnect ======
-
-{{pagequery>@:docs:guide-user:services:vpn:openconnect *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

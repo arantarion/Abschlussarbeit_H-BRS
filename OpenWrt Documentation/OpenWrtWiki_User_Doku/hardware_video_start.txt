@@ -1,3 +1,0 @@
-====== Video support ======
-
-{{pagequery>@:docs:guide-user:hardware:video *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

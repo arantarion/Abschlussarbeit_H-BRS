@@ -1,3 +1,0 @@
-====== WWAN aka 3G/4G/LTE and similar ======
-
-{{pagequery>@:docs:guide-user:network:wan:wwan *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

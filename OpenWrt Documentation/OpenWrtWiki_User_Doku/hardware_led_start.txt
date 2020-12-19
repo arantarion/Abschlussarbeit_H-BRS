@@ -1,3 +1,0 @@
-====== Led manipulation and setup ======
-
-{{pagequery>@:docs:guide-user:hardware:led *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

@@ -1,3 +1,0 @@
-====== Audio support ======
-
-{{pagequery>@:docs:guide-user:hardware:audio *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

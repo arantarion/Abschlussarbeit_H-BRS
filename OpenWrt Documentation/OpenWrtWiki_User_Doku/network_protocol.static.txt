@@ -1,6 +1,0 @@
-====== Static configuration ======
-
-Static configuration for IPv4 / IPv6 is different. Please chose which one you want to configure:
-
-  * [[docs:guide-user:network:ipv4:start#protocol_static_ipv4]]
-  * [[docs:guide-user:network:ipv6:start#protocol_static_ipv6]]

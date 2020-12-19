@@ -1,8 +1,0 @@
-====== IPv6 ISPs ======
-
-  * [[https://www.timewarnercable.com/en/support/internet/topics/ipv6.html|Time Warner Cable]]
-  * [[http://www.myaccount.charter.com/customers/Support.aspx?SupportArticleID=2665|Charter Communications (6rd Only)]]
-  * [[http://customer.xfinity.com/help-and-support/internet/about-ipv6/|Comcast]]
-  * [[http://www.electronicbox.net/|Electronic Box]] DSL
-     * Run a DHCPv6 client on the PPP interface to get a public /56 prefix.
-     * Less usefully, Neighbor Discovery will provide a public /64, and PPP will negotiate link-local addresses.

@@ -1,5 +1,0 @@
-====== fw3 Port Forwarding ======
-
-Port forwarding is done with DNAT redirect rules in fw3.
-
-See [[docs:guide-user:firewall:fw3_configurations:fw3_nat]]

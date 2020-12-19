@@ -1,3 +1,0 @@
-====== NTP (aka network time synchronization) ======
-
-{{pagequery>@:docs:guide-user:services:ntp *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

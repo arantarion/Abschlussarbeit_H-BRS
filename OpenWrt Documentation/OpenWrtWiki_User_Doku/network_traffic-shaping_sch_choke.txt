@@ -1,4 +1,0 @@
-====== CHOKe ======
-
-  * [[http://lxr.free-electrons.com/source/net/sched/sch_choke.c|Source Code]]
-  * [[http://lwn.net/Articles/422477/|Article]]

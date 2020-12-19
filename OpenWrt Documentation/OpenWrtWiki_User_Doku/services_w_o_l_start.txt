@@ -1,3 +1,0 @@
-====Wake On Lan (aka send messages to power up devices connected to ethernet)====
-
-{{pagequery>@:docs:guide-user:services:w_o_l *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

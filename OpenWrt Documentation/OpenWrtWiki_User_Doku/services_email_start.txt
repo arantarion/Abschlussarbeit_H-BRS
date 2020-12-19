@@ -1,3 +1,0 @@
-====== Email server and functionality ======
-
-{{pagequery>@:docs:guide-user:services:email *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

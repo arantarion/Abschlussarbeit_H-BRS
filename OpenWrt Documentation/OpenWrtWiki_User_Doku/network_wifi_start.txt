@@ -1,2 +1,0 @@
-====== Wi-Fi configuration ======
-{{pagequery>@:docs:guide-user:network:wifi *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

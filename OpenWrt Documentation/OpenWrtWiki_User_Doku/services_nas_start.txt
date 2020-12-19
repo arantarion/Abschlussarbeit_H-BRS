@@ -1,3 +1,0 @@
-====== NAS (aka Network Attached Storage) ======
-
-{{pagequery>@:docs:guide-user:services:nas *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

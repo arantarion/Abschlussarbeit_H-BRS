@@ -1,2 +1,0 @@
-==== Captive Portals (aka splash pages for an open/paid Wi-Fi hotspot) ====
-{{pagequery>@:docs:guide-user:services:captive-portal *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

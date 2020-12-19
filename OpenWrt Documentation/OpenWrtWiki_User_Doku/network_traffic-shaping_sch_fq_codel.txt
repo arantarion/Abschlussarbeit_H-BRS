@@ -1,7 +1,0 @@
-====== Fair Queue CoDel ======
-
-  * [[docs:guide-user:network:traffic-shaping:sch_codel|CoDel]]
-  * http://lxr.free-electrons.com/source/net/sched/sch_fq_codel.c
-
-Explanations for the average person:
-  * This Video: [[http://www.youtube.com/watch?v=y5KPryOHwk8|YT 41minutes]] at Time point ~ 21:00 explains CoDel

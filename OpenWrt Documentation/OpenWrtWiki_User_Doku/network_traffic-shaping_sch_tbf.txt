@@ -1,4 +1,0 @@
-====== Token Bucket Filter ======
-
-  * [[man>tc-tbf]]
-  * is meant for Traffic shaping only, no prioritization

@@ -1,1 +1,0 @@
-[[docs:techref:netifd|netifd (Network Interface Daemon) – Technical Reference]]

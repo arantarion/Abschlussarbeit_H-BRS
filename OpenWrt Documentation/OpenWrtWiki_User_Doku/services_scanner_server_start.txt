@@ -1,3 +1,0 @@
-====== Scanner server ======
-
-{{pagequery>@:docs:guide-user:services:scanner_server *;sort=ns,title;group;cols=1;hidestart;hidejump;display={title};filter=!name:sidebar}}

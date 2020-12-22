@@ -15,27 +15,27 @@ In der wissenschaftlichen Arbeit soll als Ausgangspunkt einer Sicherheitsanalyse
 
 ### Ordnerstruktur
 📦Abschlussarbeit_H-BRS<br>
- ┣ 📂Bachelorarbeit<br>
- ┃ ┣ 📂Results<br>
- ┃ ┃ ┣ 📂Figures<br>
- ┃ ┃ ┣ 📂TR.A<br>
+ ┣ 📂Bachelorarbeit ↤ Text of thesis / TR Results / Additional Figures<br>
+ ┃ ┣ 📂Figures<br>
+ ┃ ┣ 📂Results ↤ TR results and additional data<br>
+ ┃ ┃ ┣ 📂TR.A ↤ Results of TR.A<br>
  ┃ ┃ ┣ 📂TR.B<br>
  ┃ ┃ ┣ 📂...<br>
  ┃ ┃ ┣ 📂TR.J<br>
- ┃ ┃ ┣ 📂Test Environment<br>
- ┃ ┃ ┣ 📜installed_packages.txt<br>
+ ┃ ┃ ┣ 📂Test Environment ↤ Graphics describing the test environment <br>
  ┃ ┃ ┣ 📜ssh-audit-consoleout.png<br>
  ┃ ┃ ┗ 📜ssh-audit_log.json<br>
- ┃ ┣ 📂Text<br>
- ┃ ┣ 📜Weckermann_ICS_and_Test Documentation.xlsx<br>
+ ┃ ┣ 📂Text ↤ Contains the thesis <br>
+ ┃ ┃ ┗ 📜Abschlussarbeit_Weckermann.docx<br>
+ ┃ ┗ 📜Weckermann_ICS_and_Test Documentation.xlsx ↤ <br>
  ┃<br>
- ┣ 📂Expose<br>
+ ┣ 📂Expose ↤ Contains the expose and Gant diagram and <br>
  ┃<br>
- ┣ 📂Firmware Images<br>
- ┃ ┣ 📂Firmware_Img_OpenWrt_19.07.4<br>
- ┃ ┣ 📂Firmware_Img_Other<br>
- ┃ ┣ 📂Linux Kernel CVEs<br>
- ┃ ┣ 📂Results FACT<br>
+ ┣ 📂Firmware Images ↤ Contains multiple firmware images that were used<br>
+ ┃ ┣ 📂Firmware_Img_OpenWrt_19.07.4 ↤ The images used for the TP-Link router<br>
+ ┃ ┣ 📂Firmware_Img_Other ↤ Contains the images from the FACT corpus<br>
+ ┃ ┣ 📂Linux Kernel CVEs ↤ Contains information about Linux kernel CVEs (CVSS >= 7)<br>
+ ┃ ┣ 📂Results FACT ↤ Results from the FACT analysis<br>
  ┃ ┃ ┣ 📂AdvancedTomato<br>
  ┃ ┃ ┣ 📂DD-WRT<br>
  ┃ ┃ ┣ 📂Gargoyle<br>
@@ -43,30 +43,30 @@ In der wissenschaftlichen Arbeit soll als Ausgangspunkt einer Sicherheitsanalyse
  ┃ ┃ ┣ 📂LibreCMC<br>
  ┃ ┃ ┣ 📂OpenWrt 19.07.4<br>
  ┃ ┃ ┗ 📂OpenWrt 19.07.5<br>
- ┃ ┣ 📜Firmware Downloads and Versions.txt<br>
- ┃ ┗ 📜analysis.ods<br>
+ ┃ ┣ 📜Firmware Downloads and Versions.txt ↤ Information on the firmware images from the FACT corpus<br>
+ ┃ ┗ 📜analysis.ods ↤ Analysis of the FACT results<br>
  ┃<br>
- ┣ 📂OpenWrt Documentation and Documents<br>
- ┃ ┣ 📂Documentation Downloader<br>
- ┃ ┣ 📂Documentation HTML<br>
- ┃ ┣ 📂Documentation Plain Text<br>
+ ┣ 📂OpenWrt Documentation and Documents ↤ Holds documentation and backups from websites that were used or referenced<br>
+ ┃ ┣ 📂Documentation Downloader ↤ Resources to download the OpenWrt documentation from their website<br>
+ ┃ ┣ 📂Documentation HTML ↤ OpenWrt documentation as HTML documents (zipped) <br>
+ ┃ ┣ 📂Documentation Plain Text ↤ OpenWrt documentation as plain text<br>
  ┃ ┃ ┣ 📂OpenWrtWiki_Dev_Doku<br>
  ┃ ┃ ┣ 📂OpenWrtWiki_QuickStart_Doku<br>
  ┃ ┃ ┗ 📂OpenWrtWiki_User_Doku<br>
- ┃ ┣ 📂Documentation other websites<br>
- ┃ ┣ 📂Packages_ToH_Dump<br>
- ┃ ┗ 📜installed_packages_factory.txt<br>
+ ┃ ┣ 📂Documentation other websites ↤ Backups of websites that were used for this thesis<br>
+ ┃ ┣ 📂Packages_ToH_Dump ↤ Package dump of OpenWrt 19.07.4 + script<br>
+ ┃ ┗ 📜installed_packages_factory.txt ↤ List of packages that are installed on OpenWrt in factory state<br>
  ┃<br>
- ┣ 📂Papers<br>
+ ┣ 📂Papers ↤ Papers that were used in this thesis<br>
  ┃<br>
- ┣ 📂Prüfspezfikation und ergänzende Dokumente<br>
+ ┣ 📂Prüfspezfikation und ergänzende Dokumente ↤ TR 03148, additional documents of TR, further papers that were referenced in TR 03148<br>
  ┃<br>
- ┣ 📂Scripts<br>
+ ┣ 📂Scripts ↤ Python and Bash scripts<br>
  ┃<br>
- ┣ 📂Statistics<br>
+ ┣ 📂Statistics ↤ OpenWrt download statistics from their websites for november, OpenWrt git statistics generated with gitstat<br>
  ┃ ┣ 📂OpenWrt Download Statistics<br>
  ┃ ┗ 📂OpenWrt Git Statistics 26.10.20<br>
  ┃<br>
  ┣ 📜README.md<br>
  ┣ 📜henry_pub.asc<br>
- ┗ 📜security notes .txt<br>
+ ┗ 📜security notes.txt<br>

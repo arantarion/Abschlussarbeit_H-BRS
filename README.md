@@ -32,7 +32,7 @@ In der wissenschaftlichen Arbeit soll als Ausgangspunkt einer Sicherheitsanalyse
  ┃<br>
  ┣ 📂Expose **↤ Contains the expose and Gant diagram**<br>
  ┃<br>
- ┣ 📂Firmware Images **↤ Contains multiple firmware images that were used**<br>
+ ┣ 📂FACT Analyse **↤ Contains multiple firmware images that were used**<br>
  ┃ ┣ 📂Firmware_Img_OpenWrt_19.07.4 **↤ The images used for the TP-Link router**<br>
  ┃ ┣ 📂Firmware_Img_Other **↤ Contains the images from the FACT corpus**<br>
  ┃ ┣ 📂Linux Kernel CVEs **↤ Contains information about Linux kernel CVEs (CVSS >= 7)**<br>

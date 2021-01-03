@@ -35,7 +35,7 @@ print(f'\tNumber of samples: {len(DNS_PORT)}')
 print(f'\tNumber of unique ports: {len(set(DNS_PORT))}')
 print(f'\tRange: {min(DNS_PORT)} - {max(DNS_PORT)}')
 print(f'\tStandard Deviation: {np.std(DNS_PORT)}')
-print(f'\tMost common ports: {dns_count.most_common(15)}\n')
+print(f'\t5 most common ports: {dns_count.most_common(5)}\n')
 
 print('#'*100, '\n')
 print('Test results for transaction ID randomization:\n')
@@ -43,11 +43,11 @@ print(f'\tNumber of samples: {len(TRANS_ID)}')
 print(f'\tNumber of unique ports: {len(set(TRANS_ID))}')
 print(f'\tRange: {min(TRANS_ID)} - {max(TRANS_ID)}')
 print(f'\tStandard Deviation: {np.std(TRANS_ID)}')
-print(f'\tMost common ports: {trans_count.most_common(15)}\n')
+print(f'\t5 most common ports: {trans_count.most_common(5)}\n')
 
 
-print(stats.kstest(DNS_PORT, random.sample(range(0, 65535), 1000)))
-print(stats.kstest(TRANS_ID, random.sample(range(0, 65535), 1000)))
+print(stats.kstest(DNS_PORT, random.sample(range(0, 65535), len(DNS_PORT))))
+print(stats.kstest(TRANS_ID, random.sample(range(0, 65535), len(TRANS_ID))))
 
 fig = plt.figure(figsize=(12, 8))
 sub1 = fig.add_subplot(221)

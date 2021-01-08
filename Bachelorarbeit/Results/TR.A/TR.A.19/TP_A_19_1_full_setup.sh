@@ -9,7 +9,6 @@ uci commit network
 /etc/init.d/network restart
 
 
-
 # Configure wireless
 WIFI_DEV="$(uci get wireless.@wifi-iface[0].device)"
 uci -q delete wireless.guest
@@ -65,7 +64,7 @@ uci commit firewall
 /etc/init.d/firewall restart
 
 
-# Configure wireless
+# Configure wireless encryption
 WIFI_PSK="GUEST_WIFI_PASSWORD"
 uci set wireless.guest.encryption="psk2"
 uci set wireless.guest.key="${WIFI_PSK}"
@@ -73,13 +72,13 @@ uci commit wireless
 wifi reload
 
 
-# Configure wireless
+# Configure client isolation
 uci set wireless.guest.isolate="1"
 uci commit wireless
 wifi reload
 
 
-# Configure firewall
+# Configure firewall - icmp
 uci rename firewall.@rule[1]="icmp"
 uci rename firewall.@rule[5]="icmp6"
 uci set firewall.icmp.src="*"
@@ -88,7 +87,7 @@ uci commit firewall
 /etc/init.d/firewall restart
 
 
-# Configure firewall
+# Configure firewall - restrictions
 uci -q delete firewall.guest_wan
 uci -q delete firewall.guest_fwd
 uci set firewall.guest_fwd="rule"

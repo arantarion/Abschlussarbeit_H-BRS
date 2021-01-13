@@ -24,7 +24,7 @@ USERNAME = "root"
 PASSWORD = "imawrongpassword"
 CORRECT_PW = "1234"
 
-no_of_requests = 50
+no_of_requests = 100
 
 # Change this if you want to test ssh
 IP = '192.168.1.1'

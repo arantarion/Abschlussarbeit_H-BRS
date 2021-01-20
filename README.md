@@ -4,10 +4,10 @@
 ##### Betreuer: Florian Bierhoff
 <br>
 <br>
+
 ## Zielsetzung
 <br>
 Ziel dieser Arbeit war es, die Technische Richtlinie 03148 des BSI an Version 19.7.04 von OpenWrt durchzuführen und das Router-Betriebssystem auf Konformität zu prüfen. Hierbei wurde ein TP-Link Archer C7 Router genutzt. Es wurden die grundsätzlichen Sicherheitsmerkmale von OpenWrt mittels der Technischen Richtlinie evaluiert. Dabei wurde nur die Funktionalität des Betriebssystems geprüft, welche nach der Installation auf dem Gerät bereitgestellt wurde. Funktionen, welche vom Nutzer zusätzlich installiert und eingerichtet werden mussten, wurden nicht betrachtet. Wenn es der Testfall angeboten hat wurde ein automatischer Test entwickelt, sodass eine wiederholte Durchführung beschleunigt werden kann. Ebenso wurde die Anwendbarkeit der Technischen Richtlinie auf quelloffene Netzwerk-Betriebssysteme ermessen. Darüber hinaus wurden statische Softwaretests einiger quelloffener Router-Betriebssysteme mittels des „Firmware Analysis and Comparison Tools“ als weitere Metrik genutzt, um einen differenzierteren Einblick in die Sicherheitslage solcher Projekte zu gewähren. Die Ergebnisse dieser Analyse wurden darauffolgend mit den Ergebnissen des „Home Router Security Report 2020“ des Fraunhofer-Instituts für Kommunikation, Informationsverarbeitung und Ergonomie verglichen. Abschließend wurde sich kritisch mit den Ergebnissen, sowie der technischen Richtlinie, auseinandergesetzt. Die in dieser wissenschaftlichen Untersuchung genutzte Vorgehensweise kann nicht die vollständige Sicherheit aller Aspekte der Software OpenWrt nachzuweisen. Es muss immer betont werden, dass viele potenziell wichtige Aspekte einer sicheren Software nicht in Betracht gezogen werden. Vielmehr soll eine Grundlage bzw. ein möglicher Einstiegspunkt für weitere Forschung an Methoden und Abläufen zum Testen von Open Source (Router) Software geschaffen werden. Die Ergebnisse der Arbeit können sowohl der Entwicklung von OpenWrt als auch unerfahrenen Endnutzern weitere Einblicke in die Sicherheit des Projektes liefern und somit langfristig die Resilienz der Heim-Netzinfrastruktur stärken.<br>
-***
 
 ### Ordnerstruktur
 📦Abschlussarbeit_H-BRS<br>

@@ -20,6 +20,7 @@ Ziel dieser Arbeit war es, die Technische Richtlinie 03148 des BSI an Version 19
  ┃ ┃ ┣ 📂Test Environment **↤ Graphics describing the test environment** <br>
  ┃ ┃ ┣ 📜ssh-audit-consoleout.png<br>
  ┃ ┃ ┗ 📜ssh-audit_log.json<br>
+ ┃ ┗ 📜Openwrt_19.07.4.bin **↤ The firmware that was used**<br>
  ┃ ┗ 📜Weckermann_ICS_and_Test Documentation.xlsx **↤ Filled in excel document for TR**<br>
  ┃<br>
  ┣ 📂Expose **↤ Contains the expose and Gant diagram**<br>

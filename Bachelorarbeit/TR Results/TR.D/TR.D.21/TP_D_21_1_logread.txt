@@ -1,0 +1,363 @@
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.000000] Linux version 4.14.195 (builder@buildhost) (gcc version 7.5.0 (OpenWrt GCC 7.5.0 r11208-ce6496d796)) #0 Sun Sep 6 16:19:39 2020
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] bootconsole [early0] enabled
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] CPU0 revision is: 00019750 (MIPS 74Kc)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] MIPS: machine is TP-Link Archer C7 v5
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] SoC: Qualcomm Atheros QCA956X ver 1 rev 0
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] Determined physical RAM map:
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000]  memory: 08000000 @ 00000000 (usable)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] Initrd not found or empty - disabling initrd
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [    0.000000] Primary instruction cache 64kB, VIPT, 4-way, linesize 32 bytes.
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [    0.000000] Primary data cache 32kB, 4-way, VIPT, cache aliases, linesize 32 bytes
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] Zone ranges:
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000]   Normal   [mem 0x0000000000000000-0x0000000007ffffff]
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] Movable zone start for each node
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] Early memory node ranges
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000]   node   0: [mem 0x0000000000000000-0x0000000007ffffff]
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] Initmem setup node 0 [mem 0x0000000000000000-0x0000000007ffffff]
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [    0.000000] On node 0 totalpages: 32768
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [    0.000000] free_area_init_node: node 0, pgdat 804fbf70, node_mem_map 810090a0
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [    0.000000]   Normal zone: 256 pages used for memmap
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [    0.000000]   Normal zone: 0 pages reserved
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [    0.000000]   Normal zone: 32768 pages, LIFO batch:7
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.000000] random: get_random_bytes called from 0x804ff740 with crng_init=0
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [    0.000000] pcpu-alloc: s0 r0 d32768 u32768 alloc=1*32768
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [    0.000000] pcpu-alloc: [0] 0
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 32512
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.000000] Kernel command line: console=ttyS0,115200n8 rootfstype=squashfs,jffs2
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] PID hash table entries: 512 (order: -1, 2048 bytes)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] Dentry cache hash table entries: 16384 (order: 4, 65536 bytes)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] Inode-cache hash table entries: 8192 (order: 3, 32768 bytes)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] Writing ErrCtl register=00000000
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] Readback ErrCtl register=00000000
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] Memory: 123296K/131072K available (4031K kernel code, 160K rwdata, 532K rodata, 1220K init, 212K bss, 7776K reserved, 0K cma-reserved)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] SLUB: HWalign=32, Order=0-3, MinObjects=0, CPUs=1, Nodes=1
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] NR_IRQS: 51
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] CPU clock: 775.000 MHz
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000000] clocksource: MIPS: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 4932285024 ns
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.000008] sched_clock: 32 bits at 387MHz, resolution 2ns, wraps every 5541893118ns
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.008235] Calibrating delay loop... 385.84 BogoMIPS (lpj=1929216)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.074782] pid_max: default: 32768 minimum: 301
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.079801] Mount-cache hash table entries: 1024 (order: 0, 4096 bytes)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.086787] Mountpoint-cache hash table entries: 1024 (order: 0, 4096 bytes)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.097897] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 19112604462750000 ns
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.108294] futex hash table entries: 256 (order: -1, 3072 bytes)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.114786] pinctrl core: initialized pinctrl subsystem
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.122327] NET: Registered protocol family 16
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.129816] PCI host bridge /ahb/pcie-controller@18250000 ranges:
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.136290]  MEM 0x0000000012000000..0x0000000013ffffff
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.141792]   IO 0x0000000000000000..0x0000000000000000
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.161985] PCI host bridge to bus 0000:00
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.166311] pci_bus 0000:00: root bus resource [mem 0x12000000-0x13ffffff]
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.173598] pci_bus 0000:00: root bus resource [io  0x0000]
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.179466] pci_bus 0000:00: root bus resource [??? 0x00000000 flags 0x0]
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.186631] pci_bus 0000:00: No busn resource found for root bus, will use [bus 00-ff]
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [    0.195000] pci 0000:00:00.0: [168c:003c] type 00 class 0x028000
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [    0.195053] pci 0000:00:00.0: reg 0x10: [mem 0x00000000-0x001fffff 64bit]
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [    0.195104] pci 0000:00:00.0: reg 0x30: [mem 0x00000000-0x0000ffff pref]
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [    0.195177] pci 0000:00:00.0: supports D1 D2
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [    0.195350] pci_bus 0000:00: busn_res: [bus 00-ff] end is updated to 00
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.195373] pci 0000:00:00.0: BAR 0: assigned [mem 0x12000000-0x121fffff 64bit]
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.203124] pci 0000:00:00.0: BAR 6: assigned [mem 0x12200000-0x1220ffff pref]
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.213293] clocksource: Switched to clocksource MIPS
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.219505] NET: Registered protocol family 2
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.224867] TCP established hash table entries: 1024 (order: 0, 4096 bytes)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.232222] TCP bind hash table entries: 1024 (order: 0, 4096 bytes)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.238975] TCP: Hash tables configured (established 1024 bind 1024)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.245816] UDP hash table entries: 256 (order: 0, 4096 bytes)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.251982] UDP-Lite hash table entries: 256 (order: 0, 4096 bytes)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.258838] NET: Registered protocol family 1
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [    0.263505] PCI: CLS 0 bytes, default 32
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [    0.266031] Crashlog allocated RAM at address 0x3f00000
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.272660] workingset: timestamp_bits=30 max_order=15 bucket_order=0
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.283776] squashfs: version 4.0 (2009/01/31) Phillip Lougher
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.289919] jffs2: version 2.2 (NAND) (SUMMARY) (LZMA) (RTIME) (CMODE_PRIORITY) (c) 2001-2006 Red Hat, Inc.
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.308561] io scheduler noop registered
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.312692] io scheduler deadline registered (default)
+Mon Nov 23 16:11:39 2020 kern.err kernel: [    0.318458] ar7200-usb-phy usb-phy: phy reset is missing
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.325582] pinctrl-single 1804002c.pinmux: 544 pins at pa b804002c size 68
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.333402] gpio-export gpio-export: 1 gpio(s) exported
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.339631] Serial: 8250/16550 driver, 16 ports, IRQ sharing enabled
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.348403] console [ttyS0] disabled
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.352203] 18020000.uart: ttyS0 at MMIO 0x18020000 (irq = 9, base_baud = 1562500) is a 16550A
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.361336] console [ttyS0] enabled
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.368903] bootconsole [early0] disabled
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.394595] m25p80 spi0.0: w25q128 (16384 Kbytes)
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.399507] 8 fixed-partitions partitions found on MTD device spi0.0
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.406098] Creating 8 MTD partitions on "spi0.0":
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.411050] 0x000000000000-0x000000020000 : "factory-uboot"
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.417501] 0x000000020000-0x000000040000 : "u-boot"
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.423237] 0x000000040000-0x000000050000 : "partition-table"
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.429858] 0x000000050000-0x000000060000 : "art"
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.435414] 0x000000060000-0x000000080000 : "info"
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.440987] 0x000000080000-0x0000000c0000 : "user-config"
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.447257] 0x0000000c0000-0x000000fc0000 : "firmware"
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.456932] 2 uimage-fw partitions found on MTD device firmware
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.463054] Creating 2 MTD partitions on "firmware":
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.468228] 0x000000000000-0x000000185f97 : "kernel"
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.474009] 0x000000185f97-0x000000f00000 : "rootfs"
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.479702] mtd: device 8 (rootfs) set to be root filesystem
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.485650] 1 squashfs-split partitions found on MTD device rootfs
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.492040] 0x000000440000-0x000000f00000 : "rootfs_data"
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    0.498242] 0x000000ff0000-0x000001000000 : "default-config"
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    0.505740] libphy: Fixed MDIO Bus: probed
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    1.183647] libphy: ag71xx_mdio: probed
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    1.190614] switch0: Atheros AR8337 rev. 2 switch registered on mdio-bus.0
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    1.844814] ag71xx 19000000.eth: connected to PHY at mdio-bus.0:00 [uid=004dd036, driver=Atheros AR8216/AR8236/AR8316]
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    1.856406] eth0: Atheros AG71xx at 0xb9000000, irq 4, mode: sgmii
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    1.865455] NET: Registered protocol family 10
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    1.875311] Segment Routing with IPv6
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    1.879183] NET: Registered protocol family 17
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    1.883864] bridge: filtering via arp/ip/ip6tables is no longer available by default. Update your scripts to load br_netfilter if you need this.
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    1.897263] 8021q: 802.1Q VLAN Support v1.8
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    1.903576] hctosys: unable to open rtc device (rtc0)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    1.914353] VFS: Mounted root (squashfs filesystem) readonly on device 31:8.
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    1.928272] Freeing unused kernel memory: 1220K
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [    1.932951] This architecture does not have kernel memory protection.
+Mon Nov 23 16:11:39 2020 user.info kernel: [    2.553576] init: Console is alive
+Mon Nov 23 16:11:39 2020 user.info kernel: [    2.557293] init: - watchdog -
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    2.563331] random: fast init done
+Mon Nov 23 16:11:39 2020 user.info kernel: [    3.610241] kmodloader: loading kernel modules from /etc/modules-boot.d/*
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    3.841886] usbcore: registered new interface driver usbfs
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    3.847680] usbcore: registered new interface driver hub
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    3.853251] usbcore: registered new device driver usb
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    3.864022] ehci_hcd: USB 2.0 'Enhanced' Host Controller (EHCI) Driver
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    3.872164] ehci-platform: EHCI generic platform driver
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    3.877834] ehci-platform 1b000000.usb: EHCI Host Controller
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    3.883749] ehci-platform 1b000000.usb: new USB bus registered, assigned bus number 1
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    3.891918] ehci-platform 1b000000.usb: irq 13, io mem 0x1b000000
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    3.923339] ehci-platform 1b000000.usb: USB 2.0 started, EHCI 1.00
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    3.930445] hub 1-0:1.0: USB hub found
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    3.934664] hub 1-0:1.0: 1 port detected
+Mon Nov 23 16:11:39 2020 user.info kernel: [    3.939723] kmodloader: done loading kernel modules from /etc/modules-boot.d/*
+Mon Nov 23 16:11:39 2020 user.info kernel: [    3.957624] init: - preinit -
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    5.076114] random: jshn: uninitialized urandom read (4 bytes read)
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    5.318106] random: jshn: uninitialized urandom read (4 bytes read)
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    5.570953] random: jshn: uninitialized urandom read (4 bytes read)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    6.927950] IPv6: ADDRCONF(NETDEV_UP): eth0: link is not ready
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    6.934099] IPv6: ADDRCONF(NETDEV_UP): eth0.1: link is not ready
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [    6.973024] urandom_read: 4 callbacks suppressed
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [    6.973031] random: procd: uninitialized urandom read (4 bytes read)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    7.954621] eth0: link up (1000Mbps/Full duplex)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    7.959484] IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Mon Nov 23 16:11:39 2020 kern.info kernel: [    7.966284] IPv6: ADDRCONF(NETDEV_CHANGE): eth0.1: link becomes ready
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [   10.195388] jffs2: notice: (507) jffs2_build_xattr_subsystem: complete building xattr subsystem, 5 of xdatum (3 unchecked, 2 orphan) and 44 of xref (7 dead, 7 orphan) found.
+Mon Nov 23 16:11:39 2020 user.info kernel: [   10.213204] mount_root: switching to jffs2 overlay
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   10.239353] overlayfs: upper fs does not support tmpfile.
+Mon Nov 23 16:11:39 2020 user.warn kernel: [   10.250726] urandom-seed: Seeding with /etc/urandom.seed
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   10.357008] eth0: link down
+Mon Nov 23 16:11:39 2020 user.info kernel: [   10.377955] procd: - early -
+Mon Nov 23 16:11:39 2020 user.info kernel: [   10.381024] procd: - watchdog -
+Mon Nov 23 16:11:39 2020 user.info kernel: [   11.056258] procd: - watchdog -
+Mon Nov 23 16:11:39 2020 user.info kernel: [   11.059780] procd: - ubus -
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [   11.119262] random: ubusd: uninitialized urandom read (4 bytes read)
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [   11.127286] random: ubusd: uninitialized urandom read (4 bytes read)
+Mon Nov 23 16:11:39 2020 user.info kernel: [   11.135052] procd: - init -
+Mon Nov 23 16:11:39 2020 user.info kernel: [   12.069666] kmodloader: loading kernel modules from /etc/modules.d/*
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   12.098811] ip6_tables: (C) 2000-2006 Netfilter Core Team
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   12.122052] Loading modules backported from Linux version v4.19.137-0-gc076c79e03c6
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   12.130020] Backport generated by backports.git v4.19.137-1-0-g60c3a249
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   12.155380] ip_tables: (C) 2000-2006 Netfilter Core Team
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   12.180226] nf_conntrack version 0.5.0 (2048 buckets, 8192 max)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   12.284982] xt_time: kernel timezone is -0000
+Mon Nov 23 16:11:39 2020 user.info kernel: [   12.292179] urngd: v1.0.2 started.
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   12.387762] PPP generic driver version 2.4.2
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   12.404130] NET: Registered protocol family 24
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   12.466178] ath10k 4.19 driver, optimized for CT firmware, probing pci device: 0x3c.
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   12.484235] PCI: Enabling device 0000:00:00.0 (0000 -> 0002)
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   12.490266] ath10k_pci 0000:00:00.0: pci irq legacy oper_irq_mode 1 irq_mode 0 reset_mode 0
+Mon Nov 23 16:11:39 2020 kern.notice kernel: [   12.527019] random: crng init done
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   12.803809] ath10k_pci 0000:00:00.0: Direct firmware load for ath10k/fwcfg-pci-0000:00:00.0.txt failed with error -2
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   12.814717] ath10k_pci 0000:00:00.0: Falling back to user helper
+Mon Nov 23 16:11:39 2020 kern.err kernel: [   13.102633] firmware ath10k!fwcfg-pci-0000:00:00.0.txt: firmware_loading_store: map pages failed
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   13.112017] ath10k_pci 0000:00:00.0: Direct firmware load for ath10k/pre-cal-pci-0000:00:00.0.bin failed with error -2
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   13.123099] ath10k_pci 0000:00:00.0: Falling back to user helper
+Mon Nov 23 16:11:39 2020 kern.err kernel: [   13.494240] firmware ath10k!pre-cal-pci-0000:00:00.0.bin: firmware_loading_store: map pages failed
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   13.505896] ath10k_pci 0000:00:00.0: Direct firmware load for ath10k/QCA988X/hw2.0/ct-firmware-5.bin failed with error -2
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   13.517260] ath10k_pci 0000:00:00.0: Falling back to user helper
+Mon Nov 23 16:11:39 2020 kern.err kernel: [   13.908932] firmware ath10k!QCA988X!hw2.0!ct-firmware-5.bin: firmware_loading_store: map pages failed
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   13.918744] ath10k_pci 0000:00:00.0: Direct firmware load for ath10k/QCA988X/hw2.0/ct-firmware-2.bin failed with error -2
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   13.930100] ath10k_pci 0000:00:00.0: Falling back to user helper
+Mon Nov 23 16:11:39 2020 kern.err kernel: [   14.138129] firmware ath10k!QCA988X!hw2.0!ct-firmware-2.bin: firmware_loading_store: map pages failed
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   14.147973] ath10k_pci 0000:00:00.0: Direct firmware load for ath10k/QCA988X/hw2.0/firmware-6.bin failed with error -2
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   14.159058] ath10k_pci 0000:00:00.0: Falling back to user helper
+Mon Nov 23 16:11:39 2020 kern.err kernel: [   14.342995] firmware ath10k!QCA988X!hw2.0!firmware-6.bin: firmware_loading_store: map pages failed
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   14.352544] ath10k_pci 0000:00:00.0: Direct firmware load for ath10k/QCA988X/hw2.0/firmware-5.bin failed with error -2
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   14.363631] ath10k_pci 0000:00:00.0: Falling back to user helper
+Mon Nov 23 16:11:39 2020 kern.err kernel: [   14.609509] firmware ath10k!QCA988X!hw2.0!firmware-5.bin: firmware_loading_store: map pages failed
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   14.619062] ath10k_pci 0000:00:00.0: Direct firmware load for ath10k/QCA988X/hw2.0/firmware-4.bin failed with error -2
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   14.630145] ath10k_pci 0000:00:00.0: Falling back to user helper
+Mon Nov 23 16:11:39 2020 kern.err kernel: [   14.809259] firmware ath10k!QCA988X!hw2.0!firmware-4.bin: firmware_loading_store: map pages failed
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   14.818807] ath10k_pci 0000:00:00.0: Direct firmware load for ath10k/QCA988X/hw2.0/firmware-3.bin failed with error -2
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   14.829891] ath10k_pci 0000:00:00.0: Falling back to user helper
+Mon Nov 23 16:11:39 2020 kern.err kernel: [   15.010336] firmware ath10k!QCA988X!hw2.0!firmware-3.bin: firmware_loading_store: map pages failed
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   15.213376] ath10k_pci 0000:00:00.0: qca988x hw2.0 target 0x4100016c chip_id 0x043202ff sub 0000:0000
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   15.222904] ath10k_pci 0000:00:00.0: kconfig debug 0 debugfs 1 tracing 0 dfs 1 testmode 0
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   15.235348] ath10k_pci 0000:00:00.0: firmware ver 10.1-ct-8x-__fW-022-538f0906 api 2 features wmi-10.x,has-wmi-mgmt-tx,mfp,txstatus-noack,wmi-10.x-CT,ratemask-CT,txrate-CT,get-temp-CT,tx-rc-CT,cust-stats-CT,retry-gt2-CT,txrate2-CT,beacon-cb-CT,wmi-block-ack-CT crc32 e1c91a74
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   15.288341] ath10k_pci 0000:00:00.0: Direct firmware load for ath10k/QCA988X/hw2.0/board-2.bin failed with error -2
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   15.299152] ath10k_pci 0000:00:00.0: Falling back to user helper
+Mon Nov 23 16:11:39 2020 kern.err kernel: [   15.391271] firmware ath10k!QCA988X!hw2.0!board-2.bin: firmware_loading_store: map pages failed
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   15.400762] ath10k_pci 0000:00:00.0: board_file api 1 bmi_id N/A crc32 bebc7c08
+Mon Nov 23 16:11:39 2020 kern.warn kernel: [   16.389163] ath10k_pci 0000:00:00.0: 10.1 wmi init: vdevs: 16  peers: 127  tid: 256
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   16.406758] ath10k_pci 0000:00:00.0: wmi print 'P 128 V 8 T 410'
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   16.413176] ath10k_pci 0000:00:00.0: wmi print 'msdu-desc: 1424  sw-crypt: 0 ct-sta: 0'
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   16.421478] ath10k_pci 0000:00:00.0: wmi print 'alloc rem: 20984 iram: 25656'
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   16.489480] ath10k_pci 0000:00:00.0: htt-ver 2.1 wmi-op 2 htt-op 2 cal file max-sta 128 raw 0 hwcrypto 1
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   16.502464] ath10k_pci 0000:00:00.0: NOTE:  Firmware DBGLOG output disabled in debug_mask: 0x10000000
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [   16.636486] ath: EEPROM regdomain: 0x0
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [   16.636492] ath: EEPROM indicates default country code should be used
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [   16.636495] ath: doing EEPROM country->regdmn map search
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [   16.636508] ath: country maps to regdmn code: 0x3a
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [   16.636512] ath: Country alpha2 being used: US
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [   16.636515] ath: Regpair used: 0x3a
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [   16.697939] ath: EEPROM regdomain: 0x0
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [   16.697946] ath: EEPROM indicates default country code should be used
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [   16.697949] ath: doing EEPROM country->regdmn map search
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [   16.697962] ath: country maps to regdmn code: 0x3a
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [   16.697967] ath: Country alpha2 being used: US
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [   16.697970] ath: Regpair used: 0x3a
+Mon Nov 23 16:11:39 2020 kern.debug kernel: [   16.710348] ieee80211 phy1: Selected rate control algorithm 'minstrel_ht'
+Mon Nov 23 16:11:39 2020 kern.info kernel: [   16.711934] ieee80211 phy1: Atheros AR9561 Rev:0 mem=0xb8100000, irq=2
+Mon Nov 23 16:11:39 2020 user.info kernel: [   16.757531] kmodloader: done loading kernel modules from /etc/modules.d/*
+Mon Nov 23 16:11:40 2020 user.notice dnsmasq: DNS rebinding protection is active, will discard upstream RFC1918 responses!
+Mon Nov 23 16:11:40 2020 user.notice dnsmasq: Allowing 127.0.0.0/8 responses
+Mon Nov 23 16:11:41 2020 daemon.info dnsmasq[1115]: started, version 2.80 cachesize 150
+Mon Nov 23 16:11:41 2020 daemon.info dnsmasq[1115]: DNS service limited to local subnets
+Mon Nov 23 16:11:41 2020 daemon.info dnsmasq[1115]: compile time options: IPv6 GNU-getopt no-DBus no-i18n no-IDN DHCP no-DHCPv6 no-Lua TFTP no-conntrack no-ipset no-auth no-DNSSEC no-ID loop-detect inotify dumpfile
+Mon Nov 23 16:11:41 2020 daemon.info dnsmasq[1115]: using local addresses only for domain test
+Mon Nov 23 16:11:41 2020 daemon.info dnsmasq[1115]: using local addresses only for domain onion
+Mon Nov 23 16:11:41 2020 daemon.info dnsmasq[1115]: using local addresses only for domain localhost
+Mon Nov 23 16:11:41 2020 daemon.info dnsmasq[1115]: using local addresses only for domain local
+Mon Nov 23 16:11:41 2020 daemon.info dnsmasq[1115]: using local addresses only for domain invalid
+Mon Nov 23 16:11:41 2020 daemon.info dnsmasq[1115]: using local addresses only for domain bind
+Mon Nov 23 16:11:41 2020 daemon.info dnsmasq[1115]: using local addresses only for domain lan
+Mon Nov 23 16:11:41 2020 daemon.warn dnsmasq[1115]: no servers found in /tmp/resolv.conf.auto, will retry
+Mon Nov 23 16:11:41 2020 daemon.info dnsmasq[1115]: read /etc/hosts - 4 addresses
+Mon Nov 23 16:11:41 2020 daemon.info dnsmasq[1115]: read /tmp/hosts/dhcp.cfg01411c - 0 addresses
+Mon Nov 23 16:11:41 2020 authpriv.info dropbear[1148]: Not backgrounding
+Mon Nov 23 16:11:43 2020 user.notice : Added device handler type: 8021ad
+Mon Nov 23 16:11:43 2020 user.notice : Added device handler type: 8021q
+Mon Nov 23 16:11:43 2020 user.notice : Added device handler type: macvlan
+Mon Nov 23 16:11:43 2020 user.notice : Added device handler type: veth
+Mon Nov 23 16:11:43 2020 user.notice : Added device handler type: bridge
+Mon Nov 23 16:11:43 2020 user.notice : Added device handler type: Network device
+Mon Nov 23 16:11:43 2020 user.notice : Added device handler type: tunnel
+Mon Nov 23 16:11:43 2020 daemon.notice procd: /etc/init.d/network: 'radio0' is disabled
+Mon Nov 23 16:11:43 2020 daemon.notice procd: /etc/init.d/network: 'radio0' is disabled
+Mon Nov 23 16:11:45 2020 user.notice ucitrack: Setting up /etc/config/network reload dependency on /etc/config/dhcp
+Mon Nov 23 16:11:45 2020 user.notice ucitrack: Setting up /etc/config/network reload dependency on /etc/config/radvd
+Mon Nov 23 16:11:45 2020 user.notice ucitrack: Setting up /etc/config/wireless reload dependency on /etc/config/network
+Mon Nov 23 16:11:45 2020 user.notice ucitrack: Setting up /etc/config/firewall reload dependency on /etc/config/luci-splash
+Mon Nov 23 16:11:45 2020 user.notice ucitrack: Setting up /etc/config/firewall reload dependency on /etc/config/qos
+Mon Nov 23 16:11:45 2020 user.notice ucitrack: Setting up /etc/config/firewall reload dependency on /etc/config/miniupnpd
+Mon Nov 23 16:11:46 2020 user.notice ucitrack: Setting up /etc/config/dhcp reload dependency on /etc/config/odhcpd
+Mon Nov 23 16:11:46 2020 user.notice ucitrack: Setting up non-init /etc/config/fstab reload handler: /sbin/block mount
+Mon Nov 23 16:11:46 2020 user.notice ucitrack: Setting up /etc/config/system reload trigger for non-procd /etc/init.d/led
+Mon Nov 23 16:11:46 2020 user.notice ucitrack: Setting up /etc/config/system reload dependency on /etc/config/luci_statistics
+Mon Nov 23 16:11:46 2020 user.notice ucitrack: Setting up /etc/config/system reload dependency on /etc/config/dhcp
+Mon Nov 23 16:11:47 2020 kern.info kernel: [   26.975151] IPv6: ADDRCONF(NETDEV_UP): eth0: link is not ready
+Mon Nov 23 16:11:47 2020 kern.info kernel: [   26.982602] eth0: link up (1000Mbps/Full duplex)
+Mon Nov 23 16:11:47 2020 kern.info kernel: [   27.003502] IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Mon Nov 23 16:11:47 2020 kern.info kernel: [   27.020794] br-lan: port 1(eth0.1) entered blocking state
+Mon Nov 23 16:11:47 2020 kern.info kernel: [   27.026433] br-lan: port 1(eth0.1) entered disabled state
+Mon Nov 23 16:11:47 2020 kern.info kernel: [   27.032277] device eth0.1 entered promiscuous mode
+Mon Nov 23 16:11:47 2020 kern.info kernel: [   27.037387] device eth0 entered promiscuous mode
+Mon Nov 23 16:11:47 2020 kern.info kernel: [   27.109901] br-lan: port 1(eth0.1) entered blocking state
+Mon Nov 23 16:11:47 2020 kern.info kernel: [   27.115527] br-lan: port 1(eth0.1) entered forwarding state
+Mon Nov 23 16:11:47 2020 kern.info kernel: [   27.121434] IPv6: ADDRCONF(NETDEV_UP): br-lan: link is not ready
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: Interface 'lan' is enabled
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: Interface 'lan' is setting up now
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: Interface 'lan' is now up
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: Interface 'loopback' is enabled
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: Interface 'loopback' is setting up now
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: Interface 'loopback' is now up
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: Interface 'wan' is enabled
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: Interface 'wan6' is enabled
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: bridge 'br-lan' link is up
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: Interface 'lan' has link connectivity
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: Network device 'eth0' link is up
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: VLAN 'eth0.1' link is up
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: Network device 'lo' link is up
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: Interface 'loopback' has link connectivity
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: VLAN 'eth0.2' link is up
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: Interface 'wan' has link connectivity
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: Interface 'wan' is setting up now
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: Interface 'wan6' has link connectivity
+Mon Nov 23 16:11:47 2020 daemon.notice netifd: Interface 'wan6' is setting up now
+Mon Nov 23 16:11:48 2020 daemon.notice procd: /etc/rc.d/S96led: setting up led WAN
+Mon Nov 23 16:11:48 2020 daemon.notice netifd: wan (1514): udhcpc: started, v1.30.1
+Mon Nov 23 16:11:48 2020 daemon.notice procd: /etc/rc.d/S96led: setting up led LAN1
+Mon Nov 23 16:11:48 2020 user.notice firewall: Reloading firewall due to ifup of lan (br-lan)
+Mon Nov 23 16:11:48 2020 kern.info kernel: [   28.087322] IPv6: ADDRCONF(NETDEV_CHANGE): br-lan: link becomes ready
+Mon Nov 23 16:11:48 2020 daemon.notice procd: /etc/rc.d/S96led: setting up led LAN2
+Mon Nov 23 16:11:48 2020 daemon.notice procd: /etc/rc.d/S96led: setting up led LAN3
+Mon Nov 23 16:11:48 2020 daemon.notice procd: /etc/rc.d/S96led: setting up led LAN4
+Mon Nov 23 16:11:48 2020 daemon.err odhcpd[1241]: Failed to send to ff02::1%lan@br-lan (Address not available)
+Mon Nov 23 16:11:49 2020 daemon.err odhcp6c[1520]: Failed to send RS (Address not available)
+Mon Nov 23 16:11:49 2020 daemon.notice netifd: wan (1514): udhcpc: sending discover
+Mon Nov 23 16:11:49 2020 daemon.notice netifd: wan (1514): udhcpc: sending select for 192.168.178.115
+Mon Nov 23 16:11:49 2020 daemon.notice netifd: wan (1514): udhcpc: lease of 192.168.178.115 obtained, lease time 864000
+Mon Nov 23 16:11:49 2020 daemon.err odhcp6c[1520]: Failed to send DHCPV6 message to ff02::1:2 (Address not available)
+Mon Nov 23 16:11:50 2020 daemon.notice netifd: Interface 'wan' is now up
+Mon Nov 23 16:11:50 2020 daemon.info dnsmasq[1115]: reading /tmp/resolv.conf.auto
+Mon Nov 23 16:11:50 2020 daemon.info dnsmasq[1115]: using local addresses only for domain test
+Mon Nov 23 16:11:50 2020 daemon.info dnsmasq[1115]: using local addresses only for domain onion
+Mon Nov 23 16:11:50 2020 daemon.info dnsmasq[1115]: using local addresses only for domain localhost
+Mon Nov 23 16:11:50 2020 daemon.info dnsmasq[1115]: using local addresses only for domain local
+Mon Nov 23 16:11:50 2020 daemon.info dnsmasq[1115]: using local addresses only for domain invalid
+Mon Nov 23 16:11:50 2020 daemon.info dnsmasq[1115]: using local addresses only for domain bind
+Mon Nov 23 16:11:50 2020 daemon.info dnsmasq[1115]: using local addresses only for domain lan
+Mon Nov 23 16:11:50 2020 daemon.info dnsmasq[1115]: using nameserver 192.168.178.1#53
+Mon Nov 23 16:11:51 2020 user.notice firewall: Reloading firewall due to ifup of wan (eth0.2)
+Mon Nov 23 16:11:51 2020 daemon.err hostapd: Configuration file: /var/run/hostapd-phy1.conf
+Mon Nov 23 16:11:51 2020 kern.info kernel: [   31.274375] IPv6: ADDRCONF(NETDEV_UP): wlan1: link is not ready
+Mon Nov 23 16:11:51 2020 kern.info kernel: [   31.363786] br-lan: port 2(wlan1) entered blocking state
+Mon Nov 23 16:11:51 2020 kern.info kernel: [   31.369277] br-lan: port 2(wlan1) entered disabled state
+Mon Nov 23 16:11:51 2020 kern.info kernel: [   31.375094] device wlan1 entered promiscuous mode
+Mon Nov 23 16:11:51 2020 daemon.err hostapd: Using interface wlan1 with hwaddr b0:95:75:48:f5:ef and ssid "OpenWrt"
+Mon Nov 23 16:11:51 2020 daemon.info dnsmasq[1115]: read /etc/hosts - 4 addresses
+Mon Nov 23 16:11:51 2020 daemon.info dnsmasq[1115]: read /tmp/hosts/dhcp.cfg01411c.1539 - 0 addresses
+Mon Nov 23 16:11:51 2020 daemon.info dnsmasq[1115]: read /tmp/hosts/odhcpd - 0 addresses
+Mon Nov 23 16:11:51 2020 daemon.info dnsmasq[1115]: read /tmp/hosts/dhcp.cfg01411c - 0 addresses
+Mon Nov 23 16:11:52 2020 daemon.info procd: - init complete -
+Mon Nov 23 16:11:52 2020 daemon.info dnsmasq[1115]: read /etc/hosts - 4 addresses
+Mon Nov 23 16:11:52 2020 daemon.info dnsmasq[1115]: read /tmp/hosts/dhcp.cfg01411c.1539 - 0 addresses
+Mon Nov 23 16:11:52 2020 daemon.info dnsmasq[1115]: read /tmp/hosts/odhcpd - 1 addresses
+Mon Nov 23 16:11:52 2020 daemon.info dnsmasq[1115]: read /tmp/hosts/dhcp.cfg01411c - 0 addresses
+Mon Nov 23 16:11:52 2020 kern.info kernel: [   32.416534] IPv6: ADDRCONF(NETDEV_CHANGE): wlan1: link becomes ready
+Mon Nov 23 16:11:52 2020 kern.info kernel: [   32.423267] br-lan: port 2(wlan1) entered blocking state
+Mon Nov 23 16:11:52 2020 kern.info kernel: [   32.428807] br-lan: port 2(wlan1) entered forwarding state
+Mon Nov 23 16:11:53 2020 daemon.notice hostapd: wlan1: interface state UNINITIALIZED->ENABLED
+Mon Nov 23 16:11:53 2020 daemon.notice hostapd: wlan1: AP-ENABLED
+Mon Nov 23 16:11:53 2020 daemon.notice netifd: Network device 'wlan1' link is up
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1115]: exiting on receipt of SIGTERM
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: started, version 2.80 cachesize 150
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: DNS service limited to local subnets
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: compile time options: IPv6 GNU-getopt no-DBus no-i18n no-IDN DHCP no-DHCPv6 no-Lua TFTP no-conntrack no-ipset no-auth no-DNSSEC no-ID loop-detect inotify dumpfile
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq-dhcp[1841]: DHCP, IP range 192.168.1.100 -- 192.168.1.249, lease time 12h
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: using local addresses only for domain test
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: using local addresses only for domain onion
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: using local addresses only for domain localhost
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: using local addresses only for domain local
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: using local addresses only for domain invalid
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: using local addresses only for domain bind
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: using local addresses only for domain lan
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: reading /tmp/resolv.conf.auto
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: using local addresses only for domain test
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: using local addresses only for domain onion
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: using local addresses only for domain localhost
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: using local addresses only for domain local
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: using local addresses only for domain invalid
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: using local addresses only for domain bind
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: using local addresses only for domain lan
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: using nameserver 192.168.178.1#53
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: read /etc/hosts - 4 addresses
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: read /tmp/hosts/odhcpd - 1 addresses
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: read /tmp/hosts/dhcp.cfg01411c - 2 addresses
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq-dhcp[1841]: read /etc/ethers - 0 addresses
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: read /etc/hosts - 4 addresses
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: read /tmp/hosts/odhcpd - 1 addresses
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq[1841]: read /tmp/hosts/dhcp.cfg01411c - 2 addresses
+Mon Nov 23 16:11:54 2020 daemon.info dnsmasq-dhcp[1841]: read /etc/ethers - 0 addresses
+Mon Nov 23 16:20:18 2020 daemon.err uhttpd[1299]: luci: accepted login on / for root from 192.168.1.207
+Mon Nov 23 16:21:29 2020 authpriv.info dropbear[1928]: Child connection from 192.168.1.207:10391
+Mon Nov 23 16:21:32 2020 authpriv.notice dropbear[1928]: Password auth succeeded for 'root' from 192.168.1.207:10391

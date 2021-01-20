@@ -1,0 +1,123 @@
+ip6tables -t filter -P INPUT ACCEPT
+ip6tables -t filter -P OUTPUT ACCEPT
+ip6tables -t filter -P FORWARD DROP
+ip6tables -t filter -N reject
+ip6tables -t filter -N input_rule
+ip6tables -t filter -N output_rule
+ip6tables -t filter -N forwarding_rule
+ip6tables -t filter -N syn_flood
+ip6tables -t filter -N zone_lan_input
+ip6tables -t filter -N zone_lan_output
+ip6tables -t filter -N zone_lan_forward
+ip6tables -t filter -N zone_lan_src_ACCEPT
+ip6tables -t filter -N zone_lan_dest_ACCEPT
+ip6tables -t filter -N input_lan_rule
+ip6tables -t filter -N output_lan_rule
+ip6tables -t filter -N forwarding_lan_rule
+ip6tables -t filter -A zone_lan_input -m comment --comment "!fw3: Custom lan input rule chain" -j input_lan_rule
+ip6tables -t filter -A zone_lan_output -m comment --comment "!fw3: Custom lan output rule chain" -j output_lan_rule
+ip6tables -t filter -A zone_lan_forward -m comment --comment "!fw3: Custom lan forwarding rule chain" -j forwarding_lan_rule
+ip6tables -t filter -N zone_wan_input
+ip6tables -t filter -N zone_wan_output
+ip6tables -t filter -N zone_wan_forward
+ip6tables -t filter -N zone_wan_src_REJECT
+ip6tables -t filter -N zone_wan_dest_ACCEPT
+ip6tables -t filter -N zone_wan_dest_REJECT
+ip6tables -t filter -N input_wan_rule
+ip6tables -t filter -N output_wan_rule
+ip6tables -t filter -N forwarding_wan_rule
+ip6tables -t filter -A zone_wan_input -m comment --comment "!fw3: Custom wan input rule chain" -j input_wan_rule
+ip6tables -t filter -A zone_wan_output -m comment --comment "!fw3: Custom wan output rule chain" -j output_wan_rule
+ip6tables -t filter -A zone_wan_forward -m comment --comment "!fw3: Custom wan forwarding rule chain" -j forwarding_wan_rule
+ip6tables -t filter -A INPUT -i lo -m comment --comment "!fw3" -j ACCEPT
+ip6tables -t filter -A OUTPUT -o lo -m comment --comment "!fw3" -j ACCEPT
+ip6tables -t filter -A INPUT -m comment --comment "!fw3: Custom input rule chain" -j input_rule
+ip6tables -t filter -A OUTPUT -m comment --comment "!fw3: Custom output rule chain" -j output_rule
+ip6tables -t filter -A FORWARD -m comment --comment "!fw3: Custom forwarding rule chain" -j forwarding_rule
+ip6tables -t filter -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment "!fw3" -j ACCEPT
+ip6tables -t filter -A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment "!fw3" -j ACCEPT
+ip6tables -t filter -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment "!fw3" -j ACCEPT
+ip6tables -t filter -A syn_flood -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -m limit --limit 25/sec --limit-burst 50 -m comment --comment "!fw3" -j RETURN
+ip6tables -t filter -A syn_flood -m comment --comment "!fw3" -j DROP
+ip6tables -t filter -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -m comment --comment "!fw3" -j syn_flood
+ip6tables -t filter -A reject -p tcp -m comment --comment "!fw3" -j REJECT --reject-with tcp-reset
+ip6tables -t filter -A reject -m comment --comment "!fw3" -j REJECT --reject-with icmp6-port-unreachable
+ip6tables -t filter -A zone_wan_input -p udp -s fc00::/fc00:: -d fc00::/fc00:: -m udp --dport 546 -m comment --comment "!fw3: Allow-DHCPv6" -j ACCEPT
+ip6tables -t filter -A zone_wan_input -p icmpv6 -s fe80::/ffc0:: -m icmp6 --icmpv6-type 130/0 -m comment --comment "!fw3: Allow-MLD" -j ACCEPT
+ip6tables -t filter -A zone_wan_input -p icmpv6 -s fe80::/ffc0:: -m icmp6 --icmpv6-type 131/0 -m comment --comment "!fw3: Allow-MLD" -j ACCEPT
+ip6tables -t filter -A zone_wan_input -p icmpv6 -s fe80::/ffc0:: -m icmp6 --icmpv6-type 132/0 -m comment --comment "!fw3: Allow-MLD" -j ACCEPT
+ip6tables -t filter -A zone_wan_input -p icmpv6 -s fe80::/ffc0:: -m icmp6 --icmpv6-type 143/0 -m comment --comment "!fw3: Allow-MLD" -j ACCEPT
+ip6tables -t filter -A zone_wan_input -p icmpv6 -m icmp6 --icmpv6-type 128 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Input" -j ACCEPT
+ip6tables -t filter -A zone_wan_input -p icmpv6 -m icmp6 --icmpv6-type 129 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Input" -j ACCEPT
+ip6tables -t filter -A zone_wan_input -p icmpv6 -m icmp6 --icmpv6-type 1 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Input" -j ACCEPT
+ip6tables -t filter -A zone_wan_input -p icmpv6 -m icmp6 --icmpv6-type 2 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Input" -j ACCEPT
+ip6tables -t filter -A zone_wan_input -p icmpv6 -m icmp6 --icmpv6-type 3 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Input" -j ACCEPT
+ip6tables -t filter -A zone_wan_input -p icmpv6 -m icmp6 --icmpv6-type 4/0 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Input" -j ACCEPT
+ip6tables -t filter -A zone_wan_input -p icmpv6 -m icmp6 --icmpv6-type 4/1 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Input" -j ACCEPT
+ip6tables -t filter -A zone_wan_input -p icmpv6 -m icmp6 --icmpv6-type 133 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Input" -j ACCEPT
+ip6tables -t filter -A zone_wan_input -p icmpv6 -m icmp6 --icmpv6-type 135 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Input" -j ACCEPT
+ip6tables -t filter -A zone_wan_input -p icmpv6 -m icmp6 --icmpv6-type 134 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Input" -j ACCEPT
+ip6tables -t filter -A zone_wan_input -p icmpv6 -m icmp6 --icmpv6-type 136 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Input" -j ACCEPT
+ip6tables -t filter -A zone_wan_forward -p icmpv6 -m icmp6 --icmpv6-type 128 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Forward" -j ACCEPT
+ip6tables -t filter -A zone_wan_forward -p icmpv6 -m icmp6 --icmpv6-type 129 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Forward" -j ACCEPT
+ip6tables -t filter -A zone_wan_forward -p icmpv6 -m icmp6 --icmpv6-type 1 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Forward" -j ACCEPT
+ip6tables -t filter -A zone_wan_forward -p icmpv6 -m icmp6 --icmpv6-type 2 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Forward" -j ACCEPT
+ip6tables -t filter -A zone_wan_forward -p icmpv6 -m icmp6 --icmpv6-type 3 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Forward" -j ACCEPT
+ip6tables -t filter -A zone_wan_forward -p icmpv6 -m icmp6 --icmpv6-type 4/0 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Forward" -j ACCEPT
+ip6tables -t filter -A zone_wan_forward -p icmpv6 -m icmp6 --icmpv6-type 4/1 -m limit --limit 1000/sec -m comment --comment "!fw3: Allow-ICMPv6-Forward" -j ACCEPT
+ip6tables -t filter -A zone_wan_forward -p esp -m comment --comment "!fw3: Allow-IPSec-ESP" -j zone_lan_dest_ACCEPT
+ip6tables -t filter -A zone_wan_forward -p udp -m udp --dport 500 -m comment --comment "!fw3: Allow-ISAKMP" -j zone_lan_dest_ACCEPT
+ip6tables -t filter -A zone_lan_forward -m comment --comment "!fw3: Zone lan to wan forwarding policy" -j zone_wan_dest_ACCEPT
+ip6tables -t filter -A zone_lan_input -m comment --comment "!fw3" -j zone_lan_src_ACCEPT
+ip6tables -t filter -A zone_lan_forward -m comment --comment "!fw3" -j zone_lan_dest_ACCEPT
+ip6tables -t filter -A zone_lan_output -m comment --comment "!fw3" -j zone_lan_dest_ACCEPT
+ip6tables -t filter -D zone_lan_src_ACCEPT -i br-lan -m conntrack --ctstate NEW,UNTRACKED -m comment --comment "!fw3" -j ACCEPT
+ip6tables -t filter -A zone_lan_src_ACCEPT -i br-lan -m conntrack --ctstate NEW,UNTRACKED -m comment --comment "!fw3" -j ACCEPT
+ip6tables -t filter -D zone_lan_dest_ACCEPT -o br-lan -m comment --comment "!fw3" -j ACCEPT
+ip6tables -t filter -A zone_lan_dest_ACCEPT -o br-lan -m comment --comment "!fw3" -j ACCEPT
+ip6tables -t filter -D INPUT -i br-lan -m comment --comment "!fw3" -j zone_lan_input
+ip6tables -t filter -A INPUT -i br-lan -m comment --comment "!fw3" -j zone_lan_input
+ip6tables -t filter -D OUTPUT -o br-lan -m comment --comment "!fw3" -j zone_lan_output
+ip6tables -t filter -A OUTPUT -o br-lan -m comment --comment "!fw3" -j zone_lan_output
+ip6tables -t filter -D FORWARD -i br-lan -m comment --comment "!fw3" -j zone_lan_forward
+ip6tables -t filter -A FORWARD -i br-lan -m comment --comment "!fw3" -j zone_lan_forward
+ip6tables -t filter -A zone_wan_input -m comment --comment "!fw3" -j zone_wan_src_REJECT
+ip6tables -t filter -A zone_wan_forward -m comment --comment "!fw3" -j zone_wan_dest_REJECT
+ip6tables -t filter -A zone_wan_output -m comment --comment "!fw3" -j zone_wan_dest_ACCEPT
+ip6tables -t filter -D zone_wan_dest_ACCEPT -o eth0.2 -m conntrack --ctstate INVALID -m comment --comment "!fw3: Prevent NAT leakage" -j DROP
+ip6tables -t filter -A zone_wan_dest_ACCEPT -o eth0.2 -m conntrack --ctstate INVALID -m comment --comment "!fw3: Prevent NAT leakage" -j DROP
+ip6tables -t filter -D zone_wan_dest_ACCEPT -o eth0.2 -m comment --comment "!fw3" -j ACCEPT
+ip6tables -t filter -A zone_wan_dest_ACCEPT -o eth0.2 -m comment --comment "!fw3" -j ACCEPT
+ip6tables -t filter -D zone_wan_src_REJECT -i eth0.2 -m comment --comment "!fw3" -j reject
+ip6tables -t filter -A zone_wan_src_REJECT -i eth0.2 -m comment --comment "!fw3" -j reject
+ip6tables -t filter -D zone_wan_dest_REJECT -o eth0.2 -m comment --comment "!fw3" -j reject
+ip6tables -t filter -A zone_wan_dest_REJECT -o eth0.2 -m comment --comment "!fw3" -j reject
+ip6tables -t filter -D INPUT -i eth0.2 -m comment --comment "!fw3" -j zone_wan_input
+ip6tables -t filter -A INPUT -i eth0.2 -m comment --comment "!fw3" -j zone_wan_input
+ip6tables -t filter -D OUTPUT -o eth0.2 -m comment --comment "!fw3" -j zone_wan_output
+ip6tables -t filter -A OUTPUT -o eth0.2 -m comment --comment "!fw3" -j zone_wan_output
+ip6tables -t filter -D FORWARD -i eth0.2 -m comment --comment "!fw3" -j zone_wan_forward
+ip6tables -t filter -A FORWARD -i eth0.2 -m comment --comment "!fw3" -j zone_wan_forward
+ip6tables -t filter -D zone_wan_dest_ACCEPT -o eth0.2 -m conntrack --ctstate INVALID -m comment --comment "!fw3: Prevent NAT leakage" -j DROP
+ip6tables -t filter -A zone_wan_dest_ACCEPT -o eth0.2 -m conntrack --ctstate INVALID -m comment --comment "!fw3: Prevent NAT leakage" -j DROP
+ip6tables -t filter -D zone_wan_dest_ACCEPT -o eth0.2 -m comment --comment "!fw3" -j ACCEPT
+ip6tables -t filter -A zone_wan_dest_ACCEPT -o eth0.2 -m comment --comment "!fw3" -j ACCEPT
+ip6tables -t filter -D zone_wan_src_REJECT -i eth0.2 -m comment --comment "!fw3" -j reject
+ip6tables -t filter -A zone_wan_src_REJECT -i eth0.2 -m comment --comment "!fw3" -j reject
+ip6tables -t filter -D zone_wan_dest_REJECT -o eth0.2 -m comment --comment "!fw3" -j reject
+ip6tables -t filter -A zone_wan_dest_REJECT -o eth0.2 -m comment --comment "!fw3" -j reject
+ip6tables -t filter -D INPUT -i eth0.2 -m comment --comment "!fw3" -j zone_wan_input
+ip6tables -t filter -A INPUT -i eth0.2 -m comment --comment "!fw3" -j zone_wan_input
+ip6tables -t filter -D OUTPUT -o eth0.2 -m comment --comment "!fw3" -j zone_wan_output
+ip6tables -t filter -A OUTPUT -o eth0.2 -m comment --comment "!fw3" -j zone_wan_output
+ip6tables -t filter -D FORWARD -i eth0.2 -m comment --comment "!fw3" -j zone_wan_forward
+ip6tables -t filter -A FORWARD -i eth0.2 -m comment --comment "!fw3" -j zone_wan_forward
+ip6tables -t filter -A FORWARD -m comment --comment "!fw3" -j reject
+ip6tables -t mangle -D FORWARD -p tcp -o eth0.2 -m tcp --tcp-flags SYN,RST SYN -m comment --comment "!fw3: Zone wan MTU fixing" -j TCPMSS --clamp-mss-to-pmtu
+ip6tables -t mangle -A FORWARD -p tcp -o eth0.2 -m tcp --tcp-flags SYN,RST SYN -m comment --comment "!fw3: Zone wan MTU fixing" -j TCPMSS --clamp-mss-to-pmtu
+ip6tables -t mangle -D FORWARD -p tcp -i eth0.2 -m tcp --tcp-flags SYN,RST SYN -m comment --comment "!fw3: Zone wan MTU fixing" -j TCPMSS --clamp-mss-to-pmtu
+ip6tables -t mangle -A FORWARD -p tcp -i eth0.2 -m tcp --tcp-flags SYN,RST SYN -m comment --comment "!fw3: Zone wan MTU fixing" -j TCPMSS --clamp-mss-to-pmtu
+ip6tables -t mangle -D FORWARD -p tcp -o eth0.2 -m tcp --tcp-flags SYN,RST SYN -m comment --comment "!fw3: Zone wan MTU fixing" -j TCPMSS --clamp-mss-to-pmtu
+ip6tables -t mangle -A FORWARD -p tcp -o eth0.2 -m tcp --tcp-flags SYN,RST SYN -m comment --comment "!fw3: Zone wan MTU fixing" -j TCPMSS --clamp-mss-to-pmtu
+ip6tables -t mangle -D FORWARD -p tcp -i eth0.2 -m tcp --tcp-flags SYN,RST SYN -m comment --comment "!fw3: Zone wan MTU fixing" -j TCPMSS --clamp-mss-to-pmtu
+ip6tables -t mangle -A FORWARD -p tcp -i eth0.2 -m tcp --tcp-flags SYN,RST SYN -m comment --comment "!fw3: Zone wan MTU fixing" -j TCPMSS --clamp-mss-to-pmtu

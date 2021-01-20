@@ -1,7 +1,0 @@
-OPENWRT		ARCHER C7 v5		19.07.4	09.2020		https://downloads.openwrt.org/releases/19.07.4/targets/ath79/generic/openwrt-19.07.4-ath79-generic-tplink_archer-a7-v5-squashfs-factory.bin	
-OPENWRT		ARCHER C7 v5		19.07.5	12.2020		https://downloads.openwrt.org/releases/19.07.5/targets/ath79/generic/openwrt-19.07.5-ath79-generic-tplink_archer-c7-v5-squashfs-factory.bin
-LIBRECMC	ARCHER C7 v2		v1.5.3:2020-10-02	02.10.2020	https://librecmc.org/librecmc/downloads/snapshots/v1.5.3/targets/ath79/generic/librecmc-ath79-generic-tplink_archer-c7-v2-squashfs-factory.bin
-GLUON		ARCHER C7 v5		V2-v2020.2.1		09.10.2020	https://images.ffkbu.de/BonnV2/stable/Wireguard/factory/gluon-ffkbu-V2-v2020.2.1-Wireguard-tp-link-archer-c7-v5.bin
-GARGOYLE	ARCHER C7 v5		1.12.0 (stable)	03.12.2019	https://www.gargoyle-router.com/downloads/images/ar71xx/gargoyle_1.12.0-ar71xx-generic-archer-c7-v5-squashfs-factory.bin
-TOMATO		NETGEAR WNDR3700v3	3.4-138		05.12.2016	https://advancedtomato.com/downloads/router/wndr3700v3
-DDWRT 		ARCHER C7 v5		12-18-2020-r45036	18.12.2020	ftp://ftp.dd-wrt.com/betas/2020/12-18-2020-r45036/tplink_archer-c7-v5/

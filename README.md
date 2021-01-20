@@ -1,6 +1,7 @@
 # Untersuchung der Sicherheit von OpenWrt anhand der BSI TR-03148 mittels eines OpenWrt betriebenen Heim-Routers
 ### Bachelorarbeit im Studiengang Informatik der Hochschule Bonn-Rhein-Sieg
-##### Betreuer: Prof. Dipl.-Ing. Markus Ullmann und Prof. Dr.-Ing. Norbert Jung
+##### Prüfer: Prof. Dipl.-Ing. Markus Ullmann und Prof. Dr.-Ing. Norbert Jung
+##### Betreuer: Florian Bierhoff
 <br>
 <br>
 ## Zielsetzung
@@ -17,8 +18,7 @@ In der wissenschaftlichen Arbeit soll als Ausgangspunkt einer Sicherheitsanalyse
 ### Ordnerstruktur
 📦Abschlussarbeit_H-BRS<br>
  ┣ 📂Bachelorarbeit **↤ Text of thesis / TR Results / Additional Figures**<br>
- ┃ ┣ 📂Figures<br>
- ┃ ┣ 📂Results **↤ TR results and additional data**<br>
+ ┃ ┣ 📂TR Results **↤ TR results and additional data**<br>
  ┃ ┃ ┣ 📂TR.A **↤ Results of TR.A**<br>
  ┃ ┃ ┣ 📂TR.B<br>
  ┃ ┃ ┣ 📂...<br>
@@ -26,8 +26,6 @@ In der wissenschaftlichen Arbeit soll als Ausgangspunkt einer Sicherheitsanalyse
  ┃ ┃ ┣ 📂Test Environment **↤ Graphics describing the test environment** <br>
  ┃ ┃ ┣ 📜ssh-audit-consoleout.png<br>
  ┃ ┃ ┗ 📜ssh-audit_log.json<br>
- ┃ ┣ 📂Text **↤ Contains the thesis** <br>
- ┃ ┃ ┗ 📜Abschlussarbeit_Weckermann.docx<br>
  ┃ ┗ 📜Weckermann_ICS_and_Test Documentation.xlsx **↤ Filled in excel document for TR**<br>
  ┃<br>
  ┣ 📂Expose **↤ Contains the expose and Gant diagram**<br>
@@ -45,7 +43,7 @@ In der wissenschaftlichen Arbeit soll als Ausgangspunkt einer Sicherheitsanalyse
  ┃ ┃ ┣ 📂OpenWrt 19.07.4<br>
  ┃ ┃ ┗ 📂OpenWrt 19.07.5<br>
  ┃ ┣ 📜Firmware Downloads and Versions.txt **↤ Information on the firmware images from the FACT corpus**<br>
- ┃ ┗ 📜analysis.ods **↤ Analysis of the FACT results**<br>
+ ┃ ┗ 📜analysis.xlsx **↤ Analysis of the FACT results**<br>
  ┃<br>
  ┣ 📂OpenWrt Documentation and Documents **↤ Holds documentation and backups from websites that were used or referenced**<br>
  ┃ ┣ 📂Documentation Downloader **↤ Resources to download the OpenWrt documentation from their website**<br>
@@ -57,17 +55,17 @@ In der wissenschaftlichen Arbeit soll als Ausgangspunkt einer Sicherheitsanalyse
  ┃ ┣ 📂Documentation other websites **↤ Backups of websites that were used for this thesis**<br>
  ┃ ┣ 📂Packages_ToH_Dump **↤ Package dump of OpenWrt 19.07.4 + script**<br>
  ┃ ┗ 📜installed_packages_factory.txt **↤ List of packages that are installed on OpenWrt in factory state**<br>
+  ┃<br>
+ ┣ 📂OpenWrt Statistics **↤ OpenWrt download statistics from their websites for november, OpenWrt git statistics generated with gitstat**<br>
+ ┃ ┣ 📂OpenWrt Download Statistics<br>
+ ┃ ┗ 📂OpenWrt Git Statistics 26.10.20<br>
  ┃<br>
- ┣ 📂Papers **↤ Papers that were used in this thesis**<br>
+ ┣ 📂Papers **↤ Some papers that were used in this thesis**<br>
  ┃<br>
  ┣ 📂Prüfspezfikation und ergänzende Dokumente **↤ TR 03148, additional documents of TR, further papers that were referenced in TR 03148**<br>
  ┃<br>
  ┣ 📂Scripts **↤ Python and Bash scripts**<br>
  ┃<br>
- ┣ 📂Statistics **↤ OpenWrt download statistics from their websites for november, OpenWrt git statistics generated with gitstat**<br>
- ┃ ┣ 📂OpenWrt Download Statistics<br>
- ┃ ┗ 📂OpenWrt Git Statistics 26.10.20<br>
- ┃<br>
  ┣ 📜README.md<br>
  ┣ 📜henry_pub.asc<br>
- ┗ 📜security notes.txt<br>
+ ┗ 📜Backup Literaturverzeichnis.7z **↤ Contains a copy of all references listed in the thesis**

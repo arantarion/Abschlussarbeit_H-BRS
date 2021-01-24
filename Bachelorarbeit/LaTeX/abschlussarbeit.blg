@@ -1,0 +1,53 @@
+This is BibTeX, Version 0.99d
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: abschlussarbeit.aux
+Reallocating 'name_of_file' (item size: 1) to 7 items.
+The style file: ieeetr.bst
+Reallocating 'name_of_file' (item size: 1) to 10 items.
+Database file #1: literatur.bib
+Warning--empty publisher in LennartBeringerAdamPetcheKatherineQ.YeAndrewW.Appel.
+Warning--empty year in LennartBeringerAdamPetcheKatherineQ.YeAndrewW.Appel.
+Warning--empty publisher in Yaworski.2019
+Warning--empty publisher in Spillner.2019
+You've used 97 entries,
+            1876 wiz_defined-function locations,
+            1058 strings with 21765 characters,
+and the built_in function-call counts, 15727 in all, are:
+= -- 1588
+> -- 532
+< -- 0
++ -- 234
+- -- 137
+* -- 745
+:= -- 2264
+add.period$ -- 189
+call.type$ -- 97
+change.case$ -- 85
+chr.to.int$ -- 0
+cite$ -- 101
+duplicate$ -- 631
+empty$ -- 1920
+format.name$ -- 137
+if$ -- 3987
+int.to.chr$ -- 0
+int.to.str$ -- 97
+missing$ -- 39
+newline$ -- 381
+num.names$ -- 98
+pop$ -- 548
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 368
+stack$ -- 0
+substring$ -- 267
+swap$ -- 94
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 4
+while$ -- 129
+width$ -- 99
+write$ -- 955
+(There were 4 warnings)

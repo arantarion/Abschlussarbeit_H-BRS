@@ -1,0 +1,20 @@
+Test results for DNS port randomization:
+
+	Number of samples: 1086
+	Number of unique ports: 1086
+	Range: 61 - 65508
+	Standard Deviation: 18668.148912615263
+	5 most common ports: [(59336, 1), (27475, 1), (14318, 1), (57429, 1), (31375, 1)]
+
+
+
+Test results for transaction ID randomization:
+
+	Number of samples: 1086
+	Number of unique ports: 1037
+	Range: 45 - 65415
+	Standard Deviation: 19128.480563438716
+	5 most common ports: [(22681, 2), (16653, 2), (25739, 2), (20337, 2), (57986, 2)]
+
+KstestResult(statistic=0.03222836095764273, pvalue=0.6257210434465147)
+KstestResult(statistic=0.027624309392265192, pvalue=0.8019298430829213)

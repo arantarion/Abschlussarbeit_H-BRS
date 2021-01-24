@@ -1,0 +1,1794 @@
+In an increasingly digitalized world, the network router often forms the
+border between the home network and the internet. An increasing number
+of attacks on these very home networks for the spread of ransomware and
+botnets is observed worldwide. This
+makes it more important for manufacturers and customers to evaluate the
+security of their products. The goal of this thesis was to evaluate the
+open-source router operating system OpenWrt using the Technical
+Guideline 03148 - Secure Broadband Routers of the German Federal Office
+for Information Security. Furthermore, solutions for shortcommings of
+OpenWrt were worked out in cases were OpenWrt could not comply with the
+guideline. To address another possibility for security verification the
+source code of various open source router operating systems were
+statically analyzed. Finally, the results of this analysis were compared
+with the results of the Home Router Security Report 2020.
+To support the premise that OpenWrt is compliant with the Technical
+Guideline, all applicable test cases were tested against the published
+test criteria. Furthermore, the source codes of seven contemporary open
+source router firmware images were statically analyzed using the
+Firmware Analysis and Comparison Tool so that the results were
+comparable to the Home Router Security Report 2020. The results showed
+that OpenWrt fails to comply in 22% of the test cases, but the predicted
+effort to correct these weaknesses is low. The static code analysis
+showed that the open source firmware, while not without shortcomings, is
+superior to the proprietary firmware which was analysed in the Home
+Router Security Report.
+The results showed that, with some adjustments, OpenWrt can present a
+safer alternative to proprietary pre-installed router firmware and that
+open source firmware performs comparatively well when using static code
+analysis. Ultimately, a repetition of the static code analysis with a
+larger set of open-source firmware is desirable in order to establish a
+higher degree of comparability.
+In einer zunehmend digitalisierten Welt bildet der Netzwerk-Router
+häufig die Grenze zwischen dem Heimnetzwerk und dem Internet. Weltweit
+wird eine zunehmende Anzahl an Angriffen auf eben diese Heimnetze für
+die Verbreitung von Ransomware und Bot-Netzen beobachtet. Umso
+wichtiger sind Mittel und Wege für Hersteller und Kunden die Sicherheit
+ihrer Produkte zu evaluieren. Das Ziel dieser Arbeit war es das
+quelloffene Router-Betriebssystem OpenWrt mittels der Technischen
+Richtlinie 03148 - Sichere Breitband Router des deutschen Bundesamtes
+für Sicherheit in der Informationstechnik (BSI) zu prüfen. Ferner
+sollten Lösungen für eventuelle Defizite erarbeitet werden, falls
+OpenWrt den Anforderungen der TR nicht entsprechen kann. Anschließend
+wurde der Quellcode verschiedener quelloffener Router-Betriebssysteme
+statisch analysiert, um eine weitere Möglichkeit der
+Sicherheitsüberprüfung zu thematisieren. Die Ergebnisse dieser Analyse
+wurden abschließend mit den Ergebnissen des Home Router Security
+Reports 2020 verglichen.
+Um die Annahme zu stützen, dass OpenWrt TR-konform ist, wurden alle
+anwendbaren Testfälle anhand der veröffentlichten Prüfkriterien
+getestet. Weiterhin wurde der Quellcode von sieben quelloffenen Router
+Firmware-Abbildern statisch mit dem Firmware Analysis and Comparison
+Tool analysiert, sodass die Ergebnisse mit dem Home Router Security
+Report 2020 vergleichbar waren. Die Ergebnisse zeigten, dass OpenWrt
+22% der Technischen Richtlinie nicht besteht, der Aufwand aber gering
+ist, diese Defizite auszubessern. Die statische Code-Analyse zeigte,
+dass die quelloffene Firmware zwar nicht ohne Mängel ist, jedoch im
+Vergleich der proprietären Firmware überlegen ist.
+Die Ergebnisse zeigen, dass OpenWrt mit einigen Anpassungen eine sichere
+Alternative zu proprietärer vorinstallierter Firmware bilden kann und
+die quelloffene Firmware bei einer statischen Code-Analyse
+vergleichsweise gut abschneidet. Letztlich ist eine Wiederholung der
+statischen Code-Analyse mit einem größeren Korpus erstrebenswert, um
+eine höhere Vergleichbarkeit herzustellen.
+Das Internet wird ein zunehmend wichtigerer Teil des menschlichen
+Lebens. Öffentliche Hotspots, internetfähige Alltags-Geräte (Internet of
+Things (IoT) Geräte) und mobiles Arbeiten von Zuhause sind nur einige
+Beispiele für technologische Neuerungen, welche ohne das Internet nicht
+möglich wären. Die rund 38 Mio. Netzanbindungen an DSL-, Kabel-, oder
+Glasfaser-Anschlüsse in Deutschland werden in Heimnetzen und
+Kleinunternehmen überwiegend durch Netzwerk-Router realisiert
+. In vielen Fällen bildet der Router die
+direkte Schnittstelle zwischen dem Internet und dem privaten Netzwerk.
+So stellt dieser durch Paketfilter und eine Firewall meist auch die
+einzige zentrale Sicherheitskomponente zum Schutz des Netzwerkes bereit.
+Ein erfolgreicher Angriff auf den Router bietet einem Angreifer
+unzählige Möglichkeiten, in das Netz einzugreifen und so immensen
+Schaden anzurichten. Neben bekannten Zielen wie private Daten und
+Passwörtern kann der Router auch als Teil eines Bot-Netzwerks für
+Distributed Denial-of-Service (DDoS) verwendet werden oder als
+Einfallstor auf weitere Geräte des Netzwerkes. In Korrelation mit den stark
+steigenden Fällen von Cyberkriminalität im privaten und wirtschaftlichen
+Umfeld zeigt dies wie wichtig ein von Werk aus geschützter Router mit
+einer sicheren Konfiguration ist. Handelsübliche
+Router, wie sie in Privathaushalten und Small Office, Home Office (SOHO)
+Umgebungen eingesetzt werden sind bereits mit einem proprietären
+Betriebssystem bespielt. Die Sicherheit dieser meist proprietären
+Distribution kann nur mit großem Aufwand von Endnutzern verifiziert
+werden und Sicherheitsupdates nur vom Hersteller veröffentlicht werden.
+Hersteller können in der zunehmend kürzer werdenden Zeit zwischen neuen
+Iterationen von Malware meist nicht in angemessener Zeit reagieren, um
+Sicherheitsupdates zur Verfügung zu stellen. Quelloffene Router Firmware
+wie OpenWrt, DD-Wrt, Tomato oder LibreCMC bieten eine Alternative zu den
+vorinstallierten, proprietären Betriebssystemen der Router.
+Diese Projekte können vollständig eingesehen, modifiziert und kompiliert
+werden, sodass die Sicherheit des Produktes einfacher evaluiert werden
+kann. Ebenfalls können aufgrund der hohen Anzahl an Mitwirkenden
+Sicherheits- und Funktionsupdates schneller entwickelt und
+veröffentlicht werden. Umfangreiche Überprüfungen dieser Projekte, wie
+z.B. anhand der BSI TR-03148: Sichere Broadband Router, werden
+allerdings aufgrund des hohen Zeit- bzw. Kostenaufwands selten
+durchgeführt, sodass diese Zertifizierung nicht erlangen können. Eine solche
+Zertifizierung könnte ungeschulten Endnutzern auch diese quelloffenen
+Router-Betriebssysteme als Alternativen näherbringen und somit zu einem
+höheren Sicherheitsniveau in privater und SOHO Netzwerkinfrastruktur
+führen.
+Während der Einsatz von OpenWrt im privaten und professionellen Umfeld
+beliebt zu sein scheint und auch einige Forschungsarbeiten mit
+OpenWrt verwirklicht wurden, sind derzeit keine aktuellen Arbeiten zur
+Sicherheit von OpenWrt verfügbar. Ortega et al. (2009) veröffentlichte
+eine Arbeit über eine quelloffene Methode zum Verhindern von sogenannten
+ARP Poisoning Attacken. Sie nutzten in diesem Kontext OpenWrt lediglich
+als vielseitig unterstützte Testplattform. Palazzi et al. (2010) nutzten den
+Funktionsumfang und die Anpassbarkeit der Firmware, um einen
+verbesserten Datendurchsatz in Heimnetzen mit verschiedenen WLAN-Geräten
+zu erreichen. Keine der derzeitigen
+Veröffentlichungen beschäftigt sich mit der Sicherheit von OpenWrt als
+Betriebssystem. Einzig Andrew McDonnell (2014) veröffentlichte in seinem
+Blog zwei Einträge über eine Sicherheitsanalyse von OpenWrt mittels des
+Tools checksec.sh und entwarf eine verbesserte Version, in welcher bedeutend mehr
+Maßnahmen zur Verhinderung von Exploits aktiviert waren. Die Ergebnisse der Veröffentlichung basierten
+jedoch auf Version 14.07 (Barrier Breaker) von OpenWrt, welche stark
+veraltet ist. Die Forschung an
+Komponenten, die OpenWrt ausmachen, ist jedoch keinesfalls so
+eingeschränkt wie zuvor aufgezeigt. Der Linux Kernel, welcher einen
+grundlegenden Teil des OpenWrt Betriebssystems ausmacht, ist seit seiner
+Veröffentlichung 1991 ein andauerndes Gebiet der Forschung und
+Entwicklung, so auch in der IT-Sicherheit.
+Ebenso definiert sich OpenWrt über seine ca. 3800 zusätzlichen
+quelloffenen Pakete. Viele dieser Software-Erweiterungen existieren
+schon seit Jahrzehnten und ihre Integrität und Vertraulichkeit sind von
+den unzähligen Nutzern auf verschiedensten Plattformen anerkannt.
+Abschließend kann man festhalten, dass es zwar durchaus Forschung an
+Komponenten, welche auch in OpenWrt genutzt werden, gibt, jedoch OpenWrt
+selbst noch nicht im Mittelpunkt der Forschung stand und die
+Sicherheitslage des Projektes weitestgehend ungeklärt bleibt.
+Ziel dieser Arbeit war es, die Technische Richtlinie 03148 des BSI an
+Version 19.7.04 von OpenWrt durchzuführen und das Router-Betriebssystem
+auf Konformität zu prüfen. Hierbei wurde ein TP-Link Archer C7 Router
+genutzt. Es wurden die grundsätzlichen Sicherheitsmerkmale von OpenWrt
+mittels der Technischen Richtlinie evaluiert. Dabei
+wurde nur die Funktionalität des Betriebssystems geprüft, welche nach
+der Installation auf dem Gerät bereitgestellt wurde. Funktionen, welche
+vom Nutzer zusätzlich installiert und eingerichtet werden mussten,
+wurden nicht betrachtet. Wenn es der Testfall angeboten hat wurde ein
+automatischer Test entwickelt, sodass eine wiederholte Durchführung
+beschleunigt werden kann. Ebenso wurde die Anwendbarkeit der Technischen
+Richtlinie auf quelloffene Netzwerk-Betriebssysteme ermessen. Darüber
+hinaus wurden statische Softwaretests einiger quelloffener
+Router-Betriebssysteme mittels des Firmware Analysis and Comparison
+Tools als weitere Metrik genutzt, um einen differenzierteren Einblick in
+die Sicherheitslage solcher Projekte zu gewähren. Die Ergebnisse dieser Analyse wurden
+darauffolgend mit den Ergebnissen des Home Router Security Report 2020
+des Fraunhofer-Instituts für Kommunikation, Informationsverarbeitung und
+Ergonomie (FKIE) verglichen.
+Abschließend wurde sich kritisch mit den Ergebnissen, sowie der
+technischen Richtlinie, auseinandergesetzt. Die in
+dieser wissenschaftlichen Untersuchung genutzte Vorgehensweise kann
+nicht die vollständige Sicherheit aller Aspekte der Software OpenWrt
+nachzuweisen. Es muss immer betont werden, dass viele potenziell
+wichtige Aspekte einer sicheren Software nicht in Betracht gezogen
+werden. Vielmehr soll eine Grundlage bzw. ein möglicher Einstiegspunkt
+für weitere Forschung an Methoden und Abläufen zum Testen von Open
+Source (Router-) Software geschaffen werden. Die Ergebnisse der Arbeit
+können sowohl der Entwicklung von OpenWrt als auch Endnutzern weitere
+Einblicke in die Sicherheit des Projektes liefern und somit langfristig
+die Resilienz der Heimnetz-Infrastruktur stärken.
+Ein Netzwerkrouter (auch als Router bezeichnet) ist ein essentieller
+Bestandteil der meisten Computer-Netzwerke und kann auf Schicht 3 des
+OSI-Referenzmodelles 
+Netzwerkpakete zwischen mehreren Netzwerken weiterleiten. Eine häufige Verwendung von Routern ist die Anbindung eines
+privaten Netzwerkes an das Internet. Da Router auf Schicht 3 des
+OSI-Modells arbeiten, nutzen sie das IP-Protokoll um Netzwerkpakete
+weiterzuleiten . Eine wichtige Aufgabe des Routers ist
+unter anderem die sog. Network Address Translation (NAT). Diese Technik
+wird eingesetzt, um den Netzwerkverkehr aller Systeme im privaten
+Netzwerk durch den Router in das öffentliche Netz (Internet) zu
+transportieren und dort an die korrekte IP-Adresse zuzustellen
+. Im Gegensatz zu Netzwerk-Bridges (auch
+Netzwerk-Switches genannt) sind Router flexibler, da sie mit logischen
+Adressen (IP-Adressen) arbeiten . Bridges hingegen
+arbeiten auf der Sicherungsebene (Schicht 2) des OSI-Modells. Dadurch
+können sie nicht verwendet werden, um ein anderes Sub-Netz zu
+adressieren. Daraus folgt ebenso, dass Netzwerk-Bridges nicht für die
+Verbindung eines privaten Netzwerks mit dem Internet geeignet sind.
+Neben den bereits genannten Aufgaben eines Routers liefern die meisten
+modernen Heimrouter zusätzliche Funktionen. So verfügen moderne
+Heimrouter meist auch über die Möglichkeiten einer Firewall. Durch diese
+können ein- und ausgehende Pakete gefiltert werden, oder Angriffe auf
+das Netzwerk erkannt werden . Ebenfalls bieten
+viele Router einen Dynamic Host Configuration Protocol (DHCP)-Server an.
+Dieses Protokoll ermöglicht die automatische Zuweisung einer
+Netzwerkkonfiguration an Clients . Darüber hinaus
+findet man häufig auch einen Network Time Protocol (NTP)-Server, welcher
+genutzt werden kann, um über den Router Zeitinformationen zu beziehen
+. Zusätzlich verfügen einige Heimrouter über die
+Möglichkeit das Voice over IP (VoIP) Protokoll zu nutzen, welches
+Telefonie über das Internet ermöglicht . Einige
+Modelle unterstützen auch Virtual Private Networks(VPN) . Dabei handelt
+es sich um eine sichere Verbindung von zwei privaten Netzwerken über ein
+öffentliches Netzwerk, also dem Internet. Die Daten sind auf dem Weg
+vollständig verschlüsselt, sodass abgefangene Pakete keinen Aufschluss
+über den Inhalt geben. In diesem Zusammenhang wird auch von einem
+Tunnelgesprochen, da die einzigen Zugangspunkte an den jeweiligen Enden
+sind .
+Router sind ein immer beliebteres Angriffsziel für Cyberkriminelle. Der Netzwerkrouter stellt oft die direkte
+Schnittstelle zwischen dem Internet und einem privaten Netzwerk dar. Die
+Übernahme von Routern bietet Angreifern daher viele
+Monetarisierungsmöglichkeiten. Router bieten ein geeignetes Einfallstor
+in ein privates Netz, da Angreifer über einen kompromittierten Router
+Zugriff auf weitere Geräte des privaten Netzes erhalten können. Der
+Router und die ggf. weiteren infizierten Geräte können nun z.B. für die
+Verbreitung von Ransomware eingesetzt werden, oder selbst Opfer eines
+Ransomware-Angriffs sein. Bei diesem Angriff wird der Zugriff auf die
+Daten des Geräts von einem Angreifer verhindert, bis das Opfer den
+geforderten Betrag bezahlt. Ein kompromittierter Router kann auch als
+Teil eines Bot-Netzes eingebunden und für die Zwecke des Angreifers
+missbraucht werden. Darüber hinaus kann das Gerät auch genutzt werden,
+um den Datenverkehr des Angreifers über die IP-Adresse des Routers zu
+leiten, sodass die Spuren des Angreifers verwischt werden und die IP des
+infizierten Routers augenscheinlich illegale Aktivitäten durchführt.
+Bei einem Bruteforce Angriff versucht ein Angreifer nicht eine bestimmte
+Software- oder Hardwarelücke auszunutzen, sondern stattdessen durch eine
+erschöpfende Suche des Schlüsselraumes das korrekte Passwort zu finden.
+Es können natürlich auch Kombinationen von Nutzername und Passwort
+gesucht werden, um sich auf einem Gerät anmelden zu können. Für diese
+Suche werden oft Passwortlisten oder Listen mit häufigen Kombinationen
+von Nutzername und Passwort eingesetzt. Es ist jedoch auch möglich
+automatisch einen voreingestellten Passwortraum, z.B. acht Zeichen mit
+einer Kombination aus Buchstaben und Zahlen, zu bilden und alle
+möglichen Kombinationen zu testen . Indem der Angreifer die
+Antwort des angegriffenen Servers oder Systems evaluiert, kann er einen
+Erfolg feststellen. Aus dem Vorgehen wird ersichtlich, dass dieser
+Angriffsvektor unter Umständen sehr zeitintensiv ist, wenn ein sicheres
+Passwort gewählt wurde. Wie Hilt et al. (2020) zeigten, gewinnen
+Bruteforce Angriffe auf Router jedoch stetig an Beliebtheit. Aufgrund
+von einfachen oder bekannten Standardpasswörtern ist es Angreifern
+möglich, schnell durch einen Bruteforce-Angriff Zugriff auf einen Router
+zu erhalten und diesen für eigene Zwecke zu nutzen.
+Neben dem Bruteforce Angriff auf den Webserver ist auch
+Cross-Site-Request-Forgery (CSRF) ein Angriffsvektor, welcher bei
+Routern zum Einsatz kommen kann . Wenn keine adäquaten
+Schutzmaßnahmen vom Server getroffen werden, kann ein Angreifer über
+eine präparierte Website oder einen Phishing Link schädlichen Code auf
+Webseiten ausführen, auf denen der Nutzer bereits authentifiziert ist.
+Dieser Code versetzt den Angreifer in die Lage, Befehle auf der Webseite
+oder dem Webserver auszuführen, auf welchem der Nutzer angemeldet ist
+. Es könnte zum Beispiel ein neuer Benutzeraccount durch den
+Angreifer angelegt werden oder Einstellungen und Sicherheitsparameter an
+den Angreifer gesendet werden. So könnte ein
+Angreifer eine gültige Session eines Nutzers übernehmen, wenn dieser
+beim Webserver seines Routers angemeldet ist. Von dort könnte er
+Zugangsdaten entwenden und verändern oder einen persistenten
+Einstiegspunkt in das Netzwerk ermöglichen. Ebenso könnte ein
+präpariertes Firmware-Abbild aufgespielt werden. Es ist auch ein
+zweistufiges Verfahren bekannt, bei dem der Nutzer zunächst durch den
+Angreifer an seinem Gerät angemeldet wird, da das Opfer meist nicht an
+seinem Gerät angemeldet ist. Danach verläuft der CSRF-Angriff wie
+beschrieben. Dieses zweistufige Vorgehen ist möglich, da viele Endnutzer
+das Passwort ihres Gerätes nicht ändern und die voreingestellten
+Passwörter oft nach einem bekannten Muster generiert werden.
+Eine häufig verwendete Sicherheitsmaßnahme gegen CSRF Angriffe ist ein
+Anti-CSRF Cookie (auch Token genannt). Dieser wird im
+HTTP-request-header, im http-POST-body oder als verstecktes Feld in
+einem HTTP-FORM-Objekt deklariert und besteht aus zwei zufällig
+generierten Zeichenketten, sodass der Nutzer und der Server jeweils
+einen Cookie gespeichert haben. Der Cookie des Nutzers wird für jede
+http-Methode benötigt, welche nach dem Setzen des Cookies aufgerufen
+wird. Dazu wird neben dem normalen Session Cookie auch geprüft, ob der
+korrekte Anti-CSRF Cookie übermittelt wurde. Dies geschieht auf Seiten
+des Servers mittels des zweiten Teils des CSRF-Tokens .
+Wenn der Angreifer diesen Wert nicht berechnen kann, so kann er keine
+erfolgreiche domänenübergreifende Anfrage stellen. Um ein höheres
+Sicherheitsniveau zu erreichen sollte der CSRF-Cookie an die Session des
+Nutzers gebunden sein
+Eine möglicher Ablauf eines Cross-Site-Request-Forgery Angriffs. Der
+Nutzer ist bei MyBank.de angemeldet und öffnet Evil-News.de. Diese Seite
+liefert Schadcode an den Browser des Opfers aus. Der Code tätigt eine
+Überweisung mittels eines POST Requests und dem gültigen Cookie des
+Nutzers. Da es keine Abwehrmaßnahmen gibt tätigt der Bankserver die
+Überweisung an den Angreifer
+Bei dieser Art von Angriff wird die vom Browser durchgesetzte Same
+Origin Policy umgangen, um arbiträre Anfragen an das lokale Netzwerk
+des Opfers zu stellen. Abbildung zeigt, wie die Herkunft (Origin) eines
+Web Dokumentes definiert ist.
+Zwei Dokumente haben also die gleiche Herkunft (same origin), wenn
+sie identische scheme, host und port Komponenten haben.
+Die Same Origin Policy setzt durch, dass Skripte, oder auch
+Cascading Style Sheets (CSS), nur auf Daten von anderen Webseiten
+zugreifen können, wenn diese sich dieselbe Herkunft teilen. Wenn diese
+Richtlinie nicht implementiert wäre, dann wäre eine bösartige Webseite
+zum Beispiel in der Lage auf ein Bankkonto zuzugreifen, auf dem ein
+Opfer ebenfalls eingeloggt ist. Dort könnten Daten wie die
+Transaktionshistorie ausgelesen oder weitere Aktionen ausgeführt werden.
+Bei einem DNS Rebinding Angriff ruft das Opfer zunächst eine
+kompromittierte, oder bösartige, Website auf. Für diesen Aufruf wird ein
+DNS-Server beauftragt mit der IP-Adresse des angefragten Web-Servers zu
+antworten. Der vom Angreifer kontrollierte DNS-Server antwortet mit
+einem DNS A Record, welcher auf die Angreifer-Webseite verweist und den
+Browser des Opfers anweist, die DNS-Daten nur für eine geringe Zeit im
+Cache zu behalten. Ein Skript, welches auf der Webseite des Angreifers
+platziert wurde, wartet nun darauf, dass die DNS-Daten aus dem Cache
+verfallen, sodass der Browser eine neue Anfrage stellen muss. Diesmal
+antwortet der DNS-Server allerdings nicht mit der eigenen IP-Adresse,
+sondern mit einer IP-Adresse im lokalen Netzwerks des Opfers. Nun kann
+das Skript Anfragen an diesen lokalen Dienst stellen, z.B. Daten
+exfiltrieren oder weitere Angriffe starten
+Bei einem Denial of Service (DoS) Angriff generiert ein Angreifer
+unzählige Anfragen oder eine sehr große Menge Daten auf einem anderen
+System, um die Netzwerk- oder Rechenkapazitäten des Opfers
+auszuschöpfen. Während eines solchen Angriffes wird der Zugriff auf die
+Webseite, den Dienst oder den Rechner für legitime Nutzer verhindert. Es handelt sich also um einen
+Angriff auf das Schutzziel der Verfügbarkeit.
+ More simply, a DoS attack is when an attacker uses a single machine's
+ resources to exhaust those of another machine, in order to prevent it
+ from functioning normally .
+Es handelt sich also bei DoS um ein System, welches ein anderes oder
+mehrere andere Systeme angreift. Diese Art von Angriff kann entweder
+durch eine Sicherheitslücke in einem gegebenen System ausgeführt werden,
+oder über eine Überlastung des Netzwerkes mit Anfragen. Daher teilt man
+DoS-Attacken meist in drei Kategorien ein:
+-   Bandbreitensättigung
+-   Ressourcensättigung
+-   Herbeiführung von System- und Anwendungsabstürzen
+Bandbreitensättigung beschreibt das Vorgehen einen Webdienst oder
+Webserver mit einer großen Menge an Anfragen zu belasten, sodass
+legitime Nutzer den Dienst nicht, oder nur sehr langsam, nutzen können.
+Ressourcensättigung ist das Äquivalent für ein gesamtes Rechnersystem.
+Hier wird eine Sicherheitslücke oder ein Programmierfehler genutzt, um
+durch einen Prozess eine sehr hohe Auslastung des Systems zu erzeugen,
+sodass dieses nicht mehr reagiert. Die letzte Art beschreibt das
+Herbeiführen von Abstürzen. Auf diese Weise kann der Zugriff auf ein
+Webdienst oder System vollständig unterbrochen werden. Darüber hinaus
+ist es so möglich, gezielt Elemente eines Netzwerkes wie eine Firewall
+auszuschalten, sodass ein weiterführender Angriff möglich ist.
+Die meisten Webserver können jedoch Überlastungsversuchen von einem
+einzelnen System widerstehen. Daher nutzen Angreifer meist mehrere
+Systeme, welche ein Ziel überlasten sollen. Dies bezeichnet man als
+Distributed Denial of Service(DDoS) Angriff . Für
+diesen Zweck werden in den meisten Fällen viele Systeme unter ein
+Kommando gestellt, sodass der Angriff koordiniert ablaufen kann. Dies
+wird als Botnetz bezeichnet. Den Teilnehmern eines solchen Botnetzes ist
+oft gar nicht bekannt, dass ihre Geräte durch speziell präparierte
+Malware infiziert und zu einem Botnetz hinzugefügt wurden. Der Einsatz von infizierten IoT-Geräten wird
+ebenfalls immer beliebter, da diese oft sehr schlecht abgesichert sind
+und die Nutzer zumeist das Standardpasswort nicht ändern .
+Mögliche Motive für DoS und DDoS sind finanzielle Ziele, politische
+Motivation (Hacktivismus), zielgerichtete Angriffe auf kritische
+IT-Infrastruktur oder vertrauliche Daten (Advanced Persistent Threats)
+sowie Cyberkrieg . DoS und DDoS
+Angriffe auf Router sind durch die Schnittstellenfunktion des Routers
+relativ einfach möglich. Die Abwehr solcher Attacken auf Router ist
+jedoch in den meisten Fällen durch Software und einige Firewall-Regeln
+automatisch möglich. So kann z.B. die erlaubte Datenrate dynamisch vom
+Router eingestellt werden, wenn bestimmte Muster in den Anfragen erkannt
+werden, welche auf einen (D)DoS Angriff hindeuten.
+OpenWrt (Open Wireless RouTer) ist ein quelloffenes
+Netzwerk-Betriebssystem für Router, welches auf GNU/Linux basiert und
+durch eine GNU General Public License (GPL) lizensiert ist. Die Installation umfasst einen Bootloader, einen
+Linux-Kernel, ein eigenes Dateisystem und ausgewählte Anwendungen. Es
+kann auf Routern, Switches und Wireless Access Points eingesetzt werden,
+um die vorinstallierte Firmware vollständig zu ersetzen. Es bietet neben standardmäßiger Router
+Funktionalität einen eigenen Paketmanager, über welchen ca. 3800 (Stand
+01.11.20) weitere Pakete installiert werden können. Dies bietet viele weitere Einsatzmöglichkeiten
+und Funktionen, welche vom Hersteller nicht oder unzureichend
+unterstützt werden. Ebenfalls beinhaltet die Installation von OpenWrt
+den SSH-Dienst BusyBox und das Web-Interface LuCI, sodass dem Nutzer
+über den root-Benutzeraccount vollständiger Zugriff auf das Gerät
+gewährt wird. Nach derzeitigem Stand werden über 1700 Geräte von ca. 270
+Herstellern von OpenWrt unterstützt . Diese
+Anzahl Geräte kann unter anderem deshalb unterstützt werden, da OpenWrt
+nur minimale Ressourcen auf dem Endgerät benötigt. Nach eigenen Angaben
+kann die derzeitige Version auf Geräten installiert werden, welche 4MB
+Flash Speicher und 32MB RAM besitzen. Ab der nächsten Major Release
+Version (20.XX) werden 8MB Flash und 64MB RAM vorausgesetzt. Diese Voraussetzungen sind jedoch bei den
+meisten Geräten der letzten Jahre gegeben. OpenWrt zeichnet sich
+ebenfalls dadurch aus, dass es sich nicht nur um eine statische Firmware
+handelt, sondern ebenfalls um ein komplettes Framework zur Entwicklung
+und Erstellung von angepassten Firmware Versionen. OpenWrt zeichnet sich
+auch dadurch aus, dass Geräte solange unterstützt werden, wie sie die
+minimalen Systemanforderungen erfüllen. Dies steht im Gegensatz zu den
+meisten proprietären Betriebssystemen, welche nur einige Jahre
+Funktions- und Sicherheitsupdates erhalten und nach ihrem sog. End
+of Life (EOL) nicht mehr sicher betrieben werden können und
+ausgetauscht werden müssen. Auch wenn in der Entwicklungsgeschichte von
+OpenWrt viel für die Benutzerfreundlichkeit des Betriebssystems getan
+wurde, ist es nicht unbedingt für Laien geeignet. Trotz des Managements
+über die Weboberfläche erweist sich die Einrichtung ohne Grundkenntnisse
+als anspruchsvoll.
+Die Entwicklung von OpenWrt begann 2004, nachdem der amerikanische
+Hersteller Linksys zuvor einen Router auf den Markt brachte, dessen
+Firmware zu Teilen ebenfalls unter der GPL Lizenz stand und somit
+öffentlich verfügbar sein musste. Die erste Veröffentlichung von OpenWrt
+erfolgte im Januar 2006 mit Version 0.9 (White Russian). Seitdem wurde
+das Projekt stetig weiterentwickelt. 2016 spaltete sich eine
+Gruppe Mitwirkender aufgrund interner Diskrepanzen ab und gründete das
+LEDE Projekt. Jedoch wurde LEDE bereits 2018 wieder in OpenWrt
+integriert, sodass beide Projekte nun wieder zusammen unter einem Namen
+entwickelt werden. Die derzeit aktuelle Version ist 19.07.5, welche am
+09.12.2020 veröffentlicht wurde
+Die Webseite des OpenWrt Projektes verzeichnete im Jahre 2020 bis
+einschließlich November 1.261.500 Besucher, sowie 52,4 Millionen
+Seitenaufrufe. Insgesamt wurden bis November 2020 bereits 16,44TB Daten
+abgerufen . Die zum Zeitpunkt des
+Seitenaufrufes aktuelle Version von OpenWrt (19.07.4) wurde dabei allein
+im November 1981 Mal heruntergeladen. Ebenfalls wurde Version 18.06.8
+noch 935 Mal angefragt. Zusammen wurden ca. 10000 Firmware-Abbilder im
+November 2020 heruntergeladen . Wie die
+Daten zeigen ist OpenWrt keinesfalls ein kleines Projekt mit nur wenigen
+Interessierten, sondern eine nachgefragte Alternative für Heimrouter,
+Unternehmen und Entwickler. Es lässt sich nur schwer abschätzen wie die
+Verteilung zwischen dem privaten und wirtschaftlichen Einsatz der
+Firmware genau ist, jedoch ist eine mehrheitliche Nutzung im privaten
+Umfeld zu vermuten, da die Downloadzahlen eine Tendenz zu Geräten mit
+einer günstigeren MIPS-Architektur, anstelle von professionellen
+Geräten, zeigen. OpenWrt ist dennoch nicht nur für
+Heimrouter relevant, sondern zeichnet sich auch in seinem Nutzen für
+Unternehmen und Entwickler aus. Es bietet Unternehmen die Möglichkeit
+ein Netz zu betreiben, welches sie vollständig mit quelloffener Software
+realisieren und steuern können. Ebenfalls bietet es
+Dienstleistungsunternehmen einen Weg, hochgradig maßgeschneiderte
+Netzstrukturen für ihre Kunden zu entwerfen, welche quelloffen und
+leicht anpassbar sind. So können neue oder geänderten Funktionen über
+ein Paket bereitgestellt und verteilt werden.
+Bei der Technischen Richtlinie Sichere Breitband Router (BSI
+TR-03148) des Bundesamtes für Sicherheit in der Informationstechnik
+handelt es sich um eine Sammlung von grundlegenden
+Sicherheitsanforderungen für Breitband Router. Der
+Schwerpunkt der Richtlinie liegt hierbei vor allem auf Heimroutern,
+sowie auf Geräten, welche im SOHO Umfeld eingesetzt werden. Das Dokument
+wird durch die Dokumente BSI TR-03148 Implementation Conformance
+Statement (ICS) sowie BSI-TR-03148-P ICS and Test Documentation
+ergänzt. In diesen Dokumenten sind Testfälle und Dokumentation zur
+Durchführung einer Prüfung festgehalten. Die Test Spezifikation der
+Technische Richtlinie definiert 101 Test Requirements, welche
+insgesamt 164 Test Procedures beschreiben. Die Test Requirements
+sind dabei in logische Module unterteilt. Ein Test Requirement wird als
+fehlgeschlagen gewertet, wenn ein zugehöriges Test Procedure nicht
+bestanden wird. Nach Angaben des BSI richtet sich die Technische
+Richtlinie vor allem an Hersteller von Routern, sie kann jedoch auch für
+Endnutzer relevant sein, wenn diese einen neuen Router anschaffen
+möchten und sich daher über den Stand der Technik informieren wollen. Es werden
+Anforderungen für ein Mindestmaß an verpflichtenden und einigen
+optionalen IT-Sicherheitsmaßnahmen definiert, um ein grundlegendes
+Niveau für die Sicherheit dieser Geräte zu schaffen. Die
+angestrebte Zertifizierung von Geräten würde ebenso die Sicherheit der
+Geräte für den Verbraucher transparenter machen. Das Dokument entstand
+aus einer Zusammenarbeit des BSIs mit verschiedenen Herstellern von
+Routern, Telekommunikationsanbietern, Behörden, dem Innen- und
+Wirtschaftsministerium, sowie unter Anderem mit Vertretern des OpenWrt
+Projektes und des Chaos Computer Clubs (CCC). Diese trugen ihre Ideen und Vorstellungen
+zur Sicherheit von Routern zusammen und suchten Lösungen für
+Interessenkonflikte. Nach Veröffentlichung der Richtlinie im Jahre 2018
+wurde diese allerdings unter anderem von Vertretern des OpenWrt
+Projektes sowie vom CCC kritisiert. Nach Meinung dieser Interessengruppe
+sind die definierten Maßnahmen in der Technischen Richtlinie nicht
+ausreichend, um tatsächliche Angriffe auf Router zu verhindern.
+Der Aufbau der Technischen Richtlinie, des Conformance Statements und
+der Test Spezifikation ist für das Verständnis der Arbeit unabdingbar.
+Die Technische Richtlinie selbst beginnt mit einer Beschreibung für
+welche Geräte die TR genutzt werden soll. Darauf folgt eine Beschreibung
+des Rahmens, welcher durch die TR vorgegeben wird. So wird festgelegt,
+dass Router mit einem Betriebssystem betrachtet werden sollen, welche
+die Schnittstelle zum Internet darstellen und dem Nutzer das Management
+seines eigenen privaten Netzes ermöglichen. Weiterführend wird
+festgelegt, dass die Sicherheit von zusätzlichen angeschlossenen Geräten
+und nicht essentiellen zusätzlichen Funktionsmerkmalen nicht betrachtet
+wird. Anschließend werden drei Zustände definiert, in dem sich ein Gerät
+während des Testens befinden kann: factory settings, initialized (after
+initialization) und (end user) customized. Bevor
+die einzelnen logischen Themenmodule der TR erläutert werden, wird
+zunächst das Bedrohungsmodell definiert. Hierzu
+werden zwei verschiedene Angreifer festgelegt. Angreifer A greift den
+Router über das Internet, also die Wide Area Network (WAN) Schnittstelle
+des Routers an, während Angreifer B einen Angriff über das Local Area
+Network (LAN) und Wireless-Lan (WLAN) Interface versucht. An dieser
+Stelle wird auch ein erweiterter kombinierter Angriff betrachtet.
+Darauffolgend werden die Module der Technischen Richtlinie beschrieben,
+welche die Anforderungen in logische Einheiten bündel. Es werden die
+folgenden Module beschrieben:
+Bevor die eigentlichen Tests, welche in der TR beschrieben sind,
+durchgeführt werden können, muss zunächst ein sogenanntes
+Implementation Conformance Statement ausgefüllt werden. In diesem
+werden maßgebende Informationen über das zu testende Gerät festgehalten.
+Bei einer Durchführung der Technischen Richtlinie im Kontext einer
+Zertifizierung würde dieses Conformance Statement zunächst vom
+Hersteller bzw. Auftraggeber ausgefüllt und eingereicht. Die angegebenen
+Informationen unterstützen den Tester, sind aber auch selbst Teil der
+Testprozedur. Zu diesen Informationen gehören neben dem Namen und der
+betrachteten Software-Version auch eine Übersicht über die zur Verfügung
+stehende Dokumentation des Gerätes. Hierzu wird auch technische
+Dokumentation gezählt, welche normalerweise nicht für Endnutzer und
+Verbraucher zur Verfügung steht. Des Weiteren werden Informationen zu
+allen Modulen zusammengetragen, welche bei der Durchführung der Test
+Procedures von Relevanz sind.
+Der Aufbau der Test Spezifikation orientiert sich ebenfalls an den
+einzelnen Modulen. Nach einer Einleitung wird zunächst das Device Under
+Testing(DUT) beschrieben sowie Ansprüche an die Fähigkeiten und die
+Ausstattung des Testers. Darauf steht erneut das komplette Conformance
+Statement zur Verfügung. Im Anschluss darauf werden die Testfälle, sowie
+die Kriterien zum Bestehen der Testfälle definiert. Die Ergebnisse
+können in der Test Dokumentation, welche als Tabellenkalkulationsdatei
+ausgefüllt wurde, dokumentiert werden. Die Testdokumentation definiert
+die folgenden Kategorien: Eine durchlaufende Nummerierung und eine
+Angabe, ob es ein „muss oder „soll Kriterium ist, eine Beschreibung
+des Testfalls und die Angabe des Testers, ob der Testfall anwendbar ist
+oder nicht. Ebenso steht „N/A (not applicable) als Option zur
+Verfügung. Darauf folgen Felder für die jeweiligen Ergebnisse der Tests
+einer jeden Testreihe, gefolgt von der Möglichkeit für Notizen,
+Referenzen, benutze Tools, Zugriffsmethoden und einer Referenz für
+weitere Daten wie Bilder
+Bei einem statischen Softwaretest wird die Software nicht während der
+Laufzeit (vgl. dynamischer Softwaretest) getestet, sondern der
+eigentliche Quellcode oder der dekompilierte Bytecode analysiert.
+Statische Softwaretests gehören also zur Gruppe der sog.
+non-execution-based-Methoden. Dynamische Softwaretests bezeichnet man
+hingegen als execution-based, da die Software ausgeführt werden muss. Zu
+den statischen Softwaretests gehören unter Anderem das Software-Review
+oder auch werkzeuggestütze automatische Verfahren. Wie die meisten
+Softwaretestverfahren gehören statische Softwaretests zu den
+falsifizierenden Verfahren und können somit lediglich die Anwesenheit
+von Fehlern bestimmen .
+Bei einem Software-Review wird der Quellcode, die Dokumentation oder
+jedes weitere Dokument eines Softwareentwicklungsprozesses von einem
+oder mehreren Prüfern inspiziert und ausgewertet. Dabei sollte nach
+einen festgelegten Plan vorgegangen werden. Darüber hinaus müssen auch
+psychologische Effekte in Betracht gezogen werden, sodass der Entwickler
+des geprüften Dokumentes sich nicht persönlich kritisiert sieht.
+Werkzeuggestützte statische Softwaretests kommen in vielen Formen vor.
+So führen die meisten integrierten Entwicklungsumgebungen (IDE) und
+Compiler bereits eine statische Analyse durch. Sie zeigen z.B.
+Abweichungen von voreingestellten Code-Stilen an, sodass ein Entwickler
+darin unterstützt wird, einheitlichen und strukturierten Code zu
+schreiben. Ebenso werden sog. Code Smells in einigen IDEs angezeigt. Es
+handelt sich hierbei um ein Code-Konstrukt oder Code-Abschnitt, welcher
+es nahelegt, diesen zu refaktorisieren. Dazu gehören zum Beispiel
+Duplikate im Quellcode oder zu lange und komplexe Methoden. Viele
+moderne IDEs zeigen noch viele Metriken zur Verbesserung des Quellcodes
+an . Es existieren jedoch auch Programme,
+mit denen gezielt eine statische Analyse durchgeführt werden kann. Ein
+Beispiel hierfür ist das Programm Lint. Es ist eines der ersten
+Programme für statische Softwaretests und prüfte kritische Stellen, wie
+nicht initialisierte Variablen, da dies von frühen Compilern nicht
+unterstützt wurde . Ein weiteres bekanntes Beispiel
+ist das Rough Auditing Tool for Security(RATS) Programm. Es unterstützt
+mehrere Programmiersprachen und prüft viele verschiedene Fehler. Jedoch müssen die Ergebnisse dieser
+Programme aufgrund einer erhöhten Falsch-Positiven-Rate von einem
+Menschen kontrolliert werden.
+Das Firmware Analysis and Comparison Tool (FACT) ist ein quelloffenes
+Programm zur statischen Analyse von Firmware, welches vom
+Fraunhofer-Institut für Kommunikation, Informationsverarbeitung und
+Ergonomie entwickelt wurde. Es ist in der Lage arbiträre Firmware
+(Router, Webcams, UEFI, etc.) zu entpacken und mehrere Analysen
+durchzuführen. Nachdem mehrere Firmware-Abbilder extrahiert und
+analysiert wurden, kann FACT ebenfalls genutzt werden, um diese
+miteinander zu vergleichen. Eine Benutzeroberfläche wird dabei durch ein
+Web-Interface bereitgestellt, während die eigentliche Funktionalität
+über Plug-Ins organisiert ist, sodass eigens entwickelte Komponenten
+einfach hinzugefügt werden können. FACT automatisiert somit den
+normalerweise aufwendigen Prozess der Firmware-Analyse. In der Standardinstallation stellt FACT die
+folgenden Plug-Ins für die Analyse zur Verfügung:
+-   Identifikation der Software
+    -   Betriebssystem erkennen
+    -   Welche Programme sind installiert?
+    -   Welche Programmversionen kommen zum Einsatz?
+    -   Welche Routinen werden beim Systemstart gestartet?
+    -   Können bekannte Schwachstellen gefunden werden?
+-   Benutzerkonten finden. Vor allem hartkodierte Passwörter
+-   Kryptographisches Material identifizieren
+    -   Private Schlüssel
+    -   Zertifikate
+-   CPU-Architektur bestimmen (Für Emulation und Disassembler)
+-   QEMU Unterstützung evaluieren (Für Debugging und Fuzzing)
+-   Bekannte Fehler in der Implementierung
+-   Exploit Mitigationen auswerten
+-   zusätzliche Plug-Ins
+FACT ist in der Lage einige bekannte Härtungsmaßnahmen (auch als Exploit
+Mitigationen bezeichnet) für elf-Binärdateien in einem Firmware-Abbild
+zu analysieren. So kann angezeigt werden welche Binärdateien mit diesen
+Maßnahmen erzeugt wurden und welche nicht. Diese Härtungsmaßnahmen sind
+vor allem Wege zur Mitigation von Speicherkorruption, entweder durch
+einen Angreifer oder durch Systemfehler. FACT kann folgende Mitigationen
+auswerten:
+-   Stack Canary: Es handelt sich hierbei um eine zufällig gewählte
+    Byte-Sequenz, welche vor die return-Adresse auf den Stack
+    geschrieben wird, um Overflows zu erkennen. Diese zufällige Sequenz
+    wird aus einer statisch adressierbaren Speicherregion außerhalb des
+    Stacks geholt . Wenn es zu einem
+    Buffer-Overflow kommt, würde diese Sequenz überschrieben und diese
+    kann somit nicht vor dem Zurückkehren (return) verifiziert werden,
+    sodass der Overflow erfolgreich erkannt wird . Wenn die
+    Werte nicht übereinstimmen, dann wird eine Kernel-Panik ausgelöst
+    und der Prozess terminiert.
+-   FORTIFY_SOURCE ist eine zusätzliche Option der GCC Compiler
+    Collection. Wenn diese Option beim Kompiliervorgang von Dateien
+    ausgewählt wird, werden verschiedene Funktionen zur Manipulation von
+    Zeichenketten und Speicher (memcpy, memset, strcpy, strcat, sprintf,
+    gets, ...) während der Ausführung auf Pufferüberläufe (buffer
+    overflow) geprüft. Dies schützt meistens nicht vor gezieltem
+    Ausnutzen dieser Funktionen aber vor der Korruption des Heaps und
+    Stacks durch Systemfehler .
+-   Non-Executable Bit (NX): Dieses besondere Bit markiert Bereiche
+    des Speichers als reine Datenspeicherbereiche. Dadurch wird
+    sichergestellt, dass in diesen Bereichen, in denen kein Code
+    ausgeführt werden sollte, auch kein Code ausgeführt werden kann.
+    Diese Separierung findet sich sonst nur in Harvard-Architekturen.
+-   Position-Independent Executable (PIE) (positionsunabhängiges
+    ausführbares Programm) bezeichnet eine Technik, bei welcher
+    Programm-Code an einer zufälligen Speicheradresse geladen wird.
+    Hierbei wird nicht mit absoluten, sondern relativen Speicheradressen
+    gearbeitet. Dies erschwert zwar Angriffe, da ein Angreifer zunächst
+    die absolute Speicheradresse finden muss, jedoch verlangsamt diese
+    Technik unter Umständen auch die Ausführung des Codes .
+-   RELocation Read-Only (RELRO) schützt den Global Offset Table
+    (GOT) gegen Manipulationen während der Laufzeit. Der Global Offset
+    Table beinhaltet die Speicheradressen von gemeinsam genutzten
+    Softwarebibliotheken oder globalen Variablen, sodass diese von einem
+    Programm genutzt werden können. Wenn die RELRO Option beim
+    Kompiliervorgang ausgewählt wurde, dann wird nach dem Start des
+    Programms ein reiner Lesezugriff auf den GOT festgelegt.
+Das Common Vulnerabilities and Exposures(CVE) System wurde 1999
+geschaffen, um ein weltweit einheitliches System zur Beschreibung von
+Firmware oder Software Schwachstellen zu etablieren .
+Sogenannte CVE Numbering Authorities(CNAs) vergeben pro Sicherheitslücke
+eine spezifische Identifikationsnummer. Nachdem eine Beschreibung und
+Referenzen formuliert wurden, wird der Eintrag in die CVE-Datenbank
+aufgenommen und kann weltweit eingesehen werden. Durch das festgelegte
+Format von CVE-Einträgen ist auch die automatische Verarbeitung von
+Einträgen möglich. Dies kann für die automatische Notifikation eines
+Betroffenen genutzt werden, wenn eine sicherheitsrelevante Schwachstelle
+gemeldet wird. Das CVE Projekt wird von dem US-Amerikanischen
+Unternehmen MITRE unterhalten .
+Da CVE-Einträge keinen Aufschluss über die schwere der Sicherheitslücke
+geben, wurde 2005 vom Forum of Incident Response and Security
+Teams(FIRST) ein Bewertungssystem für CVE-Einträge entwickelt. Dieses
+als Common Vulnerability Scoring System(CVSS) bezeichnete System ist
+heute der Industriestandard . Das CVSS-Bewertungssystem
+ermöglicht es, die Erarbeitung von Lösungen für Sicherheitslücken zu
+priorisieren. Jeder CVE-Eintrag erhält durch eine Reihe von Metriken,
+welche den Anspruch und die Auswirkung einer gegebenen Sicherheitslücke
+in Betracht ziehen, eine CVSS Bewertung zwischen null und zehn. Eine
+Bewertung von zehn ist dabei die schwerwiegendste Stufe .
+2007 wurde die zweite Version, CVSS2 (auch CVSS v2), veröffentlicht und
+2015 wurde CVSS3 (CVSS v3) herausgegeben . Die
+neuste Version beinhaltet überarbeitete Metriken sowie ein neues
+Einstufungssystem mit zwei neuen Stufen.
+Die Bewertungen sind nicht mit einander vergleichbar . Da
+vor allem ältere Sicherheitslücken keine CVSS3 Bewertung haben, wird im
+weiteren Verlauf dieser Arbeit das CVSS2 System verwendet.
+Die Methodik der Arbeit ist in großen Teilen durch die Technische
+Richtlinie vorgegeben. Die Testfälle wurden aufgrund ihrer Gruppierung
+in thematische Module in chronologischer Reihenfolge erarbeitet. Einzig
+solche Testfälle, welche spezifizierten, dass sie erst zum Ende der
+Testphase durchgeführt werden sollten, wurden nach hinten gestellt. Da
+es in erster Linie um die Technische Richtlinie 03148 gehen sollte,
+wurden weitere Tests, wie ein statischer Test mit dem Firmware
+Analysis and Comparison Tool, erst nach
+Vollendung der Technischen Richtlinie begonnen .
+Die Testfälle der Technischen Richtlinie wurden, soweit möglich, mit den
+Programmen durchgeführt, welche in der TR selbst spezifiziert wurden.
+Die Ergebnisse einer Literaturrecherche zeigten, dass die aufgeführte
+Software für die Überprüfung der Testanforderungen geeignet ist und die
+Ergebnisse dieser Programme seit vielen Jahren weitestgehend als korrekt
+akzeptiert sind. Hierzu zählt vor allem das Programm nmap, welches
+aufgrund von verschiedenen Testrechnern in den Versionen 7.80, 7.90 und
+7.91 verwendet wurde . Die Änderungshistorie von nmap gibt
+allerdings keinen Anlass zur Annahme, dass dies die Ergebnisse
+invalidiert . Ebenso wurde airmon-ng /
+airodump-ng in der Version 1.6 zum Prüfen verwendet. Dieses
+Softwarepaket ist ebenfalls seit vielen Jahren angesehen und findet in
+wissenschaftlichen Arbeiten Verwendung. Zur Aufzeichnung von
+Netzwerkpaketen wurde Wireshark 3.4.2 verwendet, welches neben der
+Kommandozeilenanwendung tcpdump häufig Verwendung findet. Im Rahmen der Tests wurde
+des Weiteren auf einige zweckspezifische Skripte in den
+Programmiersprachen Python und Bash zurückgegriffen. Bei der Entwicklung
+wurde Wert auf einfache Ausführbarkeit, sowie eine geringe Zahl an
+externen Abhängigkeiten, gelegt, um eine wiederholbare Ausführbarkeit
+auch in der Zukunft zu gewährleisten. Wireshark und nmap wurden, neben
+den bereits genannten Gründen, aufgrund der wiederholten expliziten
+Nennung in der Technischen Richtlinie gewählt. Die verwendeten Programme
+des Aircrack-ng Softwarepaketes wurden genutzt, da diese auch in den
+bereits durchgeführten Prüfungen von Geräten durch die TR zum Einsatz
+kamen. Eine Alternative zu nmap bietet das Programm MASSCAN oder Angry
+IP Scanner . Jedoch ermöglichen beide
+Programme nicht den Funktionsumfang von nmap. Vergleichbare
+Funktionalität zu den Programmen aus dem aircrack-ng Paket hat das
+netsniff-ng toolkit . Neben tcpdump stellt auch Ethercap
+eine geeignete Alternative zu Wireshark dar. So können
+Netzwerkmitschnitte ebenfalls im pcap Format gespeichert werden, welches
+auch Wireshark nutzt .
+Als Router wurde ein TP-Link Archer C7 (AC1750)
+Dualband-Gigabit-WLAN-Router (v5) verwendet. Dieses Modell wurde
+aufgrund der Beliebtheit im OpenWrt-Umfeld, der Verfügbarkeit, der
+aktuellen Ausstattung und dem Preis-Leistungs-Verhältnis gewählt. Die
+Statistiken der OpenWrt-Webseite haben gezeigt, dass die zu dem Gerät
+gehörige Version die dritt häufigst heruntergeladene OpenWrt-Firmware im
+November des Jahres 2020 ist. Bei dem Xiaomi Mi R3P und dem D-Team Newifi
+D2 Router, welche öfter abgefragt wurden, handelt es sich zwar um
+günstigere Geräte, allerdings haben diese nur eine eingeschränkte
+Verfügbarkeit in Deutschland. Die vom gewählten TP-Link unterstützten
+Funktionen sind darüber hinaus vergleichbar mit vielen Endgeräten,
+welche im privaten und SOHO Umfeld eingesetzt werden.
+Der genutzte Testaufbau soll einen reibungslosen Ablauf der Testfälle
+erlauben sowie einfach reproduzierbar sein. Der Internetanschluss wurde
+durch den Internet Service Provider (ISP) bn:t Blatzheim Networks
+Telecom GmbH zur Verfügung gestellt. Der Glasfaseranschluss des ISP
+terminiert in einer FRITZ!Box 5530 Fiber, welche das Subnetz
+192.168.178.0/24 bereitstellt. Der WAN Port des mit OpenWrt 19.7.04
+bespielten TP-Link Archer C7 v.5 Dualband-Gigabit-WLAN-Router, wurde mit
+dieser FRITZ!Box verbunden, sodass der OpenWrt-Router das Subnetz
+192.168.1.0/24 zur Verfügung stellen konnte. Die Erstinstallation von
+OpenWrt auf dem TP-Link Router erfolgte über die zur Verfügung stehende
+Anleitung . Zunächst wurde das Firmware-Abbild
+heruntergeladen, daraufhin wurden die Hash-Werte mit den
+veröffentlichten und signierten Hash-Werten abgeglichen. Nachdem
+sichergestellt wurde, dass diese übereinstimmten, konnte die Datei über
+das Web-Interface des TP-Link Routers aufgespielt werden. Die OpenWrt
+Installationsdatei wurde hierzu über die Firmware-Update Funktion
+hochgeladen und automatisch vom Gerät installiert. Das Gerät startet
+daraufhin persistent mit OpenWrt anstelle des Betriebssystems von
+TP-Link. Alternativ besteht die Möglichkeit das Firmware-Abbild von
+OpenWrt über die Trivial File Transfer Protocol (TFTP)
+Funktionalität des Routers aufzuspielen.
+Ein Testcomputer wurde über das LAN Interface angeschlossen, ein
+weiterer Laptop per WLAN und LAN verbunden. Der Testcomputer wurde wahlweise mit
+Windows 10 Version 20H2 (Build 19042.685) oder Ubuntu 20.04 LTS
+betrieben. Auf dem Laptop kam Kali Linux 2020.2 zum Einsatz. Dieser
+Aufbau gibt dem Tester eine flexible Arbeitsumgebung, in welcher die
+Tests ungestört durchgeführt werden können. Durch die Abtrennung des
+Netzes in das 192.168.1.0/24 Subnetz durch den OpenWrt Router sind
+Geräte des allgemeinen Heimnetzes von Portscans und
+Netzwerkpaketmitschnitten ausgeschlossen. Dadurch können Tests
+performanter durchgeführt werden, während andere Teilnehmer des Netzes
+ungestört weiterarbeiten können. Ebenso bietet der beschriebene Aufbau
+einfach die Möglichkeit weitere Geräte, welche für Tests benötigt
+werden, hinzuzufügen. Die verwendeten Linux-Distributionen, Ubuntu 20.4
+LTS und Kali Linux, bieten die Möglichkeit die notwendigen Programme
+reibungslos zu betreiben.
+Dieser sogenannte double NAT (Network Address Translation) Aufbau
+stellt praktisch keinen Nachteil
+dar . Obwohl der direkte Anschluss des
+OpenWrt-fähigen Routers präferiert eingesetzt werden sollte, können alle
+Tests ohne Integritätsverlust durchgeführt werden. Die Tests bezüglich
+des WAN Anschlusses können über die IP-Adresse des OpenWrt Routers
+durchgeführt werden, welche durch die FRITZ!Box vergeben wurde.
+Weiterhin wurde der Domain Name System Resolver (DNS Resolver) der
+FRITZ!Box auf die IP-Adresse des OpenWrt Routers geändert, um die Tests
+bzgl. des DNS-Protokolls und der Implementierung nicht zu verfälschen.
+Alle verfügbaren Firewall- und Filter-Einstellungen der FRITZ!Box wurden
+ebenfalls während der Tests deaktiviert.
+Im Falle dieser Arbeit wurde das Conformance Statement als Teil der
+Richtlinie betrachtet und mit den in der Online-Dokumentation von
+OpenWrt beschriebenen Informationen ausgefüllt. Darüber hinaus konnte
+der Quellcode Aufschluss über in der Dokumentation ungeklärte
+Fragestellungen geben. Die Informationen zu Modul A zeigen, dass OpenWrt
+eine vergleichsweise geringe Anzahl an Diensten im Ausgangs- sowie
+initialisierten Zustand anbietet. Lediglich der Web-Server uHTTPd auf
+Port 80, der SSH Server auf Port 22 und der von dnsmasq zur Verfügung
+gestellte DNS-Dienst auf Port 53 sind aktiv. Funktionen wie das Session
+Initiation Protocol (SIP) für Voice-over-IP-Telefonie oder Protokolle
+zur externen, automatischen Konfiguration des Geräts, welche oft bei
+handelsüblichen Routern verwendet werden, fehlen vollends. Ebenso gibt
+die Dokumentation an, dass das veraltete und als unsicher geltende Wi-Fi
+Protected Setup (WPS) Verfahren ohne die Installation von zusätzlicher
+Software nicht verwendet werden kann . Dies ist
+auf vielen aktuellen Geräten in den Standardeinstellungen aktiviert. Aus
+dieser eingeschränkten Menge an Diensten wird ersichtlich, dass das
+Gerät nur über die Netz-Schnittstelle oder per SSH eingerichtet und
+bedient werden kann. Jedoch steht dem Nutzer standardmäßig der
+sogenannte root Benutzer zur Verfügung, sodass uneingeschränkter
+Zugriff auf alle Funktionen und Einstellungen des Gerätes gewährleistet
+ist. Eine weitere Besonderheit zeigt sich in auch in der
+Vorkonfiguration des WLAN-Netzes von OpenWrt. Dies ist zunächst
+deaktiviert und wird standardmäßig ohne Passwort initialisiert.
+Begründen kann man dies damit, dass OpenWrt nicht mit gerätespezifischer
+Dokumentation ausgeliefert werden kann wie sonst üblich. Ein
+Schriftstück mit einzigartigem Passwort für das Gerät, sowie das
+voreingestellte WLAN, kann nicht erstellt werden. So muss jedes
+Passwort, welches für ein OpenWrt Gerät verwendet wird, vom Benutzer
+selbst erstellt werden. Dies kann sowohl positive als auch negative
+Implikationen für die Sicherheit des Gerätes haben. Zum einen verhindert
+dieses Vorgehen, dass ein Hersteller ein unsicheres Passwort festlegt,
+welches ein unerfahrener Nutzer nicht ändert. Ebenso könnte der
+Hersteller ein bestimmtes Muster oder Master-Passwort verwenden. Wenn
+dieses veröffentlicht wird, so sind alle Geräte auf denen das Passwort
+nicht geändert wurde in Gefahr. Zum anderen könnte der Nutzer ein
+unsicheres Passwort vergeben, wenn er damit konfrontiert wird. Wenn vom
+System keine festen Ansprüche an dieses Passwort gesetzt werden, so
+würde ein schwaches Passwort die Sicherheit des Gerätes ebenso
+kompromittieren.
+Schon im zweiten Abschnitt des Conformance Statements, welcher sich auf
+das öffentliche Netz bezieht, wird erkenntlich, dass auch auf Seiten des
+Internets nur eine minimale Anzahl an Diensten verwendet wird. Die
+Dokumentation von OpenWrt spezifiziert keinen Dienst, welcher auf dem
+WAN-Interface angeboten wird. Ein vergleichbarer Trend kann auch bei den
+angebotenen Funktionen des Geräts beobachtet werden. Lediglich sehr
+grundlegende Funktionen wie DHCP, SSH, secure copy (SCP), IPv6
+Unterstützung und eine Firewall werden angeboten. Die eigens für OpenWrt
+entwickelte, quelloffene Packet-Management Software opkg, über
+welche zusätzliche Funktionalität installiert werden kann, bildet jedoch
+eine Ausnahme. Der geringe Umfang an Funktionen lässt sich in zweierlei
+Hinsicht begründen. Durch den Packet Manager opkg kann gewünschte
+Funktionalität leicht vom Benutzer selbst installiert und eingerichtet
+werden, ohne schon im Vorhinein Speicherplatz für Funktionen zu nutzen,
+welche unter Umständen nicht verwendet werden. Darüber hinaus kann
+OpenWrt so auch auf Geräten mit limitiertem persistenten Speicher oder
+Arbeitsspeicher installiert werden. So kann zum Beispiel das
+Web-Interface von der Installation ausgeschlossen sein, wenn ein Gerät
+nicht über genügend Speicher verfügt. Dadurch ist eine minimale
+Installation auf Geräten mit 4MB Flashspeicher und 32MB RAM möglich. Ein Defizit von OpenWrt lässt sich jedoch bereits
+im Conformance Statement finden. Es besteht keine Möglichkeit
+sicherheitsrelevante Updates automatisch einzuspielen. Über den Paket
+Manager bereitgestellte Funktionen könnten zwar mittels sog. CronJobs
+aktualisiert werden, dies würde jedoch nur periodisch nach Einstellung
+des Nutzers geschehen. Dies bietet keine Sicherheit, wenn die Periode zu
+groß gewählt wurde. Sicherheitslücken im Linux Kernel können jedoch nur
+über vollständige Firmware-Upgrades behoben werden und erfordern das
+aktive Eingreifen des Nutzers. Dies setzt das Engagement und fachliche
+Verständnis des Nutzers voraus, über den aktuellen Stand informiert zu
+bleiben und eine Aktualisierung zeitnah durchzuführen. Jedoch gibt die
+Dokumentation an, dass die Überprüfung des Firmware-Upgrades von OpenWrt
+auf Integrität und Authentizität nicht automatisiert ist. Für einige
+Abbilder stehen digitale Signaturen zur Verfügung, welche vom
+integrierten Tool fwtool beim Aufspielen des Updates geprüft werden.
+Falls dieser Option allerdings nicht zur Verfügung steht, stehen dem
+Nutzer zur Unterstützung beim Upgrade-Prozess dann die eingebetteten
+Metadaten bereit, welche ausschließlich sicherstellen, dass es sich
+überhaupt um ein unterstütztes Gerät handelt. Gleichermaßen sind die
+berechneten Hash-Werte verfügbar, welche durch den Benutzer mit den
+signierten Werten des Download-Servers abgeglichen werden können. Die folgenden Module des Conformance
+Statements zeigen gleichwohl eine weitere Besonderheit von OpenWrt. Die
+für Firewall, DNS und DHCP verwendeten Implementierungen sind
+vollständig quelloffen und werden schon seit vielen Jahren entwickelt.
+Die Firewall wird durch ein für OpenWrt gestaltetes Programm firewall3
+bereitgestellt. Es handelt sich hier um eine einfache Möglichkeit
+netfilter/iptable Regeln zu gestalten. Iptables ist Bestandteil des
+Kernels und wird schon seit Version 2.4 mitgeliefert .
+Der DHCP und DNS-Dienst werden von dnsmasq ermöglicht. Dies ist
+ebenfalls ein weit verbreitetes Programm, welches bereits 2001
+veröffentlicht wurde und seitdem kontinuierlich weiterentwickelt wurde. Da OpenWrt keine Fernwartungs-, VoIP- oder
+VPN-Funktionalität bereitstellt, ohne die entsprechenden Pakete über den
+Paketmanager zu installieren, werden diese im weiteren Verlauf nicht
+betrachtet und dieses Ergebnis im Conformance Statement vermerkt.
+Die Testdokumentation wurde in Form der bereitgestellten
+Tabellenkalkulationsdatei ausgefüllt.
+Alternativ können die Ergebnisse auch in einer Textdatei festgehalten
+werden. Die Anforderungen mit Kriterien zum Bestehen des Testes finden
+sich in der veröffentlichten Test Specification. Die in der Richtlinie
+spezifizierten Zustände des DUT wurden vor Beginn der Test nach Rücksprache mit
+dem BSI wie folgt festgelegt: Das Gerät ist im Auslieferungszustand
+(factory state), wenn es initial in Betrieb genommen wurde und nach
+jedem vollständigen Zurücksetzen. Der erste Start nach einem solchen
+Zurücksetzen des Geräts versetzt dieses in den Auslieferungszustand. Der
+initialisierte Zustand (initialized state) ist erreicht, wenn das Gerät
+im Auslieferungszustand gestartet und ein Passwort für das Root-Konto
+vergeben wurde. Dies ist vom Nutzer selbst vorzunehmen und nicht
+verpflichtend. Für alle Testfälle, die den initialisierten Zustand oder
+den kundenspezifischen (customized state) Zustand voraussetzen, wurde
+diese Aktion durchgeführt. Das Gerät befindet sich im kundenspezifischen
+Zustand, wenn zusätzliche Einstellungen vom Nutzer aktiviert oder
+angepasst wurden. Die spezifizierten Kriterien für den
+Übergang zwischen den verschiedenen Zuständen sind spezifisch für das in
+dieser Arbeit betrachtete Gerät und müssen für jedes weitere Gerät
+selbst definiert werden.
+Wie in TP.A.1 nachgewiesen, unterstützt die betrachtete Version von
+OpenWrt zwei Arten, das Gerät in Betrieb zu nehmen. Zum einen stellt das
+Gerät einen SSH Zugang zur Verfügung, zum anderen den Web-Server,
+welches das Web-Interface LuCI bereitstellt. Zur Prüfung des
+verlangten vollständigen Internetzugangs im initialisierten Zustand
+(TR.A.1) wurde die DNS-Funktionalität des bei Windows 10 standardmäßig
+installierten Kommandozeilenprogramm nslookup verwendet. Um zu Testen,
+ob eine FTP-Verbindung (File Transfer Protocol) über den OpenWrt Router
+aufgebaut werden kann wurde das Windows-Kommandozeilenprogramm ftp
+verwendet. Hierzu wurde der FTP-Downloadserver von DD-WRT genutzt
+(ftp.dd-wrt.com), da dieser ohne Benutzerkonto genutzt werden kann.
+HTTP, sowie HTTPS-Unterstützung können mittels des Programms curl
+nachgewiesen werden. Hierbei handelt es sich um ein quelloffenes
+Programm, welches neben HTTP und HTTPS viele verschiedene Protokolle
+unterstützt und zur Übertragung von Daten über diese Protokolle gedacht
+ist . Das Simple Mail Transfer Protocol
+(SMTP) kann ebenfalls mit Hilfe von curl getestet werden. Die geforderte
+IPv4 und IPv6 Konnektivität kann mit den Kommandozeilenapplikationen
+ping bzw. ping6 geprüft werden. Zur Sicherstellung der SSH-Verbindung
+kann zum Beispiel der kostenlose öffentliche Server von SDF Public
+Access UNIX System, Inc genutzt werden (ssh.sdf.org). Ein eigens
+bereitgestellter SSH-Server kommt ebenfalls in Frage. Die Unterstützung
+für das Telnet Protokoll muss unter Windows zunächst aktiviert werden,
+es ist jedoch auf vielen Linux Distributionen sofort verfügbar. Ein Test
+kann über die URL towel.blinkenlights.nl durchgeführt werden. Die
+verwendeten Programme stehen unter den meisten aktuellen
+Betriebssystemen standardmäßig zur Verfügung und die spezifizierten
+Server sind weltweit kostenlos zu erreichen. Ebenfalls kann angenommen
+werden, dass die angegebenen URLs längerfristig zu erreichen sind, da
+sie schon seit vielen Jahren ihre Dienste anbieten. Ein wichtiger Aspekt
+der Technischen Richtlinie wird ebenfalls durch TR.A.2 bis TR.A.5
+spezifiziert. Diese Test Requirements behandeln die durch das
+Gerät zur Verfügung gestellten Dienste. Es wird vorausgesetzt, dass die
+angebotenen Dienste durch den Hersteller dokumentiert und auf eine
+wohldefinierte, minimale Menge beschränkt sind. Die Überprüfung kann mit
+Hilfe des Tools nmap durchgeführt werden. Nmap ist ein
+quelloffener Portscanner, welcher ursprünglich von Gordon Lyon
+entwickelt wurde . Es wird genutzt, um offene Ports und die
+darauf lauschenden Dienste zu identifizieren. Die TCP Ports des DUT
+wurden mit dem Kommando
+überprüft. Ebenfalls kann der Option -T4 hinzugefügt werden, um
+ggf. die Geschwindigkeit durch eine engere Taktung der Anfragen zu
+erhöhen. UDP Dienste wurden wie folgt getestet:
+Die optionale Erweiterung -v erhöht die Verbosität und liefert bei
+den zeitintensiven UDP-Scans Informationen über den Fortschrittsgrad.
+Eine genaue Übersicht über die Funktion der gewählten Kommandos liefert
+Abbildung. Die beiden verwendeten Kommandos
+bzw. leichte Abwandlungen von diesen wurden vor allem aufgrund ihrer
+detaillierten Ausgabe sowie Performanz gewählt.
+Zur Prüfung der WLAN-Schnittstelle wurde auf die Programmsuite
+aircrack-ng zurückgegriffen. Es handelt sich hierbei um eine frei
+verfügbare Sammlung von Programmen zur Analyse der Sicherheit von Wi-Fi
+Netzwerken . Zunächst wird das
+Programm airmon-ng eingesetzt, um die WLAN-Karte in den sogenannten
+Monitor-Modus zu versetzen:
+Daraufhin kann airodump-ng verwendet werden, um Informationen zu allen
+verfügbaren WLAN-Netzen bereitzustellen:
+Vor allem die Spalte ENC, welche für encryption steht, ist von
+Bedeutung. Sie zeigt an, dass das Gerät durch Wi-Fi Protected Access 2
+(WPA2) geschützt ist. Dies unterstützt die Annahme, dass das Gerät WPA2
+nach dem IEEE802.11i Standard bereitstellt.
+Die Teststrategie, welche für Modul B -- Public Network eingesetzt
+wurde, ist nahe an der Vorgehensweise von Modul A -- Private Network
+orientiert. Jedoch wird nun die IP des OpenWrt Geräts im Kontext des
+Subnetzes 192.168.178.0/24 verwendet. So wird nicht die LAN-Schnittstelle
+des Gerätes angesprochen, sondern die WAN-Schnittstelle, also die
+öffentliche IP-Adresse des Gerätes ist.
+Auch die VoIP Funktionalität kann effektiv mit nmap getestet werden.
+Zusätzlich zu einem vollständigen Scan des Geräts wurden auch die
+standardmäßig für VoIP verwendeten Ports 5060 und 5061 separat gescannt.
+Jedoch sollte eine vollständige Prüfung aller Ports in jedem Falle
+durchgeführt werden, da diese Ports nicht zwingend genutzt werden
+müssen.
+Das Test Requirement TR.C.2 beschreibt die Anforderung, dass dem
+Endnutzer keinerlei Funktionalität verheimlicht werden darf. Dies ist
+eine durchaus schwierig zu prüfende Anforderung, welche erst zum Ende
+des Tests durchgeführt werden sollte. Im Falle von OpenWrt und dem somit
+vollständig verfügbaren Quellcode, sowie dem vollumfänglichen root
+Zugriff auf das Gerät per SSH ist dies vereinfacht, jedoch aufgrund des
+Funktionsumfangs immer noch eine Herausforderung. Es muss sich hier auf
+die Eindrücke und Erfahrungen des Testers zum Ende der Testphase
+verlassen werden. Darüber hinaus verweist die Technische Richtlinie
+ebenfalls auf eine Recherche in Foren und Blogs.
+Für die meisten modernen Heimrouter ist die Konfiguration durch ein
+Web-Interface die benutzerfreundlichste Methode, so auch für OpenWrt.
+Die Sicherung der Datenintegrität und Vertraulichkeit auf dem
+Transportweg wird heutzutage durch HTTPS erreicht. Diese
+Transportwegverschlüsselung verhindert, dass eine böswillige dritte
+Partei die übertragenen Daten auslesen oder verändern kann.
+Es ist also naheliegend, die Anforderung an eine durch HTTPS gesicherte
+Verbindung zum Webserver in der Technischen Richtlinie zu finden. Zur
+Überprüfung des Test Requirement TR.D.3 bietet sich ein Skript wie
+testssl.sh an, welches von Dr. Wetter IT-Consulting frei zur Verfügung
+gestellt wird . Dieses Skript zeigt detaillierte
+Informationen zu allen vom Webserver unterstützten Protokollversionen
+sowie Verschlüsselungsmethoden an. Des Weiteren kann auch ein
+Paketaufzeichnungs- und Analyse-Software wie Wireshark eingesetzt
+werden, um die unverschlüsselten Pakete zu betrachten. Wenn HTTPS aktiv
+ist, sollten keine unverschlüsselten Daten in den Paketen gefunden
+werden können. Es ist ebenfalls möglich, Informationen zu HTTPS und dem
+dazugehörigen Zertifikat in den meisten modernen Browsern in der Nähe
+der URL-Leiste zu finden. Nichtsdestoweniger müssen auch andere
+Angriffsvektoren auf Heimrouter betrachtet bzw. getestet werden. So muss
+das Einloggen auf dem Gerät gegen Bruteforce Angriffe
+geschützt sein. Eine Schutzmaßnahme kann ein Fehlerzähler sein, welcher
+die fehlgeschlagenen Versuche protokolliert und das Aufschalten auf das
+Gerät nach einer gewissen Anzahl an Versuchen unterbindet oder
+verlangsamt. Ebenso könnte die Eingabe auf Muster geprüft werden, um
+automatische Login-Versuche zu erkennen. Die Prüfung dieses Test
+Requirements wurde durch ein Skript in der Programmiersprache Python
+umgesetzt. Durch den Aufruf
+wird der Web-Server getestet. Alternativ kann durch
+der SSH Server getestet werden. Vor der Nutzung können der korrekte
+Benutzername, sowie das korrekte Password, die Anzahl der Versuche, die
+IP des Geräts, sowie der SSH-Port festgelegt werden. Für den Test des
+SSH-Servers wurden 100 Versuche eingestellt, wobei die Zeit für die
+Antwort des Servers gemessen wird. Das Python Modul SSHLibrary wird
+genutzt, um die Verbindungen mit dem SSH-Server zu handhaben. Zunächst
+wird geprüft, ob der spezifizierte Server erreichbar ist. Daraufhin
+werden die spezifizierten Login Versuche durchgeführt und die Zeit bis
+zur Antwort des Servers gemessen. Die Antwort des Servers bei falschen
+Daten ist der Abbruch der Session durch eine SSHLibrary Exception.
+Nachdem die Daten gesammelt wurden, wird eine lineare Regression auf den
+Daten durchgeführt, um einen Trend in den Antwortzeiten kenntlich zu
+machen. Wenn ein linearer Anstieg zu erkennen ist, dann werden die
+Versuche verlangsamt, wenn die Regressionslinie jedoch zur X-Achse
+parallel ist, so werden die Versuche in konstanter Zeit durchgeführt.
+Neben der grafischen Darstellung der Antwortzeiten, sowie der
+Regressionslinie, werden dem Nutzer der Mittelwert, der Median, der
+Regressionskoeffizient und der Standardfehler angezeigt. Nachdem die
+Analyse durchgeführt wurde, werden die korrekten Login Daten verwendet,
+um eine neue Verbindung herzustellen. Wenn das OpenWrt SSH-Banner
+korrekt angezeigt wird, lässt der SSH-Server trotz der vorherigen
+fehlgeschlagenen Versuche noch weitere zu, ohne erkennbare
+Entschleunigung. Der Test des Webservers wurde durch die POST Anfrage
+realisiert. Wenn ein falscher Benutzername, oder ein falsches Passwort
+verwendet wird, so antwortet der Webserver mit dem Statuscode 403. Nach
+der ersten Überprüfung der Verbindung wurden erneut 100 Versuche
+eingestellt. Dieser Wert wurde gewählt, um eine möglichst große
+Stichprobengröße zu erzielen und den unter Umständen implementierten
+Grenzwert für Login-Versuche zu überschreiten. Der weitere Ablauf der
+Analyse verläuft wie bereits beschrieben. Nach der Auswertung der Daten
+werden die korrekten Login-Daten an den Server geschickt. Ein einfacher
+regulärer Ausdruck überprüft, ob ein erfolgreicher Login möglich war,
+und es wird dem Benutzer anschließend angeboten, eine eingeloggte
+Session im Browser zu öffnen.
+Zur Überprüfung der Anforderung TR.D.12 wird zunächst festgestellt, ob
+es einen Anti-CSRF Cookie gibt. Zunächst
+kann der Speicher des Webbrowsers angezeigt werden, um zu prüfen, ob
+überhaupt ein Cookie eingesetzt wird. Daraufhin wird die Web-Proxy
+Funktionalität von Burp Suite genutzt, um den Ablauf des Logins und der
+Erstellung einer gültigen Session zu beobachten. Dabei handelt es sich
+um ein Programm, welches die Anfragen des Nutzers und des Servers
+entgegen nimmt und stellvertretend an den jeweils anderen vermittelt.
+Die Besonderheit bei Burp Suite ist dabei, dass die Anfragen zunächst
+abgefangen werden und der Inhalt für den Nutzer dargestellt wird. Auf
+diese Weise lässt sich die gesamte Kommunikation zwischen einem Client
+und einem Server beobachten.
+Alternativ zu Burp Suite kann auch der Zed Attack Proxy (ZAP) des Open
+Web Application Security Project (OWASP) eingesetzt werden .
+Alle nachfolgenden http-Methoden sollten nach Initialisierung des
+Cookies diesen als Sicherheitsmerkmal mit versenden. Der Quellcode von
+OpenWrt gibt darüber hinaus weiteren Aufschluss über die Implementierung
+der Anti-CSRF Tokens. Die Datei dispatcher.lua des LuCI Interfaces,
+welche die Erstellung und Validierung der Benutzer-Sitzungen handhabt,
+zeigt in diesem Falle eindeutig, dass es sich um Anti-CSRF Cookies
+handelt und dass diese durch den als sicher anerkannten
+Zufallszahlengenerator /dev/urandom generiert werden. Abschließend wurde ein
+einfaches Python Skript verwendet, welches 100 gültige Sitzungen am Web
+Server des OpenWrt Routers anmeldet und mittels eines
+Regulären-Ausdruckes den Wert des Cookies ausließt. Dazu wird das
+Request Modul von Python verwendet, sowie die POST-Anfrage, welche
+bereits für das Bruteforce-Skript verwendet wurde. Abschließend wird
+geprüft, ob die 100 verschiedenen Sitzungen einzigartige SessionIDs und
+Anti-CSRF Token besitzen.
+Modul E der Technischen Richtlinie prüft die Firmware Update Funktion
+des Geräts. Hier ist vor allem der Mechanismus der Firmware-Validierung
+von Interesse. Nach Angaben der Entwickler werden einige Firmware
+Dateien signiert. OpenWrt liefert standardmäßig ein
+Kommandozeilenprogramm, mit dem Signaturen und Metadaten aus den
+Firmwareabbildern extrahiert werden können. Der Aufruf
+zeigt die Signatur an, wenn diese vorhanden ist. Ebenso muss ermessen
+werden, wie lange der Hersteller benötigt, um Sicherheitslücken zu
+beheben. Die sogenannten Git Hashes, genaue
+Identifizierungsmerkmale eines git commits, sind hier förderlich, da sie
+einen genauen Zeitstempel tragen. Des Weiteren ist der entsprechende git
+commit, welcher eine Sicherheitslücke behebt, in den Sicherheitsnotizen
+auf der OpenWrt Website spezifiziert, sodass das Erstellen einer
+Zeitleiste mit Sicherheitsvorfällen und deren Beheben einfach
+realisierbar ist.
+Zur weiteren Einschränkung der Angriffsoberfläche wird in Modul G die
+Implementierung des DNS-Dienstes des DUT geprüft. Ein möglicher Angriff
+auf DNS-Dienste ist eine sogenannte DNS Rebinding Attacke. Die Überprüfung der Anforderung TR.G.2 basiert
+auf der Untersuchung der verwendeten Methoden zur Mitigation von DNS
+Rebinding Attacken und einem funktionalen Test dieser Umsetzung. Da
+OpenWrt DNS-Dienste mittels dnsmasq anbietet, muss geprüft werden, ob
+die Option --stop-dns-rebind aktiviert ist. Dies ist sowohl über
+die Kommandozeile als auch über das LuCI Web-Frontend möglich. Ein
+funktionaler Test dieser Sicherheitsmaßnahme kann mittels des
+Singularity of Origin Web-Toolkits der NCC Group getestet werden
+. Als Target Host wird dabei die IP-Adresse des
+OpenWrt Routers spezifiziert. Des Weiteren wurde das Intervall auf zwei
+reduziert und die Option Flood DNS Cache aktiviert. Diese Option
+konnte genutzt werden, da der Test mit einem Chromium basierten Browser
+durchgeführt wurde. Das Web-Tool spezifiziert, dass diese Option
+erfolgreich im Chrome-Browser getestet wurde. Es bietet sich ebenfalls an
+verschiedene Attack Payloads und Strategien zu testen.
+Eine ebenso relevante Sicherheitsfunktion von DNS-Diensten ist die
+sogenannte Source Port Randomization und Transaction ID
+Randomization, also die zufällige Wahl eines Quell-Ports, sowie einer
+Transaktions-ID für eine DNS-Anfrage. Diese Werte, welche vom DNS-Client
+generiert werden, dienen als Synchronisationsmethode zwischen dem
+DNS-Server und Client. Wenn der Quell-Port und die
+Transaktionsidentifikationsnummer von einem Angreifer berechnet oder
+geraten werden können, dann kann ein Angreifer diese nutzen, um dem
+Opfer manipulierte DNS-Antworten zu senden. Der DNS-Client würde diese
+aber als korrekt akzeptieren und eine potenziell schädliche Verbindung
+zu einem dritten Server aufbauen . Für einen
+funktionalen Test werden zunächst mithilfe des Python Skriptes
+send_dns_requests.py eine große Anzahl verschiedene DNS-Anfragen
+generiert. Dazu wird eine Liste mit 1000 häufig besuchten Webseiten
+genutzt . Dies bietet sich an, da so
+sichergestellt wird, dass diese Webseiten verfügbar sind und in einer
+geringen Zeit antworten. Ebenso erfüllt diese Anzahl an Anfragen die
+minimale Stichprobengröße ($n$) für $rho = 0.5$ (Stichprobenfehler
+$e = 0.03$ / Signifikanzniveau $alpha = 0.05$) .
+Während die DNS-Anfragen gestellt werden wird ein Mitschnitt aller
+Netzwerkpakete durch das Programm Wireshark gemacht. Die so erstellte
+Datei wird in einem weiteren Schritt analysiert. Dazu liest das
+Python-Skript analyze_pcap.py diese ein und selektiert im ersten
+Schritt alle DNS-Pakete, welche vom OpenWrt Router gesendet wurden.
+Daraufhin werden der DNS-Quell-Port sowie die Transaktions-ID aus diesen
+Paketen ausgelesen. Im letzten Schritt werden die Anzahl der DNS
+Anfragen, die Anzahl der einzigartigen Ports und Transaktions-IDs, die
+jeweiligen minimalen und maximalen Werte, die Standardabweichung und die
+häufigsten Werte angezeigt. Des Weiteren wird ein
+Kolmogorow-Smirnow-Test durchgeführt, um zu prüfen, ob die Verteilung
+der Daten mit einer Gleichverteilung übereinstimmt .
+Schlussendlich werden noch jeweils zwei Grafiken generiert, welche die
+Daten in einem Säulendiagramm und einen Streudiagramm darstellen. Auf
+diese Art kann visuell prüfen, ob Muster in den Darstellungen zu
+erkennen sind.
+Das Testen der Zurücksetzfunktion des OpenWrt Routers fällt aufgrund des
+uneingeschränkten Systemzugriffs einfach. Es können verschiedene
+Methoden eingesetzt werden. Zunächst sollte eine Leitlinie (Baseline)
+erstellt werden. Dazu dient ein Konfigurationsbackup, welches direkt
+nach dem ersten Einschalten des Geräts erstellt wurde. Dieses wird
+anschließend mittels des Kommandozeilenprogramms diff mit einem
+Backup verglichen, welches nach der Nutzung des Routers und einem
+anschließenden Zurücksetzen des Geräts erstellt wurde. Alternativ kann
+das ebenfalls auf OpenWrt zur Verfügung stehende Kommandozeilenprogramm
+md5sum verwendet werden, um MD5 Hash-Werte aller lesbarer Dateien auf
+dem System zu generieren und diese zu exportieren. Diese sollten nach
+dem Zurücksetzen des Geräts wieder übereinstimmen. Die Erstellung von
+CRC-Prüfsummen mit dem cksum Befehl kann unter Umständen schneller sein,
+als MD5 Hash-Werte. Es bietet sich also an diese Prüfsummen auf
+leistungsschwachen Geräten zu verwenden. Da die MD5 Hash-Werte und CRC
+Summen lediglich genutzt werden sollen, um zu prüfen, ob Einstellungen
+zurückgesetzt wurden, sind an dieser Stelle keine kryptografisch
+sicheren Hash-Werte wie SHA256 nötig. Die Wahrscheinlichkeit für
+zufällige Kollisionen bei MD5 ist sehr gering . Darüber
+hinaus werden diese Prüfsummen bzw. Hash-Werte ausschließlich in einem
+lokalen System generiert und verwendet.
+Ebenso wie die Natur des OpenWrt Projektes ein einfaches Testen vieler
+Test Requirements ermöglicht, so werden einige Aspekte der
+Firmware anders gehandhabt als bei handelsüblichen Heimroutern. So sucht
+man vergeblich nach einem initial verfügbaren WLAN-Netz, nachdem der
+Router gestartet und eingerichtet wurde. Ebenso sind viele Funktionen,
+die ein Nutzer vielleicht von anderen Geräten gewöhnt ist, nur als
+zusätzliches Software-Paket verfügbar, oder durch aufwendige
+Konfiguration. Beispiele sind Wi-Fi Protected Setup, ein Community WLAN,
+Fernwartung, automatische Firmware-Updates oder Meldungen zu neuen
+Firmware-Updates, Voice over IP und Virtual Private Network Funktionen.
+Neben der Methodik der Technischen Richtlinie des BSI gibt es noch viele
+weitere Arten, um Aspekte einer Software zu evaluieren. Die Sicherheit
+einer betrachteten Software, in diesem Fall OpenWrt, lässt sich unter
+anderem durch sogenannte statische Tests abschätzen. Es wird sich für die Durchführung einer
+statischen Code-Analyse von Router-Firmware an der Methodik des Home
+Router Security Reports 2020 des Fraunhofer-Institut für Kommunikation,
+Informationsverarbeitung und Ergonomie (FKIE) orientiert. In dieser Veröffentlichung des
+FKIE wurden 127 verschiedene, aktuelle Firmware-Abbilder von sieben
+Herstellern automatisch durch das ebenfalls vom FKIE entwickelte
+Firmware Analysis and Comparison Tool analysiert und
+ausgewertet.
+FACT, welches vom FKIE kostenfrei zur Verfügung gestellt wird, wurde
+lokal auf einem Desktop Computer installiert. Es handelt sich hierbei um
+ein System mit 6 physischen und 6 virtuellen Prozessorkernen, welche
+jeweils auf einer Taktfrequenz von 4.2GHz betrieben werden, sowie 16GB
+RAM. Ebenfalls stehen dem System 256GB persistenter Speicher zur
+Verfügung. Da die Installation auf Ubuntu 16.04, 18.04, 20.04 (stable)
+empfohlen wird, wurde Ubuntu 20.04 als aktuellster Vertreter des
+Ubuntu-Betriebssystems ausgewählt . Die zum
+Zeitpunkt der Arbeit aktuelle Version von FACT, FACT_core v3.1.1, wurde
+mittels der bereitgestellten Anleitung installiert.
+Da das System den minimalen Software Anforderungen von FACT entspricht
+ist die Installation und Nutzung des Programms prinzipiell möglich,
+jedoch empfiehlt sich ein System mit mehr RAM, da dies die Performanz
+der Analyse erhöht. Ebenfalls kam es bei dem eingesetzten System
+vermehrt dazu, dass kein RAM mehr zur Verfügung stand und der Rechner
+während der Analyse aufgrund der Auslastung nicht anderweitig genutzt
+werden konnte. Der Einsatz eines separaten Test Computers oder eines
+Virtuellen Privaten Servers (VPS) ist zu empfehlen.
+Der zu testende Firmware-Corpus besteht aus sieben verschiedenen,
+quelloffenen Router-Firmwares. Neben dem für die Technische Richtlinie
+verwendeten Abbild von OpenWrt Version 19.7.04, wurden noch sechs
+weitere Alternativen gewählt, von denen fünf spezifisch für das gewählte
+TP-Link Model Archer C7 v5 kompiliert sind. Zu der betrachteten Firmware
+gehören DD-WRT, Gargoyle Router Management, Gluon, LibreCMC,
+AdvancedTomato, sowie Version 19.7.05 von OpenWrt. Einzig AdvancedTomato
+bietet keine Version für den getesteten Router an, weshalb auf eine
+Version für einen NETGEAR WNDR3700v3 Dual-Gigabit-WLAN-Router
+zurückgegriffen wurde, da dieser Router ebenfalls eine MIPS Architektur
+nutzt und im Leistungsumfang vergleichbar ist.
+Die aufgelistete Firmware wurde gewählt, da sie in Funktion und Umfang
+OpenWrt ähnlich sind und die Projekte, denen sie entstammt, ebenfalls
+mehrere Heimrouter mit einer Codebasis unterstützen. Es wurden keine
+Firmware-Alternativen gewählt, die auf Desktop Computern oder Servern
+installiert werden, da diese aufgrund der zur Verfügung stehenden
+Rechenkapazitäten im Leistungsumfang nicht vergleichbar sind. Das
+analysierte Korpus wurde am 21.12.2020 erstellt. Es wurde für jede
+analysierte Firmware die aktuellste Version für den TP-Link
+AC1750-Dualband-Gigabit-WLAN-Router genutzt, mit Ausnahme des Abbildes
+von OpenWrt Version 19.07.4 und der Tomato Firmware. Version 19.07.4
+wurde getestet, da es sich um die mittels der Technischen Richtlinie
+geprüfte Version handelt.
+Um einen Vergleich mit den Ergebnissen des Home Router Security Reports
+2020 des FKIE zu ermöglichen, wurden die gleichen Aspekte auch bei der
+quelloffenen Firmware analysiert. Es wurden die folgenden
+sicherheitsrelevanten Aspekte betrachtet:
+-   Wann wurde das letzte Update für das Gerät veröffentlicht?
+-   Welches Betriebssystem wird verwendet und wie viele kritische
+    Schwachstellen sind für dieses bekannt?
+-   Welche vorbeugenden Maßnahmen gegen Exploits werden eingesetzt und
+    wie häufig sind diese aktiviert.
+-   Ist privates kryptografisches Schlüsselmaterial enthalten?
+-   Können hartkodierte Login-Daten und bekannte Passwörter in dem
+    Firmware-Abbild gefunden werden?
+Die einzelnen Komponenten des Firmware Analysis and Comparison
+Tools werden mittels des Befehls
+gestartet. Nachdem der lokale Server gestartet ist, werden die
+Firmware-Abbilder einzeln über die Upload-Funktion hochgeladen. Die
+folgenden Analyse-Methoden wurden gewählt:
+-   CPU Architecture
+-   Crypto Material
+-   CVE Lookup
+-   CWE Checker
+-   Exploit Mitigations
+-   Known Vulnerabilities
+-   Software Components
+-   Source Code Analysis
+-   Users and Passwords
+Die Ergebnisse der automatischen Analyse werden anschließend durch die
+REST API von FACT ausgelesen und als Grafiken dargestellt, sodass eine
+direkte Gegenüberstellung der Ergebnisse des FKIE mit den erhobenen
+Daten möglich ist.
+Von 101 Test Requirements konnte der TP-Link Router in 69 getestet
+werden. Bei den 32 nicht getesteten Fällen handelt es sich in den
+meisten Instanzen um Funktionalität, welche von dem Gerät ohne weitere
+Software-Pakete nicht unterstützt wird. So wurden die Module K --
+Remote Configuration, Modul L -- Voice over IP und Modul M --
+Virtual Private Network vollkommen vom Testvorgang ausgeschlossen.
+Ebenso wurden Test Requirements nicht geprüft, welche mit den
+bereits genannten Modulen Gemeinsamkeiten haben. Darüber hinaus fielen
+Testfälle bezüglich der standardmäßig gesetzten Passwörter und
+Login-Daten ebenso weg wie solche, die Community-Funktionen testen. Die
+69 getesteten Anforderungen umfassten 109 Test Prozeduren, von denen
+wiederum 9 als ergebnislos gewertet wurden. Grafik
+zeigt, dass 72% (78 Test
+Prozeduren) als bestanden gelten, während 22% (24 Test Prozeduren) als
+durchgefallen gewertet wurden. Nachfolgend werden zunächst die
+bestandenen Testfälle betrachtet und anschließend Änderungsvorschläge
+für nicht bestandene Testfälle beschrieben.
+Die Durchführung der Technischen Richtlinie an dem mit OpenWrt
+betriebenen Gerät zeigte, dass OpenWrt die eigenen Ansprüche an
+Speicherverbrauch und Funktionalität einhalten kann. Das Gerät liefert
+Kernfunktionen eines Routers und legt dabei besonderes Augenmerk auf die
+Reduzierung der angebotenen Dienste auf ein Minimum. Die wiederholten
+Port-Scans mit nmap zeigten, dass lediglich der Webserver, SSH und der
+DNS/DHCP Dienst über TCP und UDP betrieben werden
+Des Weiteren wurden an keiner Stelle Defizite bezüglich der
+Testkriterien in der Dokumentation der Software gefunden. Alle in der
+Technischen Richtlinie geforderten Informationen der Dokumentation
+konnten ermittelt werden. Neben diesen Ergebnissen sind der vollständig
+quelloffene Code des Betriebssystems und der vollständige root Zugriff
+auf das Gerät deutliche Indikatoren dafür, dass dem Nutzer keine
+Funktionen vorenthalten werden (TR.C.2). Durch die Reduzierung auf die
+wesentlichen Funktionen eines Routers verringert OpenWrt deutlich die
+Angriffsoberfläche und spielt somit den Zielen der TR-03148 zu. Die
+Ergebnisse in Module B -- Private Networks unterstützen diese
+Aussage. Der OpenWrt Router stellt keinen Dienst auf der
+WAN-Schnittstelle zur Verfügung.
+So wurde auch das VoIP-Protokoll nicht in der
+Standardinstallation mitgeliefert, da dieses für die Funktionalität als
+Router nicht relevant ist. Ebenfalls konnten die Tests nachweisen, dass
+OpenWrt international angesehene Standards wie IEEE802.11i erfolgreich
+inkorporiert.
+OpenWrt besteht auch einige weitere Testfälle aufgrund der umfänglichen
+Informationen und Logs, welche das System für den Nutzer bereitstellt.
+Das Gerät führt umfassende System- und Kernel-Log Dateien ebenso wie
+Informationen über verbundene Geräte, aktive und bereitstehende Dienste,
+Firewall-Funktionen und das System selbst. Die Log-Dateien können über
+das Logread-Programm abgerufen werden, stehen aber nicht als Datei zur
+Verfügung . Auch werden relevante Informationen
+wie End-of-Support und Mitteilungen zu Sicherheitslücken klar
+strukturiert auf der Webseite der Entwickler veröffentlicht. Die
+Veröffentlichung von Updates, welche Sicherheitslücken beheben, erfolgt
+dabei stets in wenigen Tagen oder Wochen. Vor allem Module F bis I,
+welche sich mit Firewall, DNS, DHCP und dem Zurücksetzen des Gerätes
+beschäftigen, wurden von OpenWrt vollständig bestanden. Dies ist auf die
+ebenso quelloffenen Komponenten zurückzuführen, welche schon seit vielen
+Jahren weiterentwickelt werden und in einigen Bereichen weit verbreitet
+sind. So nutzt OpenWrt iptables als Firewall und dnsmasq für DNS und DHCP Funktionalität.
+Einige Defizite bzw. gemischte Ergebnisse liefern die Testfälle des
+WLAN-Gästenetzes. Da OpenWrt keine klassische Funktionalität liefert,
+welche automatisch ein WLAN-Netz für Gäste bereitstellt, wurde hier auf
+die Anleitung in der Dokumentation zurückgegriffen, die ein ähnliches
+Ergebnis erzielen soll, jedoch dem Nutzer alle Freiheiten lässt,
+Änderungen zu machen. So ist es kein Garant, dass das Gäste-Netz Nutzer
+tatsächlich separiert oder, dass ein Nutzer nicht von dort aus auf die
+Konfiguration des Gerätes zugreifen kann. Die genaue Dokumentation der
+Ergebnisse kann auch im Ordner Results $rightarrow$ TR.X $rightarrow$
+TP.X.Y abgerufen werden.
+Wie bereits im vorherigen Kapitel festgehalten, benötigt OpenWrt nur
+einige Änderungen, um die Technische Richtlinie 03148 vollumfänglich zu
+bestehen. Es wird vor allem Wert auf die mit MUST gekennzeichneten
+Testfälle gelegt. Für Testfälle, die mit SHOULD gekennzeichnet sind
+wird nachfolgend eine Änderung vorgeschlagen, wenn es sich hierbei um
+eine simple Anpassung handelt. Darüber hinaus wurde die Funktionalität
+des Gäste-WLAN nicht weiter betrachtet, da dieses vom Nutzer vollständig
+konfiguriert werden muss. OpenWrt bietet keine Möglichkeit ein
+Gäste-Netzwerk mit einer einzigen Option zu aktivieren. Die vollständige
+Implementierung einer solchen Funktionalität müsste in Betracht gezogen
+werden.
+Es sind nur einige Änderungen von Nöten, um Modul A vollständig zu
+bestehen. Der 4. Test des Testfalls TR.A.9 (TP.A.9.4) schlägt fehl, da
+die Verschlüsselung von WLAN-Netzwerken standardmäßig ausgeschaltet ist.
+Im initialen Zustand ist die gesamte WLAN-Funktionalität von OpenWrt
+abgeschaltet. Sie muss zunächst vom Benutzer selbst in den
+Einstellungen, entweder über das Web-Interface oder SSH, eingeschaltet
+werden. In der Konfigurationsübersicht des jeweiligen WLAN-Netzes ist
+das Passwort jedoch erst in einem zweiten Reiter untergebracht. Dort ist
+standardmäßig No Encryption (open network) angewählt. Diese
+verzweigte Aufteilung kann dazu führen, dass unerfahrene Nutzer
+lediglich die ESSID anpassen und daraufhin den Speichern-Button
+betätigen. Auf diese Weise würde das Netzwerk ohne Passwort
+initialisiert. Das Verschieben des Passwortfeldes, sowie der Auswahl der
+Verschlüsselung in den ersten (initialen) Reiter der Übersicht, könnte
+diesem Problem entgegenwirken. Ebenso könnte die initiale Konfiguration
+der WLAN-Netzwerkes statt No Encryption stattdessen WPA2-PSK
+ausgewählt haben. So könnte der Nutzer die Konfiguration nicht speichern
+ohne ein Passwort einzufüllen. Wenn WPA2 ausgewählt ist, erscheint bei
+einem unzureichenden Passwort eine Fehlermeldung und die Konfiguration
+wird nicht gespeichert. Auf diese Weise kann dennoch gezielt ein
+Netzwerk ohne Passwort erstellt werden, wenn der Nutzer bewusst auf
+diese Option umgeschaltet hat. Eine noch stärkere Verschlüsselung bietet
+WPA3. Auf Geräten mit genügend Speicher könnten OpenWrt standardmäßig
+mit dem zusätzlichen Paket wpad-openssl ausgestattet werden. Auf diese
+Weise könnte statt WPA3 anstelle von WPA2 eingestellt werden. Der Nutzer könnte ebenfalls von einem
+Mechanismus unterstützt werden, welcher die Stärke des WLAN-Passwortes
+darstellt. Ein ähnlicher Mechanismus wird bereits bei der Prüfung des
+Geräte-Passwortes eingesetzt und könnte auch im Umfeld des PSK dem
+Nutzer zusätzliche Hilfestellung bei der Wahl eines Passwortes geben.
+Dabei sollte der bestehende Mechanismus zur Evaluation des Passwortes
+allerdings angepasst werden, sodass die Vorgaben der Technischen
+Richtlinie eingehalten werden.
+Ein weiterer Test, welcher während der Durchführung der Technischen
+Richtlinie scheiterte, ist TR.D.2. Dieser beschreibt, dass der Zugang
+zur Konfiguration des Gerätes mindestens durch ein Passwort geschützt
+sein muss, wenn das Gerät sich im initialen oder kundenspezifischen
+Zustand befindet. Aufgrund der Natur vom OpenWrt als Alternatives
+Router-Betriebssystem, welches erst nach Erhalt des Gerätes vom Nutzer
+aufgespielt wird, ist ein Passwort im factory-Zustand nicht
+sinnvoll. Da kein einzigartiges Passwort vergeben werden kann, bevor
+OpenWrt vom Nutzer eingesetzt wird, würde das Gerät keinen höheren
+Sicherheitsansprüchen genügen, wenn ein Benutzeraccount mit Passwort
+voreingestellt wäre. Aufgrund der anhaltenden Nutzung des root Benutzers
+auf OpenWrt Systemen ist es dem Benutzer allerdings vollkommen
+freigestellt, diesen Account ohne Passwort zu betreiben. Lediglich ein
+kleiner Informationstext im Web-Interface erinnert an das Setzen eines
+Passwortes. Ebenfalls kann über den SSH-Zugang ein bereits gesetztes
+Passwort gelöscht werden, sodass der Account dann wieder ohne Passwort
+eingesetzt werden kann. Dies stellt ein hohes Sicherheitsrisiko dar.
+Jedoch könnte dieses Problem umgangen werden, wenn der Nutzer entweder
+gezwungen würde, ein Passwort für den root Nutzer zu verwenden, um das
+Gerät zu initialisieren, oder wenn der Nutzer dazu gezwungen werden
+würde, einen neuen Nutzeraccount anzulegen und sowohl für den
+root-Benutzer als auch für den eigenen Nutzeraccount ein Passwort
+festzulegen. Daraufhin sollte der Nutzer seinen eigenen Account zur
+Konfiguration des Gerätes nutzen und lediglich auf den root-Benutzer
+zurückgreifen, wenn höhere Privilegien benötigt werden. Es könnte
+standardmäßig ein unprivilegierter Nutzeraccount installiert sein und
+zusätzlich auf ein Programm wie sudo gesetzt werden. Dadurch, dass
+das passwd Programm durch den root-Nutzer ausgeführt wird, werden
+alle Überprüfungen des Passwortes übersprungen, bzw. alle
+Fehlermeldungen ignoriert. Das passwd Dienstprogramm wird
+verwendet, um Benutzerpasswörter zu ändern oder zu entfernen. Dieses
+Vorgehen würde ebenfalls dafür sorgen, dass Kriterien wie TR.D.10 und
+TR.D.15 kein Problem mehr darstellen. So müsste ein Nutzer zunächst das
+alte Passwort eingeben, um ein Neues zu wählen. Ebenfalls könnte ein
+Nutzer gehindert werden, ein schwaches Passwort zu wählen.
+Auch wenn es sich dabei nur um ein SHOULD-Kriterium handelt, ist
+HTTPS mit Transport Layer Security eine sicherheitskritische Technologie
+(TR.D.3) . Ein Entwickler von OpenWrt schlug
+daher vor eine technically constrained subordinate Certificate
+Authority (CA) zu etablieren . Diese sollte dann für
+Subdomänen von luci.openwrt.org Zertifikate ausstellen, welche die
+Geräte verwenden können. Für diesen
+Ansatz müsste jedoch eine sog. Root Certificate Authority bereit
+sein, diese OpenWrt CA anzuerkennen. Neben dieser aufwendigen
+Umsetzung besteht die Möglichkeit selbst-signierte Zertifikate zu
+verwenden, auch wenn ein Nutzer dann in den meisten Fällen eine
+Sicherheitswarnung des Browsers akzeptieren muss. Ebenfalls besteht die
+Möglichkeit den gesamten Verkehr mit SSH zu verschlüsseln. Der Einsatz
+von HTTPS ist außerdem zu empfehlen, da z.B. der Firefox Browser mit dem
+https-only-mode den Einsatz von HTTPS erzwingen kann, sodass
+HTTP-Webseiten nicht mehr aufgerufen werden können.
+OpenWrt zeigt zusätzlich einige Schwächen bei der Implementierung von
+Sicherheitsmaßnahmen gegen Bruteforce Angriffe  auf
+den Login-Bereich sowie gegen Session-Hijacking Attacken.
+Da OpenWrt durchaus die fehlgeschlagenen Login-Versuche registriert,
+wäre ein Zähler die einfachste Option Bruteforce Angriffe auf die
+Login-Bereiche zu verhindern. Es könnten z.B. eine begrenzte Anzahl an
+Versuchen zur Verfügung stehen. Nachdem diese abgelaufen sind, muss eine
+gewisse Zeit gewartet werden, bis ein neuer Versuch unternommen werden
+kann. Ebenso könnte ein Zeitlimit zwischen jedem Login-Versuch
+implementiert werden, sodass ein Angriff verlangsamt wird. Wenn das
+Passwort ausreichend komplex gewählt ist, so würde dies die
+Geschwindigkeit und Attraktivität von Bruteforce Angriffen deutlich
+mindern. Session-Hijacking Angriffe könnten verhindert werden, wenn
+zusätzlich zu den anti-cross-site-forgery-request
+(anti-CSFR)--Token der Session-Timer verringert würde. Das
+kontinuierliche, automatische Updaten der auf der Seite dargestellten
+Informationen setzt diesen Timer jedoch alle fünf Sekunden zurück.
+Dieses Verhalten muss unterbunden werden. 300 Sekunden (5 Minuten) für
+eine Sitzung wären ein geeigneteres Intervall anstelle von den derzeit
+eingesetzt 3600 Sekunden (60 Minuten).
+Abschließend deckte die Durchführung der Technischen Richtlinie noch
+einen weiteren Schwachpunkt des OpenWrt Betriebssystems auf. Die
+Testfälle TR.E.5 bis TR.E.8 wurden alle nicht bestanden, da es keinen
+automatischen Authentifizierungsmechanismus gibt, welcher
+Firmware-Updates prüft. Dem Nutzer werden lediglich signierte SHA256
+Hash-Werte des Firmware-Updates zur Verfügung gestellt, sodass die
+Authentizität und Integrität der Datei vom Nutzer geprüft werden muss.
+ while release image files are usually signed by one or
+ more developers with detached GPG signatures to allow users to verify
+ the integrity of installation files.  Note that not every file
+ is signed individually but that we're signing the sha256sums or - for
+ repositories - the Packages files to establish a chain of trust: The
+ SHA256 checksum will verify the integrity of the actual file while the
+ signature will verify the integrity of the file containing the
+ checksums. 
+Dieser Ansatz bietet natürlich nur die geforderten Schutzziele, wenn ein
+Nutzer tatsächlich die Authentizität und Integrität der sha256sums Datei
+prüft und anschließend den darin enthalten Hash-Wert mit dem der
+heruntergeladenen Datei vergleicht. Ebenso wie der OPKG Paket Manager
+könnte auch der Firmware-Update-Mechanismus auf die usign Ed22519
+Signaturen zurückgreifen oder eine GPG-Signatur der Entwickler tragen.
+Eine automatische Verifizierung der Signatur über das Internet, mit
+entsprechenden Sicherheitsmaßnahmen, wäre dann möglich. In den Fällen,
+in denen das Gerät keine Internetverbindung aufweist, könnte dann auf
+die SHA256 Hash-Werte zurückgefallen werden. Durch das beschriebene
+Vorgehen könnte das Gerät TR.E.5 bis TR.E.8 bestehen sowie den Nutzern
+mehr Sicherheit und Nutzerfreundlichkeit bieten.
+In einigen Fällen lässt sich keine sinnvolle Lösung finden, die für ein
+Projekt wie OpenWrt geeignet ist. So auch bei TR.D.24, welches fordert,
+dass dem Nutzer eine Nachricht auf dem Gerät angezeigt wird, wenn eine
+neue Firmware verfügbar ist. Für diese Anforderung müsste das Gerät mit
+dem Internet verbunden sein und zudem müssten von Seiten der OpenWrt
+Entwickler ein Update-Server zur Verfügung gestellt werden. Dies würde
+Kosten auf Seiten der freiwilligen Entwickler sowie eine größere
+Angriffsoberfläche auf Seiten der Nutzer verursachen. Eine Anmeldung
+beim E-Mail Newsletter der Entwickler wäre die simpelste Möglichkeit um
+über neue Versionen sowie Sicherheitslücken informiert zu bleiben.
+Im Rahmen dieser statischen Code-Analyse durch das Firmware Analysis and
+Comparison Tool des FKIE wurden sieben verschiedene quelloffene
+Router-Firmware Alternativen analysiert. Dabei waren fünf Fragen von
+besonderem Interesse.
+-   Wann wurde das letzte Update für das Gerät veröffentlicht?
+-   Welches Betriebssystem wird verwendet und wie viele kritische
+    Schwachstellen sind für dieses bekannt?
+-   Welche vorbeugenden Maßnahmen gegen Exploits werden eingesetzt und
+    wie häufig sind diese aktiviert.
+-   Ist privates kryptografisches Schlüsselmaterial enthalten?
+-   Können hartkodierte Login-Daten und bekannte Passwörter in dem
+    Firmware-Abbild gefunden werden?
+FACT konnte während der Analyse erfolgreich 92,73% der Daten aus den
+Firmware-Abbildern extrahieren. Bei der gesamten betrachteten Firmware
+wurde durch Analyse von Metadaten eine MIPS 32-Bit Architektur mit
+big-endian Byte-Reihenfolge festgestellt. Dies hat zwar keinen
+direkten Einfluss auf die Sicherheit eines Gerätes, jedoch ist diese
+Architektur nicht quelloffen und die Entwicklung ist in den letzten
+Jahren ins Stocken geraten . Für die Analyse der
+Critial Vulnerabilities and Exposures (CVE) wurde aufgrund
+einiger Fehler in FACT nicht das Ergebnis der automatischen Analyse
+gewählt. Stattdessen wurden die Ergebnisse durch die Webseite
+www.cvedetails.com, welche wiederum auf die Daten der National
+Vulnerability Database der US-Regierung, zugreift, bereitgestellt. Da
+cvedetail.com ausschließlich CVSS v2 Bewertungen bereitstellt,
+wurden einzig diese für die Analyse verwendet. Um Vergleichbarkeit mit
+den Ergebnissen des FKIE zu gewährleisten wurden lediglich CVE-Einträge
+mit einem Schweregrad von Hoch
+gezählt.
+In diesem Abschnitt soll evaluiert werden, wann für die betrachteten
+Firmware-Abbilder das letzte Mal eine neue Version seit dem 24.12.2020
+veröffentlicht wurde. Alle Abbilder des Firmware-Corpus spezifizierten
+das Veröffentlichungsdatum im Dateinamen selbst oder auf der jeweiligen
+Webseite. Dieses Kriterium wurde untersucht, da es die Bereitschaft der
+Entwickler andeutet, ihr Projekt regelmäßig mit Funktions- und
+Sicherheitsupdates zu unterstützen. Eine neuere Version bedeutet also
+zumeist, dass weniger sicherheitsrelevante Lücken bekannt sind und das
+System sicherer ist. Da die Unterstützer der quelloffenen Projekte in
+vielen Instanzen auf weitere Software zurückgreifen und auch diese
+Updates erfährt, ist es wahrscheinlich, dass Firmware bekannte Lücken
+hat, wenn diese längere Zeit nicht erneuert wurde.
+Grafik zeigt, dass für fünf von sieben
+untersuchten Firmware-Abbildern in den letzten 365 Tagen eine neue
+Version veröffentlicht wurde. Aufgrund des Ausreißers in den erhobenen
+Daten wird im folgenden der Median statt des Mittelwertes betrachtet. Es
+ergibt sich, dass die Router-Betriebssysteme nach Median-Berechnung alle
+83 Tage und im Schnitt alle 309 Tage eine neue Version erhalten.
+Ebenfalls muss erwähnt werden, dass bei der Veröffentlichung einer neuen
+Version meist alle von dem jeweiligen Projekt unterstützen Geräte diese
+neue Version zur Verfügung gestellt bekommen. So werden bei einer neuen
+Version von OpenWrt alle ca. 1700 Geräte von diesem neuen Update
+unterstützt und erfahren somit alle Sicherheitsupdates, die
+bereitgestellt werden. Dies steht im Gegensatz zu etablierten
+Herstellern von Routern, welche oft pro Gerät eine eigene Version
+entwickeln. Gargoyle Router Management wurden nicht in den letzten 365
+Tagen erneuert und das Tomato Betriebssystem hat in den letzten 1480
+Tagen kein Update erfahren. Der Zyklus von 83 Tagen ist höher als der
+Update-Zyklus von Desktop- oder Server-Betriebssystemen, jedoch noch im
+Rahmen der 90 Tage, welche normalerweise das Zeitfenster darstellen, in
+dem Entwickler Zeit haben auf Sicherheitslücken und Probleme zu
+reagieren (responsible disclosure) . Darüber hinaus muss
+besonders darauf hingewiesen werden, dass in manchen Fällen ein
+Paketmanager zur Verfügung steht, über welchen Updates für
+Pakete während der Laufzeit installiert werden können. Somit sind
+Updates der Firmware nur notwendig, um Kernfunktionalität zu erweitern
+oder Fehler in dieser zu beheben, sowie um den Kernel zu aktualisieren.
+Nur eine von acht bisher veröffentlichten Sicherheitslücken im Jahr 2020
+konnte ausschließlich durch ein Update auf eine neuere Version von
+OpenWrt behoben werden, wobei alle weiteren durch ein einfaches Update
+des betroffenen Paketes nachgebessert werden konnten .
+In proprietärer Firmware ist ein Paketmanager für die Installation von
+zusätzlicher Software und für das Herunterladen von Updates in den
+meisten Fällen nicht vorhanden. Verglichen mit den Ergebnissen des Home
+Router Security Reports 2020 zeigt sich, dass für die quelloffenen
+Betriebssysteme häufiger neue Versionen veröffentlicht werden. Wenn man
+die analysierten Abbilder als Gruppe betrachtet, dann schneidet diese
+vergleichsweise gut ab. Einzig Tomato fällt als Ausreißer heraus.
+Lediglich ASUS, AVM und Netgear, als Hersteller von handelsüblichen
+Routern, können mithalten.
+Ebenso wie im Home Router Security Report 2020 festgestellt, muss
+zusätzlich beachtet werden, dass alle betrachteten Produkte kleinere
+Updates auch über die Geräte selbst zu Verfügung stellen könnten, sodass
+die aktuellste Version nicht im Internet veröffentlicht wird. Darüber
+hinaus handelt es sich bei den hier festgestellten Daten ausschließlich
+um eine Momentaufnahme, die keine Aussagekraft darüber hat, ob
+regelmäßig Updates bereitgestellt werden, oder ob diese
+Sicherheitslücken überhaupt adressieren.
+Da es sich bei allen analysierten Firmware-Abbildern um quelloffene
+Projekte handelt, ist es nicht verwunderlich, dass der Linux-Kernel
+dominant vertreten ist. Der Linux-Kernel, welcher 1991 von Linus Tovalds
+entwickelt wurde und seither stetig weiterentwickelt wird stellt einen
+der am häufigsten genutzten Betriebssysteme für IoT Geräte dar. Die geringe Größe des Kernels, der große
+Funktionsumfang und die umfangreiche Dokumentation und Verbreitung sind
+für eine community-getriebene Entwicklung auf speicher- und
+rechenleistungslimitierten Geräten wie z. B. Heim-Routern gut geeignet.
+Grafik zeigt, dass alle untersuchten Projekte
+einen Linux Kernel verwenden. Dieser Trend deckt sich ebenfalls mit den
+Ergebnissen des Home Router Security Reports des FKIE. In den
+untersuchten Produkten des Verbrauchermarktes wurde Linux in 91% der
+Fälle verwendet.
+Aufgrund der unzureichenden Ergebnisse der FACT-Analyse bezüglich der
+vorhandenen CVE-Einträge für die verwendeten Linux-Kernel wurden die
+Ergebnisse in diesem Fall direkt über www.cvedetails.com abgerufen. FACT
+erstellt zunächst eine Common Platform Enumeration (CPE) der
+Software Version und stellt mit dieser CPE eine Anfrage an die
+National Vulnerability Database. Da die zurückgegebenen Ergebnisse
+allerdings auch Schwachstellen beinhalten, welche nur für bestimme
+Geräte mit der jeweiligen Linux-Kernel Version gelten, wurden die
+jeweiligen Schwachstellen des Kernels über die Website cvedetail.com
+abgefragt. Bei einer Stichprobe der von FACT gelieferten CVE-Einträge
+sind verschiedene Einträge aufgefallen, welche z.B. nur für bestimmte
+IoT-Geräte wie Smartwatches eingetragen sind. Cvedetail nutzt ebenfalls
+die National Vulnerability Database, stellt jedoch noch zusätzliche
+Informationen und Statistiken bereit. Auf diese Art wurde
+sichergestellt, dass die betrachteten Schwachstellen spezifisch für den
+Kernel sind und nicht für ein bestimmtes Gerät, welches diesen Kernel
+nutzt. Da nicht alle eingetragenen CVEs eine direkte Bedrohung
+darstellen, wurden die Ergebnisse weiter eingeschränkt. So wurden
+lediglich solche CVEs betrachtet, welche mit einen CVSS2 Wert von sieben
+oder höher eingestuft wurden. Wie Grafik zeigt, stehen für alle
+betrachteten Geräte einige CVE Einträge des Linux Kernels zur Verfügung.
+Ebenfalls kann man sehen, dass der in DD-WRT verwendete Kernel mehr
+CVE-Einträge hat als der von Gargoyle Router Management, obwohl bei
+DD-WRT die geringste Zeit seitdem letzten Firmware Update vergangen ist.
+Tomato schneidet erneut am schlechtesten ab. Grafik zeigt zusätzlich, dass für zwei
+der sechs verschiedenen Linux Kernel schon seit einigen Jahren keine
+Sicherheitsupdates entwickelt werden. Sowohl der von Tomato verwendete
+Kernel, 2.6.22, als auch Linux Kernel 3.8.14, welcher von DD-WRT
+verwendet wird, werden nicht mehr mit Updates unterstützt. Dies spiegelt
+sich auch in der hohen Anzahl CVE-Einträge wider
+Die Ergebnisse sind aufgrund der unterschiedlichen Beschaffung sowie der
+fehlenden CVSS3 Werte nicht wirklich mit denen des Home Router Security
+Reports 2020 vergleichbar. Jedoch kann man sagen, dass die quelloffenen
+Router-Betriebssysteme mehrheitlich modernere Linux-Kernel Versionen
+nutzen. Lediglich zwei der betrachteten Firmware-Abbilder nutzen einen
+Kernel, der nicht mehr unterstützt wird. Der Security Report gibt an,
+dass ein Drittel der betrachteten Geräte einen Kernel vor Version 3
+nutzen und lediglich ca. 22% einen aktuellen Kernel der 4. Version. Im Gegensatz dazu nutzen
+ca. 70% der betrachteten quelloffenen Software-Projekte einen
+Linux-Kernel der Version 4.9.19 oder höher.
+Im Gegensatz zu den Ergebnissen des Security Reports können falsch
+positive Ergebnisse bei der Erkennung der Kernel Version beinahe
+ausgeschlossen werden, da diese ebenfalls von den Entwicklern auf der
+Webseite oder in den Veröffentlichungsdokumenten der jeweiligen Version
+veröffentlicht wird. Jedoch besteht die Möglichkeit, dass die Entwickler
+eigene Korrekturen für Sicherheitslücken des Kernels entwickeln und
+veröffentlichen. Dies ist bei dieser Art community-getriebener
+Entwicklung nicht unwahrscheinlich, da hier keine Entwickler bezahlt
+werden müssen, welche zusätzlich zu ihren anderen Aufgaben für das
+Beheben von Sicherheitslücken im Kernel eingesetzt werden. Ebenfalls ist
+es möglich, dass aufgrund der uneindeutigen CPE-Spezifikation einige
+CVE-Einträge nicht von cvedetails.com gelistet werden
+FACT ist in der Lage die folgenden Exploit Mitigationsmaßnahmen zu identifizieren:
+-   Stack Canary
+-   FORTIFY_SOURCE
+-   NX
+-   PIE
+-   RELRO
+Sowohl RELRO als auch das NX-Bit werden vermehrt bei den quelloffenen
+Router-Betriebssystemen eingesetzt. Außer Tomato nutzen alle der
+betrachteten Firmwares zu beinahe 100% das NX-Bit. Mit Ausnahme von
+Tomato und DD-WRT nutzen im Schnitt ca. 50% aller ausführbarer Dateien
+der Firmware-Abbilder RELRO. Tomato und DD-WRT setzen hingegen kaum auf
+RELRO. PIE wird andererseits im Schnitt zu ca. 40% genutzt. Tomato
+scheint bevorzugt auf PIE zu setzen. Die Nutzung von Stack Canaries
+und FORTIFY_SOURCE verhält sich pro Firmware nahezu identisch. Gargoyle
+Router Management, LibreCMC und OpenWrt nutzen es bei ca. 19% aller
+Dateien, Gluon bei ca. 8%, während DD-WRT und Tomato beinahe vollständig
+auf diese Techniken verzichten. Die Verbreitung von PIE ist vergleichbar
+mit den Ergebnissen der FKIE Veröffentlichung. Ebenso wie im Security
+Report berichtet, nutzen auch die quelloffenen Betriebssysteme annähernd
+alle vollumfänglich NX-Bits. Dies lässt sich leicht durch den
+vergleichsweise guten Schutz bei infinitesimalen
+Geschwindigkeitseinbußen erklären. Die Daten des FKIE zeigten, dass
+RELRO nur selten von allen Herstellern eingesetzt wird mit Ausnahme von
+AVM. Dem steht eine Nutzung von ca. 50% bei den freien
+Firmware-Produkten gegenüber. Ebenso wie die betrachtete Firmware der
+Markthersteller, wird nur selten auf Stack Canaries und FORTIFY_SOURCE
+gesetzt. Obwohl Stack Canaries keinen merkbaren Einfluss auf die
+Geschwindigkeit eines Systems hat, scheint diese Technik nur bei wenigen
+Dateien angewendet worden zu sein. Es könnte sich hierbei um
+systemkritische Dateien handeln. Dies gilt ebenso für die FORTIFY_SOURCE
+Option.
+Zusammenfassend kann man sagen, dass vor allem auf NX und RELRO für den
+Großteil der Dateien gesetzt wird. PIE, Stack Canaries und
+FORTIFY_SOURCE wird nur bei wenigen ausführbaren Dateien genutzt.
+Wenn private kryptographische Schlüssel in den Firmware-Abbildern
+enthalten sind, so haben diese keine Sicherheitsfunktion mehr. Um die
+korrekte Funktionalität zu gewährleisten, in dem Fall, dass private
+Schlüssel enthalten sein müssen, so sollten die Vorgaben der OWASP
+eingehalten werden:
+ Do not hardcode secrets such as passwords, usernames, tokens, private
+ keys or similar variants into firmware release images. This also
+ includes the storage of sensitive data that is written to disk. If
+ hardware security element (SE) or Trusted Execution Environment (TEE)
+ is available, it is recommended to utilize such features for storing
+ sensitive data. Otherwise, use of strong cryptography should be
+ evaluated to protect the data. If possible, all sensitive data in
+ clear-text should be ephemeral by nature and reside in a volatile
+ memory only .
+Die Einhaltung dieser Vorgaben ist jedoch deutlich erschwert, wenn die
+Firmware nicht spezifisch für ein Gerät geschrieben ist. Ebenso stehen
+den Entwicklern der quelloffenen Firmware nicht alle Entwicklerwerkzeuge
+der Hersteller zur Verfügung um z.B. auf ein Hardware Security
+Element zuzugreifen. Zugleich wird für den Zugriff in einigen Fällen
+ein physischer Zugang zu dem Gerät benötigt.
+Trotz dieser Probleme konnte FACT nur aus DD-WRT und Gargoyle Router
+Management private Schlüssel extrahieren. Bei beiden Betriebssystemen
+wurden jeweils ein Pkcs8PrivateKey sowie ein SSLPrivateKey gefunden. Da
+PKCS#8 ein Container-Format für private kryptographische Schlüssel ist,
+kann man ohne weitere Nachforschung nicht bestimmen, welchen Nutzen
+diese Schlüssel für die Systeme haben. Die gefundenen SSL-Schlüssel
+dienen vermutlich dazu den vom Webbrowser an den Webserver gesendeten
+Session-Key zu entschlüsseln . Es lässt sich also vermuten,
+dass DD-WRT und Gargoyle Transport Layer Security verwenden, jedoch kann
+ein Man-in-the-Middle Angriff einfach durchgeführt werden, wenn der
+private SSL Schlüssel bekannt ist . Die
+genauen Details der Implementierung und Nutzung der gefundenen Schlüssel
+ist jedoch vollkommen unbekannt. Es könnte sich ebenso um ungenutztes
+oder veraltetes Material handeln. Darüber hinaus könnte der SSL
+Schlüssel auch nur für die initiale Konfiguration des Gerätes genutzt
+werden, um danach durch einen neuen ersetzt zu werden.
+Diese Analyse dient dazu hartkodierte Accountinformationen in der
+untersuchten Firmware zu finden. FACT extrahiert dazu die Daten aus der
+/etc/shadow und /etc/passwd Datei. Diesen Dateien speichern
+Informationen zu allen Nutzeraccounts, welche auf dem System angelegt
+sind. Dazu gehören unter anderem der Nutzername, das Passwort, die
+Nutzerrechte und weitere Informationen der Nutzer. Das Passwort, welches
+in der /etc/shadow Datei gespeichert wird, liegt in Hash-Form vor.
+FACT nutzt eine Passwortliste mit häufig genutzten Passwörtern und das
+Programm john, um das Passwort im Klartext darzustellen. Problematisch
+sind bereits angelegte Nutzeraccounts vor allem, wenn diese nicht
+geändert oder abgeschaltet werden können. Ebenso bergen sie das Risiko,
+dass ein unerfahrener Nutzer diesen Account benutzt, ohne ein neues
+Password für den Account festzulegen. Auf diese Art kann ein Angreifer
+sehr einfach auf die Konfiguration des Gerätes zugreifen.
+Die Analyse der quelloffenen Firmware zeigt, dass lediglich Gargoyle
+Router Management einen bereits angelegten Nutzeraccount mit schwachem
+Passwort ausweist. Im Test des FKIE wurden auf 50 Geräten (40%) vom
+Hersteller angelegte Accounts gefunden. Da es sich bei dem Befund
+des Gargoyle Betriebsystems allerdings um den root Account handelt, ist
+es nicht unwahrscheinlich, dass der Nutzer nach einmaliger Eingabe des
+Passwortes password ein neues Passwort wählen muss. In diesem Falle
+bietet Gargoyle Router Management nicht mehr Sicherheit als OpenWrt, bei
+welchem der root Account ohne Passwort initialisiert ist. In dieser
+Instanz ist es umso wichtiger, dass der Nutzer auf das Risiko
+ausreichend hingewiesen wird, bzw. aufgefordert wird, dass Passwort zu
+ändern.
+Eine mögliche Limitation bei der Durchführung der Technischen Richtlinie
+ist die Testumgebung. Besonders die double NAT Konfiguration 
+ist nicht optimal zur Durchführung der Technischen Richtlinie. Der
+beschriebene Aufbau kann dazu führen, dass einige Ergebnisse nicht
+zuverlässig angegeben werden können, vor allem wenn der Zugriff auf die
+Konfiguration des ersten Routers oder des Modems nicht gegeben ist. So
+könnten einige Pakete nicht zum eigentlichen OpenWrt Router zugstellt
+werden, wenn diese bereits von der vorgelagerten Firewall abgefangen
+wurden. Ebenfalls hätte ein zusätzlicher Testrechner und ggf. weitere
+Router den Testvorgang weiter beschleunigt, indem nmap-Scans über Nacht
+oder parallel ausgeführt hätten werden können. Ebenso hätte dies die
+Durchführung einiger zusätzlicher Tests erlaubt, welche nun als
+inconclusive markiert wurden, da nicht genug Systeme zur Verfügung
+standen, um die vorgegebene Testprozedur durchzuführen. Des Weiteren
+musste in diesem Falle das Conformance Statement der Technischen
+Richtlinie vom Tester selbst ausgefüllt werden, statt vom Hersteller
+oder Entwickler. Dies stellt eine sehr einseitige Betrachtung des
+Gerätes durch den Tester dar. Auch könnte hier eine gewisse
+Voreingenommenheit unterstellt werden, da der Tester ggf. gewisse
+Ergebnisse bereits erwartet. Anschließend muss an dieser Stelle ebenso
+betrachtet werden, dass die Möglichkeit besteht, bereits bei der
+Anfertigung des Conformance Statements etwas zu übersehen, wodurch
+Ergebnisse der TR verfälscht werden können.
+Eine weitere Limitation zeigt sich im Zusammenspiel von OpenWrt und der
+Technischen Richtlinie selbst. OpenWrt ist zwar durchaus für Heim-Router
+und Router aus dem SOHO-Bereich gedacht, jedoch müssen die Nutzer schon
+für die Installation einige technische Grundkenntnisse vorweisen, sowie
+überhaupt von der Möglichkeit wissen. So wird OpenWrt durch die TR an
+einigen Stellen für die Umsetzung von Funktionen bestraft, welche für
+den durchschnittlichen Nutzer von OpenWrt vielleicht geeignet sind.
+Darüber hinaus darf die TR nur als ein Mittel von vielen gesehen werden,
+um die Sicherheit solcher komplexen Systeme zu untersuchen. Es ist
+vielmehr das Ziel der Technischen Richtlinie ein Grundmaß an Sicherheit
+auf Heim-Routern zu schaffen, statt in jeder Hinsicht sichere Router.
+Aus diesem Grunde geht die Richtlinie zu Teilen tiefer in Details hinein
+als anderswo, wo die Existenz einer Funktion wichtiger ist als die
+perfekte Implementierung. Auch wirkt die Technische Richtlinie nicht
+direkt automatisierten Angriffen wie Heartbleed, Sambacry oder BCMUPnP
+entgegen . Die TR
+sorgt allerdings für eine verringerte Angriffsoberfläche und viele
+Maßnahmen, die den Nutzer dabei unterstützen sollen, sein Gerät sicherer
+zu betreiben. Schon sicherere Login- und WLAN-Passwörter können einige
+Angriffe verlangsamen und uninteressant machen. Die Technische
+Richtlinie sollte also lediglich als Teil des Weges zu sichereren
+Geräten verstanden werden. Weitere Techniken zum Testen von Software
+sollten dennoch weiter eingesetzt werden, um einen weiteren Blick auf
+die IT-Sicherheitslage zu bekommen.
+Zu den genannten Limitationen kommt zusätzlich eine zeitliche
+Komponente. Die Durchführung anhand von OpenWrt war im gesetzten
+zeitlichen Rahmen machbar, jedoch wäre es dennoch interessant gewesen,
+eine möglichst vollständige Durchführung der TR anzustreben. OpenWrt
+hätten durch den Paket-Manager sämtliche zusätzlichen Komponenten
+geboten, um jedes Modul der TR vollständig zu testen. Dies hätte als
+konzeptioneller Beweis weitere Einblicke in die Möglichkeiten und
+Limitationen der Technischen Richtlinie und auch OpenWrt gegeben. Ebenso
+interessant wie die Ergebnisse von OpenWrt bei der TR wäre ein Vergleich
+mit dem Resultat von anderen handelsüblichen Routern. Der
+Zertifizierungsprozess hat jedoch erst vor kurzem begonnen und die Daten
+der bisher durchgeführten Testdurchläufe stehen nicht für die
+Öffentlichkeit zur Verfügung. So wird es noch eine Weile dauern, bis
+Vergleichswerte verfügbar sind.
+Neben den Limitationen bezüglich der Technischen Richtlinie, müssen auch
+einige Einschränkungen bei der Durchführung der statischen Code-Analyse
+aufgezeigt werden. Die betrachteten Firmware Abbilder hätten schneller
+und ausführlicher analysiert werden können, wenn mehr Zeit und mehr
+Rechenkapazitäten zur Verfügung gestanden hätten. Neben den gewählten
+Metriken liefert FACT noch weitere interessante Plug-ins. Ebenso kann
+nur eine eingeschränkte Vergleichbarkeit mit den Ergebnissen des Home
+Router Security Reports 2020 dargestellt werden. Dies liegt unter
+Anderem an der geringen Anzahl an untersuchter Firmware. Im Gegensatz zu
+den Herstellern, welche im FKIE Report betrachtet wurden, wird bei der
+quelloffenen Firmware in den meisten Fällen eine Codebasis für alle
+unterstützen Geräte kompiliert, sodass es die Ergebnisse nicht
+beeinflusst hätte, wenn Firmware für verschiedene
+Prozessorinstruktionssätze vertreten gewesen wäre. Ebenfalls wurden in
+dieser Analyse bereits die bekanntesten quelloffenen Alternativen
+betrachtet, welche gefunden werden konnten. Ein weiterer Punkt, welcher
+die Vergleichbarkeit mit dem Home Router Security Report 2020 betrifft,
+war die Analyse der veröffentlichten CVE-Einträge pro verwendeter Linux
+Kernel. So lassen sich diese Werte zwar nicht direkt vergleichen, jedoch
+geben die Angaben des FKIE Reports und der in dieser Arbeit aufgeführten
+Analyse einen Einblick in die Lage der IT-Sicherheit der betrachteten
+Geräte.
+Die Ergebnisse zeigen, dass die Technischen Richtlinie durchaus auch für
+quelloffenen Router-Betriebssysteme geeignet ist. Nur aufgrund der
+relativ guten Ergebnisse von OpenWrt kann man jedoch nicht sagen, dass
+es sich hier von einem IT-Sicherheitsstandpunkt aus um ein sicheres
+System handelt. Lediglich ein Mindestmaß an Sicherheit kann festgestellt
+werden und für das vollständige Bestehen der TR sind noch einige
+Änderungen notwendig. Ebenso wurden nur einige Tests mit FACT
+durchgeführt, sodass auch in dieser Hinsicht nicht von einem vollständig
+nachgewiesen sicheren System gesprochen werden darf. Es handelt sich
+hier nur um Indikatoren und Momentaufnahmen. FACT selbst erweist sich
+jedoch als geeignetes Programm, um mit wenig Aufwand und geringen
+technischen Fähigkeiten eine statische Code-Analyse an Firmware
+durchzuführen.
+Zukünftig wäre ein Vergleich verschiedener Geräte anhand der Technischen
+Richtlinie von Interesse. Ebenso wäre die Durchführung an anderen
+quelloffenen Router-Betriebssystemen sowie eine Gegenüberstellung
+interessant. Wie bereits erwähnt wäre es zusätzlich eine Möglichkeit die
+TR vollständig anhand von OpenWrt durchzuführen und darüber hinaus
+mithilfe des Software Developer Kits (SDK) der OpenWrt-Entwickler eine
+Version bereitzustellen, welche alle Anforderungen der TR erfüllt.
+Weiterhin kann eine sinnvolle Erweiterung der Technischen Richtlinie um
+mehr Testfälle in Betracht gezogen werden. Auf diese Weise könnte mehr
+Funktionalität geprüft werden oder bereits geprüfte Funktionen
+eingehender getestet werden. Wenn die Verbreitung der TR fortgeschritten
+ist und mehrere Geräte eine Zertifizierung erhalten haben, so wäre eine
+Marktanalyse interessant. So könnte die Auswirkung der TR auf die
+Hersteller und auf die Wahrnehmung der Kunden betrachtet werden.

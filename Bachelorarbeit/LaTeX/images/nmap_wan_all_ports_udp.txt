@@ -1,0 +1,11 @@
+# Nmap 7.91 scan initiated Thu Nov 26 19:21:13 2020 as: nmap -sUV --version-intensity 0 -p- --max-retries 2 -v -oN nmap_wan_udp.txt 192.168.178.115
+Warning: 192.168.178.115 giving up on port because retransmission cap hit (2).
+Increasing send delay for 192.168.178.115 from 0 to 50 due to 11 out of 20 dropped probes since last increase.
+Nmap scan report for OpenWrt.fritz.box (192.168.178.115)
+Host is up (0.0027s latency).
+All 65535 scanned ports on OpenWrt.fritz.box (192.168.178.115) are open|filtered (56258) or closed (9277)
+MAC Address: B0:95:75:48:F5:F0 (Tp-link Technologies)
+
+Read data files from: /usr/bin/../share/nmap
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Thu Nov 26 21:55:05 2020 -- 1 IP address (1 host up) scanned in 9232.30 seconds

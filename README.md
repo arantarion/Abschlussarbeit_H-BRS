@@ -12,15 +12,22 @@ Ziel dieser Arbeit war es, die Technische Richtlinie 03148 des BSI an Version 19
 ## Ordnerstruktur
 📦Abschlussarbeit_H-BRS<br>
  ┣ 📂Bachelorarbeit **↤ Text of thesis / TR Results / Additional Figures**<br>
+ ┃ ┣ 📂Gliederung BA **↤ Proposed structure of the thesis from 03.11.2020**<br>
+ ┃ ┣ 📂LaTeX **↤ The LaTeX files for the thesis**<br>
  ┃ ┣ 📂TR Results **↤ TR results and additional data**<br>
+ ┃ ┃ ┣ 📂OpenWrt 19.07.4 Checksums **↤ CRC and MD5 hashes for all files**<br>
+ ┃ ┃ ┣ 📂Test Environment **↤ Graphics describing the test environment**<br>
  ┃ ┃ ┣ 📂TR.A **↤ Results of TR.A**<br>
  ┃ ┃ ┣ 📂TR.B<br>
  ┃ ┃ ┣ 📂...<br>
  ┃ ┃ ┣ 📂TR.J<br>
- ┃ ┃ ┣ 📂Test Environment **↤ Graphics describing the test environment** <br>
+ ┃ ┃ ┣ 📜installed_packages.txt<br> 
  ┃ ┃ ┣ 📜ssh-audit-consoleout.png<br>
  ┃ ┃ ┗ 📜ssh-audit_log.json<br>
- ┃ ┗ 📜Openwrt_19.07.4.bin **↤ The firmware that was used**<br>
+ ┃ ┣ 📜Abschlussarbeit Henry Weckermann.pdf<br>
+ ┃ ┣ 📜Abschlussarbeit Plaintext.txt **↤ just text version for word counting**<br>
+ ┃ ┣ 📜coverpage.pdf<br>
+ ┃ ┣ 📜Openwrt_19.07.4.bin **↤ The firmware that was used**<br>
  ┃ ┗ 📜Weckermann_ICS_and_Test Documentation.xlsx **↤ Filled in excel document for TR**<br>
  ┃<br>
  ┣ 📂Expose **↤ Contains the expose and Gant diagram**<br>
@@ -37,8 +44,8 @@ Ziel dieser Arbeit war es, die Technische Richtlinie 03148 des BSI an Version 19
  ┃ ┃ ┣ 📂LibreCMC<br>
  ┃ ┃ ┣ 📂OpenWrt 19.07.4<br>
  ┃ ┃ ┗ 📂OpenWrt 19.07.5<br>
- ┃ ┣ 📜Firmware Downloads and Versions.txt **↤ Information on the firmware images from the FACT corpus**<br>
- ┃ ┗ 📜analysis.xlsx **↤ Analysis of the FACT results**<br>
+ ┃ ┣ 📜analysis.xlsx **↤ Analysis of the FACT results**<br>
+ ┃ ┗ 📜Firmware Downloads and Versions.txt **↤ Information on the firmware images from the FACT corpus**<br>
  ┃<br>
  ┣ 📂OpenWrt Documentation and Documents **↤ Holds documentation and backups from websites that were used or referenced**<br>
  ┃ ┣ 📂Documentation Downloader **↤ Resources to download the OpenWrt documentation from their website**<br>
@@ -51,7 +58,7 @@ Ziel dieser Arbeit war es, die Technische Richtlinie 03148 des BSI an Version 19
  ┃ ┣ 📂Packages_ToH_Dump **↤ Package dump of OpenWrt 19.07.4 + script**<br>
  ┃ ┗ 📜installed_packages_factory.txt **↤ List of packages that are installed on OpenWrt in factory state**<br>
   ┃<br>
- ┣ 📂OpenWrt Statistics **↤ OpenWrt download statistics from their websites for november, OpenWrt git statistics generated with gitstat**<br>
+ ┣ 📂OpenWrt Statistics **↤ OpenWrt download statistics from their websites for november, OpenWrt git statistics**<br>
  ┃ ┣ 📂OpenWrt Download Statistics<br>
  ┃ ┗ 📂OpenWrt Git Statistics 26.10.20<br>
  ┃<br>
@@ -61,6 +68,6 @@ Ziel dieser Arbeit war es, die Technische Richtlinie 03148 des BSI an Version 19
  ┃<br>
  ┣ 📂Scripts **↤ Python and Bash scripts**<br>
  ┃<br>
- ┣ 📜README.md<br>
+ ┣ 📜Backup Literaturverzeichnis.7z **↤ Contains a copy of all references listed in the thesis**
  ┣ 📜henry_pub.asc<br>
- ┗ 📜Backup Literaturverzeichnis.7z **↤ Contains a copy of all references listed in the thesis**
+ ┗ 📜README.md<br>
